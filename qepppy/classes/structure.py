@@ -1,4 +1,6 @@
 import os.path
+import re
+import numpy as np
 import xml.etree.ElementTree as ET
 
 bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (fcc)', '3':'body-centered cubic (bcc)', \
@@ -49,6 +51,18 @@ class structure:
 			map( lambda x: x.text.split(" "), root.find("output//cell").getchildren())))
 		self.b= list( map( lambda y: list(map( float, y)), \
 			map( lambda x: x.text.split(" "), root.find("output//reciprocal_lattice").getchildren())))
+
+		
+		self.symm = []
+		for node in root.findall( "output//symmetry"):
+			mnode   = node.find( "rotation")
+			m       = np.array( list( map( float, filter( None, re.split( "\n +| ", mnode.text)))))
+			m.shape = (3,3)
+			n       = node.find( "info").get( "name")
+			cl      = node.find( "info").get( "class")
+			rk      = node.find( "rotation").get( "rank")
+			self.symm.append( {'m':m, 'name':n, 'class':cl, 'rank':rk})
+
 
 
 

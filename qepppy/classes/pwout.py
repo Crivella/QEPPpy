@@ -56,6 +56,45 @@ class pwout( ):
 	def __exit__( self, *args):
 		del self
 
+	def band_structure( self, fname="plotted.dat", plot=True):
+		kpt   = np.array( self.kpt)
+		n_bnd = self.n_bnd
+		x = [0]
+		for i in range( 1, len( kpt)):
+			x.append( np.linalg.norm( kpt[i] - kpt[i-1]))
+			x[i] += x[i-1]
+		#mod = list( map( np.linalg.norm, self.kpt))
+		#x   = list( map( lambda x: sum( mod[0:mod.index(x)]), mod))
+		x = np.array( x)
+		print( x)
+		egv = self.egv
+
+		#print( list( zip ( x, egv)))
+		#res = np.array( list( zip ( x, egv)))
+		#res = np.concatenate( [x, egv], axis=1)
+		res = np.column_stack( ( x, egv))
+		#res = hstack( (x, egv))
+		print( res[:,0], "\n\n", res[:,1:])
+
+		np.savetxt( fname=fname, X=res, fmt="%13.8f"+"".join('%11.6f'*n_bnd))
+
+		if plot:
+			import matplotlib.pyplot as plt
+			from matplotlib.ticker import AutoMinorLocator as AML
+			fig, ax = plt.subplots()
+			plt.plot( res[:,0], res[:,1:])
+			plt.ylabel( "Energy( eV)")
+			plt.xlabel( "")
+			ml1 = AML(5)
+			ax.yaxis.set_minor_locator(ml1)
+			ax.yaxis.set_tick_params(which='both', right = True)
+			plt.legend()
+			plt.show()
+		
+
+
+		return 0
+
 	def smallest_gap( self, radius=0., comp_point=[0.,0.,0.]):
 		'''
 		print( args)
