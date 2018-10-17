@@ -51,7 +51,8 @@ class structure:
 			map( lambda x: x.text.split(" "), root.find("output//cell").getchildren())))
 		self.b= list( map( lambda y: list(map( float, y)), \
 			map( lambda x: x.text.split(" "), root.find("output//reciprocal_lattice").getchildren())))
-
+		self.atoms=list( map( lambda x: {'name':x.get("name"), 'i':int(x.get("index")), \
+			'coord':list(map( float, x.text.split(" ")))}, root.findall("output//atom")))
 		
 		self.symm = []
 		for node in root.findall( "output//symmetry"):
