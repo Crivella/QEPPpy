@@ -45,11 +45,16 @@ def pdos_char( fname="", kpt_list=[], bnd_list=[], thr=0):
 					ck = False
 				else:
 					print( "KPT (#{:5d}):\t{}".format( k+1, kpt))
-			if( ck and " e(" in line):
+			if( ck and (" e(" in line or " e =" in line)):
+				if( " e(" in line):
+					off=4
+				else:
+					off=2
 				ce = True
 				b+=1
 				
-				el = float( list( filter( None, line.split( " ")))[4])
+				#print( line, line.split( " "), list( filter( None, line.split( " "))))
+				el = float( list( filter( None, line.split( " ")))[off])
 				if( cb and b+1 not in bl):
 					ce = False
 				else:
@@ -60,6 +65,7 @@ def pdos_char( fname="", kpt_list=[], bnd_list=[], thr=0):
 			if( ce and (" psi = " in line or cp)):
 				cp = True
 				l = list( filter( None, re.split( " +psi = | +\+|\*\[#|\]\+", line)))
+				#print( l[1::2], l[0::2])
 				for s, wf in zip( l[1::2], l[0::2]):
 					wf=float(wf)
 					if( wf>thr):
