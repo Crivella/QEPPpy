@@ -1,10 +1,10 @@
 import sys
 import numpy as np
 
-from qepppy.classes.structure import structure as structure, bravais_index as bi
+from qepppy.classes.structure import structure as structure#, bravais_index as bi
 
 class pwin( ):
-	def __init__( self, stc=None):
+	def __init__( self, stc=None, **kwargs):
 		#if not isinstance( stc, structure):
 		#	raise Exception( "Must pass a valid strucutre")
 		self._d = {
@@ -205,6 +205,16 @@ class pwin( ):
 				self._add_stc_( stc)
 			else:
 				raise Exception( "stc is not an instance of structure")
+
+		for k, v in kwargs.items():
+			check_kw = False
+			for n in self._d['nl']:
+				if k in self._d[n]:
+					check_kw = True
+					self._d[n][k] = v
+			if not check_kw:
+				raise Exception( "Invalid keyword argument '{}'.".format( k))
+
 
 	def __str__( self):
 		self.print_in()
