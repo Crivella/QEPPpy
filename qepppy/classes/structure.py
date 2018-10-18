@@ -21,14 +21,17 @@ class structure:
 		self.b = None
 		self.atoms = None
 		self.atom_spec = None
-		self.atom_spec_n= None
+		#self.atom_spec_n= None
 		self.symm = None
 
 		if fname:
 			if not os.path.isfile( fname):
 				raise IOError( "File '{}' does not exist".format( fname))
 			self.fname = fname
-			self._parse_xml_()
+			if ".xml" in fname:
+				self._parse_xml_()
+			else:
+				self.qe_read( fname)
 		else:
 			for k, v in kwargs.items():
 				#print( k, v)
@@ -36,11 +39,15 @@ class structure:
 					self.__dict__[k] = v
 				else:
 					raise Exception(" unrecognized keyword argument {}".format( k))
-
+		
+		if not self.validate():
+			raise Exception( "Failed to initialize object '{}'.".format( self.__name__))
 
 		return		
 
 	def __str__( self, info=0):
+		if not self.validate():
+			raise Exception( "Failed to initialize object '{}'.".format( self.__name__))
 		t=""
 		if self.bravais_n == 0 or info > 0:
 			t += "CELL_PARAMETERS"
@@ -90,26 +97,100 @@ class structure:
 	def __exit__( self, *args):
 		del self
 
+	def validate( self):
+		if not self.bravais_n:														return False
+		if not self.atom_spec:														return False
+		#if self.atom_spec_n != len( self.atom_spec):			return False
+		if not self.atoms:																return False
+
+		for a in self.atoms:
+			if not any( a['name'] == s['name'] for s in self.atom_spec): return False
+
+		return True
+
+	def qe_read( self, fname=""):
+		with open(fname) as f:
+			content = f.readlines()
+
+		self.atoms=[]
+		self.atom_spec=[]
+		self.a=[]
+		toup = None
+		for l in content:
+			l = l.strip()
+			lu = l.upper()
+			#print( lu, "ATOMIC_POSITIONS" in lu, toup)
+			if "ATOMIC_POSITIONS" in lu:
+				toup = self.atoms
+				continue
+			if "ATOMIC_SPECIES" in lu:
+				toup = self.atom_spec
+				continue
+			if "CELL_PARAMETERS" in lu:
+				toup = self.a
+				continue
+			if "K_POINTS" in lu:
+				toup = None
+				continue
+			if "ibrav" in l:
+				l = l[l.find("ibrav"):]
+				self.bravais_n = int( l.split( "=")[1].split( ",")[0])
+				continue
+			if "celldm" in l:
+				continue
+			if toup != None:
+				#print( l.split( " "))
+				toup.append( list( filter( None, l.split( " "))))
+				#print( toup)
+
+
+		#print( self.atoms, self.atom_spec, self.a)
+		self.atoms = list( map( lambda x: {
+			'name':x[0],
+			'coord':list(map(lambda y: float( y), x[1:4]))
+			}, self.atoms))
+		self.atom_spec = list( map( lambda x: {
+			'name':x[0],
+			'mass':float(x[1]),
+			'pfile':x[2]
+			}, self.atom_spec))
+		if self.a:
+			self.a = np.array( self.a)
+			self.a.shape = (3,3)
+		#print( self.atoms, self.atom_spec, self.a)
+
+
+
+		return
+
 	def _parse_xml_( self):
+		#Read from data-file-schema.xml >6.2
 		root = ET.parse( self.fname).getroot()
 
+		#Read bravais lattice number
 		self.bravais_n = root.find("output//atomic_structure").get("bravais_index")
+		#If possible associate bravais lattice number to description
 		if self.bravais_n in bravais_index:
 			self.bravais = bravais_index[ self.bravais_n]
 		self.bravais_n = int( self.bravais_n)
+		#Read alat
 		self.lp      = float(root.find("output//atomic_structure").get("alat"))
+		#Read direct lattice vectors
 		self.a = list( map( lambda y: list(map( float, y)),
 			map( lambda x: x.text.split(" "), root.find("output//cell").getchildren())))
+		#Read reciprocal lattice vectors
 		self.b = list( map( lambda y: list(map( float, y)),
 			map( lambda x: x.text.split(" "), root.find("output//reciprocal_lattice").getchildren())))
+		#Read list of atom coordinates
 		self.atoms = list( map( lambda x: {
 			'name':x.get("name"), 
 			'i':int(x.get("index")),
 			'coord':list(map( float, x.text.split(" ")))
 			}, root.findall("output//atom")
 			))
+		#Read list of atom types
 		node = root.find("input/atomic_species")
-		self.atom_spec_n = int( node.get("ntyp"))
+		#self.atom_spec_n = int( node.get("ntyp"))
 		self.atom_spec = list( map( lambda x: {
 			'mass':float(x.find("mass").text),
 			'name':x.get("name"),
@@ -118,6 +199,7 @@ class structure:
 			},node.getchildren()
 			))
 		
+		#Read symmetries of the system
 		self.symm = []
 		for node in root.findall( "output//symmetry"):
 			mnode   = node.find( "rotation")
