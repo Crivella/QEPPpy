@@ -4,19 +4,18 @@ import numpy as np
 from qepppy.classes.structure import structure as structure#, bravais_index as bi
 
 def trim_ws( str):
-	l = str.strip().split(" ")
+	ws=[ " ", "\t", "\n"]
+	l = str.strip()
 	new = ""
 	check_str_1 = False
 	check_str_2 = False
 	for e in l:
-		if check_str_1 or check_str_2:
-			new += " "
-		new += e
-		if "\"" in l:
+		if not e in ws or check_str_1 or check_str_2:
+			new += e
+		if e == "\""  and not check_str_2:
 			check_str_1 = not check_str_1
-		if "'" in l:
+		if e == "'" and not check_str_1:
 			check_str_2 = not check_str_2
-
 	return new
 
 pw_nl = {
@@ -212,10 +211,12 @@ pw_nl = {
 	}
 }
 
-class qe_in():
+class namelist_handler():
 	def __init__( self, **kwargs):
+		#A namelist template '_d' must be declared in the child class!!!!!!
 		if not '_d' in self.__dict__:
 			raise Exception( "Must first associate the parent class with a namelist dictionary")
+		#Check if initialization keyword arguments are compliant with the given namelist template
 		for k, v in kwargs.items():
 			check_kw = False
 			for n in self._d['nl']:
@@ -227,16 +228,21 @@ class qe_in():
 
 		return
 
-	def nl_set( self, nl, k, v):
+	def namelist_arg_set( self, nl, k, v):
+		"""
+		Function to set a value in the namelist template
+		"""
 		if nl in self._d:
 			if k in self._d[nl]:
 				self._d[nl][k] = v
 				return True
 
-		raise Exception( "Namelist not found")
+		raise Exception( "Parameter '{}' not found in namelist '{}'.".format( k, nl))
 
-	def qe_print( self, f=None):
-		#Checks
+	def namelist_print( self, f=None):
+		"""
+		Print the namelist section of an input file
+		"""
 		longest = 0
 		check_mand = False
 		nl = self._d["nl"].copy()
@@ -277,32 +283,48 @@ class qe_in():
 			f.write("/\n\n")
 		return True
 
-	def qe_read( self, fname=""):
+	def namelist_read( self, fname=""):
+		"""
+		Read a the namelists of an input file
+		"""
 		if not fname:
 			raise Exception( "Must pass a filename to open")
 
+		#Read all the file content into 'content'
 		with open(fname) as f:
 			content = f.readlines()
 		
 		nl = None
+
 		for l in content:
+			#Ignore comments
 			l = l.strip().split( "!")[0]
+			#CASE: Namelist name
 			if '&' in l and l[1:].upper() in self._d['nl']:
 				nl = l[1:].upper()
 				if not nl in self._d['nl']:
 					raise Exception( "Reading unrecognized namelist '{}'".format( nl))
-			else: 
+			#CASE other
+			else:
+				#(not '/' in l or '=' in l) => Recognize namelist field from otehr fields or namelist end '/'
+				#nl => Recognize if reading field outside of namelist
 				if (not '/' in l or '=' in l) and nl and l:
 					if not nl: raise Exception( "Corrupted input file at line '{}'".format( l))
+					#Read namelist fields separated by endline ('\n') or by commas (',')
 					for e in filter( None, l.split( ",")):
 						l1 = trim_ws(e).split( "=")
 						v = l1[1].replace("\"", "").replace("'", "")
+						#Is the field value an integer?
 						try:
 							v = int(v)
 						except:
+							#Is the field value a float?
+							#Also replace the fortran exponential notation 'D/d' with the python/c notation 'E/e'
 							try:
 								v = float(v.replace( "D", "e").replace( "d", "e"))
 							except:
+								#Is the field value a boolean?
+								#Also replace the fortran notation '.true./.false.' with the Python 'True/False'
 								if v.upper() == '.TRUE.':
 									v = True
 								elif v.upper() == '.FALSE.':
@@ -310,7 +332,7 @@ class qe_in():
 								pass
 							pass
 						
-						#print( nl, e, l1, v)
+						#Check if the field/parameter name is present in the namelist template
 						if l1[0] in self._d[nl]:
 							self._d[nl][l1[0]] = v
 						else:
@@ -323,7 +345,7 @@ class qe_in():
 
 
 
-class pwin( qe_in):
+class pwin( namelist_handler):
 	def __init__( self, stc=None, fname="", **kwargs):
 		self._d = pw_nl.copy()
 		self.stc = None
@@ -333,7 +355,7 @@ class pwin( qe_in):
 			else:
 				raise Exception( "stc is not an instance of structure")
 		if fname:
-			self.qe_read( fname)
+			self.pw_read( fname)
 
 		super().__init__( **kwargs)
 
@@ -369,7 +391,7 @@ class pwin( qe_in):
 
 		return
 
-	def qe_print( self, fname=""):
+	def pw_print( self, fname=""):
 		if not self.stc:
 			raise Exception("No valid cell structure for the input file")
 
@@ -379,9 +401,9 @@ class pwin( qe_in):
 		else:
 			f = sys.stdout
 
-		if not super().qe_print( f):
+		#Print the namelist data
+		if not super().namelist_print( f):
 			return
-
 		#Write the structure data
 		f.write( self.stc.__str__())
 
@@ -390,8 +412,8 @@ class pwin( qe_in):
 
 		return
 
-	def qe_read( self, fname=""):
-		super().qe_read( fname)
+	def pw_read( self, fname=""):
+		super().namelist_read( fname)
 		self.stc = structure( fname)
 
 		return

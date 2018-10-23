@@ -9,7 +9,7 @@ bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (f
 	'-9':'as 9 different axis', '10':'face-centered orthorombic', '11':'body-centered orthorombic', '12':'monoclinic P',
 	'-12':'as 12 unique axis', '13':'base-centered monoclinic', '14':'triclinic'}
 
-class structure:
+class structure():
 	__name__ = "structure"
 	def __init__( self, fname="", **kwargs):
 		#if not fname:
@@ -31,7 +31,7 @@ class structure:
 			if ".xml" in fname:
 				self._parse_xml_()
 			else:
-				self.qe_read( fname)
+				self.pw_read( fname)
 		else:
 			for k, v in kwargs.items():
 				#print( k, v)
@@ -108,7 +108,7 @@ class structure:
 
 		return True
 
-	def qe_read( self, fname=""):
+	def pw_read( self, fname=""):
 		with open(fname) as f:
 			content = f.readlines()
 
