@@ -10,12 +10,30 @@ import sys
 from shutil import rmtree
 
 from setuptools import find_packages, setup, Command
+from setuptools.command.test import test as TestCommand
+
+
+class PyTest(TestCommand):
+    user_options = [("pytest-args=", "a", "Arguments to pass to pytest")]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = ""
+
+    def run_tests(self):
+        import shlex
+
+        # import here, cause outside the eggs aren't loaded
+        import pytest
+
+        errno = pytest.main(shlex.split(self.pytest_args))
+        sys.exit(errno)
 
 # Package meta-data.
 NAME = 'qepppy'
-DESCRIPTION = 'Python post-processing and input-output handling library for Quantum ESPERSSO'
-URL = 'https://github.com/me/myproject'
-EMAIL = 'me@example.com'
+DESCRIPTION = 'Python post-processing and input-output handling library for Quantum ESPRESSO'
+URL = 'https://github.com/Crivella/QEPPpy'
+EMAIL = 'davide.grassano@roma2.infn.it'
 AUTHOR = 'Awesome Soul'
 REQUIRES_PYTHON = '>=3.5.2'
 VERSION = None
@@ -92,6 +110,22 @@ class UploadCommand(Command):
         
         sys.exit()
 
+class PyTest( TestCommand):
+    user_options = [("pytest-args=", "a", "Arguments to pass to pytest")]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = ""
+
+    def run_tests(self):
+        import shlex
+
+        # import here, cause outside the eggs aren't loaded
+        import pytest
+
+        errno = pytest.main(shlex.split(self.pytest_args))
+        sys.exit(errno)
+
 
 # Where the magic happens:
 setup(
@@ -128,7 +162,9 @@ setup(
     # $ setup.py publish support.
     cmdclass={
         'upload': UploadCommand,
+        'test': PyTest
     },
     zip_safe=True,
-    test_suite='tests'
+    #setup_require=['pytest-runner'],
+    test_require=['pytest'],
 )
