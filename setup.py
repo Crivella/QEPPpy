@@ -18,7 +18,7 @@ URL = 'https://github.com/me/myproject'
 EMAIL = 'me@example.com'
 AUTHOR = 'Awesome Soul'
 REQUIRES_PYTHON = '>=3.5.2'
-VERSION = 0.1
+VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -129,4 +129,6 @@ setup(
     cmdclass={
         'upload': UploadCommand,
     },
+    zip_safe=True,
+    test_suite='tests'
 )
