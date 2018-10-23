@@ -38,7 +38,7 @@ class structure():
 				if k in self.__dict__:
 					self.__dict__[k] = v
 				else:
-					raise Exception(" unrecognized keyword argument {}".format( k))
+					raise Exception( "Unrecognized keyword argument '{}'".format( k))
 		
 		if not self.validate():
 			raise Exception( "Failed to initialize object '{}'.".format( self.__name__))
@@ -46,8 +46,6 @@ class structure():
 		return		
 
 	def __str__( self, info=0):
-		if not self.validate():
-			raise Exception( "Failed to initialize object '{}'.".format( self.__name__))
 		t=""
 		if self.bravais_n == 0 or info > 0:
 			t += "CELL_PARAMETERS"
@@ -57,22 +55,18 @@ class structure():
 				t += "\n"
 			t += "\n\n"
 
-		if self.atom_spec:
-			t += "ATOMIC_SPECIES\n"
-			for s in self.atom_spec:
-				t += "{:6}{:12.4f}  {}".format(s['name'],s['mass'],s['pfile'])
-			t += "\n\n"
+		t += "ATOMIC_SPECIES\n"
+		for s in self.atom_spec:
+			t += "{:6}{:12.4f}  {}".format(s['name'],s['mass'],s['pfile'])
+		t += "\n\n"
 
-		if self.atoms:
-			t += "ATOMIC_POSITIONS\n"
-			for a in self.atoms:
-				t += "{:4}  ".format(a['name'])
-				for c in a['coord']:
-					t += "{:10.5f}".format(c)
-				t += "\n"
+		t += "ATOMIC_POSITIONS\n"
+		for a in self.atoms:
+			t += "{:4}  ".format(a['name'])
+			for c in a['coord']:
+				t += "{:10.5f}".format(c)
 			t += "\n"
-		else:
-			raise Exception( "No atom specified")
+		t += "\n"
 
 		if info == 1:
 			t += "dbg info"
@@ -117,8 +111,7 @@ class structure():
 		self.a=[]
 		toup = None
 		for l in content:
-			l = l.strip()
-			lu = l.upper()
+			lu = l.strip().upper()
 			#print( lu, "ATOMIC_POSITIONS" in lu, toup)
 			if "ATOMIC_POSITIONS" in lu:
 				toup = self.atoms
