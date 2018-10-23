@@ -84,25 +84,28 @@ class namelist_handler():
 		if nl in self._d:
 			if k in self._d[nl]:
 				self._d[nl][k] = v
-				return True
+				return 
 
 		raise Exception( "Parameter '{}' not found in namelist '{}'.".format( k, nl))
 
-	def namelist_print( self, f=None):
+	def print( self, fname=""):
 		"""
-		Print the namelist section of an input file
+		Print this or a child class __str__() to a file or to the stdout
 		"""
-		try:
-			c = self.__str__()
-		except Exception as e:
-			print( e)
-			return False
-
-		if f:
-			f.write( c)
+		if fname:
+			f = open( fname, "w+")
 		else:
-			print( c)
-		return True
+			f = sys.stdout
+
+		content = self.__str__()
+		f.write( content)
+
+		if fname:
+			f.close()
+
+		return
+
+
 
 	def namelist_read( self, fname=""):
 		"""
@@ -163,7 +166,7 @@ class namelist_handler():
 
 		if err:
 			raise Exception( err)
-		return True
+		return
 
 pw_nl = {
 	"nl" : ["CONTROL", "SYSTEM", "ELECTRONS", "IONS", "CELL"],

@@ -61,28 +61,9 @@ class pwin( namelist_handler):
 
 		return
 
-	def pw_print( self, fname=""):
-		if not self.stc:
-			raise Exception("No valid cell structure for the input file")
-
-		#Define output 
-		if fname:
-			f = open( fname, "w+")
-		else:
-			f = sys.stdout
-
-		content = self.__str__()
-		#Write the structure data
-		f.write( content)
-
-		if fname:
-			f.close()
-
-		return
-
 	def pw_read( self, fname=""):
 		try:
-			super().namelist_read( fname)
+			self.namelist_read( fname)
 		except Exception as e:
 			print( e)
 		self.stc = structure( fname)
