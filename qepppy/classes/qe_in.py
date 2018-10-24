@@ -8,9 +8,10 @@ This class should provide the following methods:
 	-convert(): Function to set a value in the namelist template
 	-set:() Function to convert the list in a string QE input file
 """
-from .qe_doc import qe_doc_handler as handler
+from .qe_doc import qe_doc_parser as parser
 
 def trim_ws( str):
+	#Trim all withspace not included in a string
 	ws=[ " ", "\t", "\n"]
 	l = str.strip()
 	new = ""
@@ -28,7 +29,7 @@ def trim_ws( str):
 
 pw_nl={}#qe_doc_read( fname="INPUT_PW.def")
 
-class qe_in( handler):
+class qe_in( parser):
 	def __init__( self, fname="" , templ_file="", **kwargs):
 		#A namelist template '_d' must be declared in the child class!!!!!!
 		if templ_file:
@@ -77,22 +78,23 @@ class qe_in( handler):
 		nl = None
 		for l in content:
 			#Ignore comments
-			l = l.strip().split( "!")[0]
-			if not l: continue
+			ls = l.strip().split( "!")[0]
+			if not ls: continue
 			#CASE: Namelist name
-			if '&' == l[0]:
-				nl = l[1:].upper()
+			if '&' == ls[0]:
+				nl = ls[1:].upper()
 				if not nl in self._d['nl']:
 					raise Exception( "Reading unrecognized namelist '{}'".format( nl))
 			#CASE other
 			else:
 				#(not '/' in l or '=' in l) => Recognize namelist field from otehr fields or namelist end '/'
 				#nl => Recognize if reading field outside of namelist
-				if (not '/' in l or '=' in l) and nl and l:
-					if not nl: raise Exception( "Corrupted input file at line '{}'".format( l))
+				if (not '/' in ls or '=' in ls) and nl:
+					if not nl: raise Exception( "Corrupted input file:\n{}".format( l))
 					#Read namelist fields separated by endline ('\n') or by commas (',')
-					for e in filter( None, l.split( ",")):
+					for e in filter( None, ls.split( ",")):
 						l1 = trim_ws(e).split( "=")
+						if len(l1) != 2: raise Exception( "Corrupt input file:\n{}".format( l))
 						v = l1[1].replace("\"", "").replace("'", "")
 						
 						#Check if the field/parameter name is present in the namelist template

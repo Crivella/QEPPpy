@@ -3,7 +3,7 @@ import numpy as np
 from qepppy.classes.structure import structure as structure#, bravais_index as bi
 from qepppy.classes.qe_in import qe_in
 
-class pwin( qe_in):
+class pw_in( qe_in):
 	templ_file = "INPUT_PW.def"
 	def __iadd__(self, other):
 		if isinstance( other, structure):

@@ -1,6 +1,6 @@
 
 
-class qe_doc_handler():
+class qe_doc_parser():
 	def parse( self, fname=""):
 		"""
 		Parse a .def file from the Quantum ESPRESSO documentation.
@@ -183,7 +183,8 @@ class qe_doc_handler():
 			if not isinstance( v , dict): return #Check if element is a dictionary
 
 			#Case vargroup: read all variable inside
-			if "vargroup" in k:
+			if "vargroup" in v['keyword']:
+				#print ("Vargroup found: ", namelist, k, v)
 				if not isinstance( v, dict):
 					raise Exception( "The keyword '{}' in namelist '{}' has not been parsed as a dict...\n".format( 
 						k, namelist))
@@ -202,12 +203,10 @@ class qe_doc_handler():
 				return
 
 			#Case group: read all variable inside (recursive)
-			if "group" in k:
-				if not isinstance( v, dict):
-					raise Exception( "The keyword '{}' in namelist '{}' has not been parsed as a dict...\n".format( 
-						k, namelist))
-					for k2, v2 in v.items():
-						_set_var_( namelist=namelist, k=k2, v=v2)
+			if "group" == v['keyword']:
+				#print ("Group found: ", namelist, k, v)
+				for k2, v2 in v.items():
+					_set_var_( namelist=namelist, k=k2, v=v2)
 				return
 
 			#Case var
@@ -294,6 +293,12 @@ class qe_doc_handler():
 				if v['v'] == "***":
 					check_mand = True
 					err += "ERROR: Mandatory input parameter {} in namelist {} not set.\n".format( el, n)
+				elif v['v']:
+					if v['c']:
+						if not any( v == opt for opt in v['c']):
+							err += \
+								"Parameter '{}/{}' = '{}' is not within range of possible values: \n{}\n".format( 
+									n, el, v['v'], v['c'])
 		if check_mand:
 			raise Exception( err)
 
@@ -324,7 +329,7 @@ class qe_doc_handler():
 			return c
 
 		nl = self._d['nl'].copy()
-		for namelist in nl:
+		for namelist in self._d['nl']:
 			#Check for unused namelist (does not print it)
 			if not any( v['v'] for v in self._d[namelist].values()):
 				nl.pop( nl.index(namelist))
@@ -338,25 +343,28 @@ class qe_doc_handler():
 				if v['v']:
 					if v['vec']:
 						for n, val in enumerate( v['v']):
+							if not val: continue
 							app = el + "({})".format( n+1)
 							content += "{0:>{1}} = ".format( app, longest,)
 							content += _format_( val)
+							content += " ,\n"
 					else:
 						content += "{0:>{1}} = ".format( el, longest)
 						content += _format_( v['v'])
-					content += " ,\n"
+						content += " ,\n"
 			content += "/\n\n"
 		return content
 
 	def set( self, nl, k, v):
 		n=None
-		print( nl, k, v)
+		#print( nl, k, v)
 		#If array case
 		if '(' in k:
 			n=int( k.split('(')[1].split(')')[0])
 			k=str( k.split( '(')[0])
 
 		#Check if k is present in preset namelist
+		#print ( self._d[nl])
 		if not k in self._d[nl]: raise NameError( "Ignored unrecognized parameter '{}'\n".format( k))
 		ptr = self._d[nl][k]
 		t = ptr['t']
@@ -391,7 +399,7 @@ class qe_doc_handler():
 		if ptr['c']:
 			if not any( v == opt for opt in ptr['c']):
 				raise Exception( 
-					"Parameter '{}/{}' = '{}' does not respect possible values {}.\n".format( 
+					"Parameter '{}/{}' = '{}' is not within range of possible values: \n{}".format( 
 						nl, k, v, ptr['c']))
 
 
