@@ -1,4 +1,8 @@
 
+def gkw( d):
+	if isinstance( d, dict):
+		return d.get( 'keyword')
+	return ""
 
 class qe_doc_parser():
 	def parse( self, fname=""):
@@ -6,18 +10,37 @@ class qe_doc_parser():
 		Parse a .def file from the Quantum ESPRESSO documentation.
 		Produce a dictionary with the following structure:
 		{
-		nl:   ['", ... (List of namelists name)]
-		card: ['", ... (List of cards name)]
-		NAMELIST_NAME: {
-			VAR_NAME: {
-				v: (Value of the parameter)
-				t: (Type of the parameter)
-				d: (Default value)
-				c: (List of possible acceppted value for the parameter)
-				vec:None/(start,end) (Info for array like variables)
+			nl:   ['", ... (List of namelists name)]
+			card: ['", ... (List of cards name)]
+			NAMELIST_NAME1: {
+				VAR_NAME: {
+					v: (Value of the parameter)
+					t: (Type of the parameter)
+					d: (Default value)
+					c: (List of possible acceppted value for the parameter)
+					vec:None/(start,end) (Info for array like variables)
+					}
+				...
 				}
+			NAMELIST_NAME2={...}
 			...
+
+			CARD_NAME1:{
+				v: (Value associated with the card)
+				c: (List of possible acceppted value for the card)
+				d: (Default value for v)
+				l: (List of card elements)
+				syntax:{
+					cond: "..." (Condition on card value)
+					l:[ [{n: varname, t: TYPE}, ..., [{...}, ...]], [...], ([{...}, {...}, ..., ], s, e), ...]
+						(Every element of the list represent a line
+						A Tuple represent a repeating line
+						A List within a list marks optional arguments)
+				}
+				syntax1:{...} (if multiple syntaxes are provided)
 			}
+			CARD_NAME2:{...}
+			...
 		}
 		"""
 		type_check = { "CHARACTER":str, "INTEGER":int, "LOGICAL":bool, "REAL":float}
@@ -29,17 +52,27 @@ class qe_doc_parser():
 		with open(fname) as f:
 			content = f.read()
 
-		app = {}
-		ptr=app
+		intermediate = {}
+		ptr=intermediate
 		
 		ptr_list=[] #Stack of ptr storing the namelist lvl
 		#Keywords(KWs) that trigger the parser
 		#Every { found after a KW generate a new dictionary
-		keywords = [ "", "info", "namelist", "card", "var", "dimension", "group", 
+		nl_keywords = [ "", "info", "namelist", "var", "dimension", "group", 
 			"vargroup", "status", "options", "default", "opt", "input_description",]
+		cd_keywords = [ "card", "syntax", "table", "rows", "colgroup", "optional", "flag", "enum",
+			"choose", "when", "otherwise", "col", "elsewhen", "line"]
+		keywords = nl_keywords + cd_keywords
 
+
+		#overwrite mode: overwrite entire dictionary associated to this keyword with a string
+		oflag_l = [ 'default', 'status', 'enum']
 		# { found if one of this flag are triggered are ignored (considered as text)
-		cflag_l = [ 'info', 'default', 'opt', 'status', '']
+		#string-like mode flag
+		sflag_l = [ 'info', 'opt', '']
+		sflag_l += oflag_l
+
+		gflag_l= [ 'vargroup', 'colgroup']
 		
 		last=[] #Stack of keyword that where opened by {
 		
@@ -61,8 +94,8 @@ class qe_doc_parser():
 		#Generate a nested dictionary from the .def file to be further parsed in the final dictionary
 		for c in content:
 			#If endline in vargroup (every line is a var without {})
-			if c == "\n" and flag['vargroup']:
-				if kw == "var":
+			if c == "\n" and any( flag[gf] for gf in gflag_l):
+				if kw == "var" or kw == "col":
 					#Check against nameless var
 					if not name:
 						if not parse: raise Exception( "Corrupt .def file\n")
@@ -76,17 +109,17 @@ class qe_doc_parser():
 			if comm: continue
 			#If string mode read c into parse and skip the rest
 			if (str_c1 or str_c2) and c!="'" and c!='"': parse += c; continue
-			#Set cflag if any of the KW flags in cflag_l is true
-			#If cflag is set, treat al subsequent text as string until } that reset the flag is met
-			cflag = any( flag[cf] for cf in cflag_l)
-			if not cflag:
-				#String mode handler (if not already in cflag mode)
+			#Set sflag if any of the KW flags in sflag_l is true
+			#If sflag is set, treat al subsequent text as string until } that reset the flag is met
+			sflag = any( flag[cf] for cf in sflag_l)
+			if not sflag:
+				#String mode handler (if not already in sflag mode)
 				if c == "'" and not str_c2: str_c1 = not str_c1; continue
 				if c == '"' and not str_c1: str_c2 = not str_c2; continue
 			#Whitespace/{}/# handler
-			if c == " " or c == "{" or c == "}" or c == "#":
-				#In cflag mode handle internal brackets as string
-				if cflag:
+			if c == " " or c == "\t" or c == "{" or c == "}" or c == "#":
+				#In sflag mode handle internal brackets as string
+				if sflag:
 					if c=='{': lvl += 1
 					if c=='}': lvl -= 1
 					if lvl >= 0: parse+=c; continue
@@ -124,7 +157,7 @@ class qe_doc_parser():
 					flag[l] = False
 					ptr = ptr_list.pop()
 					#If KW is default or status, delete the dictionary and save the internal string
-					if l == "default" or l == "status": ptr[l]=' '.join( parse.split())
+					if l in oflag_l: ptr[l]=' '.join( parse.split())#; print( last, l, " overwriteing ", parse)
 					mname = ""
 				#Check if KW and set it
 				if parse in keywords and not kw: kw = parse
@@ -144,14 +177,21 @@ class qe_doc_parser():
 								if not name in ptr: break
 					ptr_list.append( ptr)
 					if name:
+						aname=name
+						num = 0
+						while aname in ptr:
+							num += 1
+							aname = name + str( num)
+						"""
 						#Handle and merge repeated dictionaries (eg: {..., group:{a,b}, group:{c,d}} => {..., group{a,b,c,d}})
 						if name in ptr:
 							if not isinstance( ptr, dict):
 								ptr[name]={}
 						#Create new dictionary
 						else:
-							ptr[name]={}
-						ptr=ptr[name]
+						"""
+						ptr[aname]={}
+						ptr=ptr[aname]
 						#Store -arg and KW inside new dictionary
 						mlist.append(("keyword", kw))
 						while mlist:
@@ -166,13 +206,13 @@ class qe_doc_parser():
 
 			parse += c
 
-		"""
+		#"""
 		import json
 		with open("report", "w") as f:
-			f.write( json.dumps( app, indent=2))
+			f.write( json.dumps( intermediate, indent=2))
 		#"""
 
-		def _set_var_( k="", v={}, namelist=""):
+		def _parse_nl_var_( k="", v={}, namelist=""):
 			#Function to set a var in the final namelist parsing the temporary nested dict
 			t = None #Handle variable type
 			s = None #Handle array var start/end
@@ -183,14 +223,13 @@ class qe_doc_parser():
 			if not isinstance( v , dict): return #Check if element is a dictionary
 
 			#Case vargroup: read all variable inside
-			if "vargroup" in v['keyword']:
+			if "vargroup" in gkw(v):
 				#print ("Vargroup found: ", namelist, k, v)
 				if not isinstance( v, dict):
 					raise Exception( "The keyword '{}' in namelist '{}' has not been parsed as a dict...\n".format( 
 						k, namelist))
-				if "type" in v:
-					if v['type'] in type_check:
-						t = type_check[v['type']]
+				ta = v.get( 'type', None)
+				t = type_check.get( str( ta).upper())
 				for k2, v2 in v.items():
 					if v2 == "":
 						nl[namelist][k2] ={
@@ -203,10 +242,10 @@ class qe_doc_parser():
 				return
 
 			#Case group: read all variable inside (recursive)
-			if "group" == v['keyword']:
+			if "group" ==gkw(v):
 				#print ("Group found: ", namelist, k, v)
 				for k2, v2 in v.items():
-					_set_var_( namelist=namelist, k=k2, v=v2)
+					_parse_nl_var_( namelist=namelist, k=k2, v=v2)
 				return
 
 			#Case var
@@ -231,50 +270,138 @@ class qe_doc_parser():
 					raise Exception( "No top value for the array.\n")
 				ptr['vec'] = (s,e)
 				ptr['v'] = []
-			#Check if valid type and assigni it
-			if "type" in v:
-				t = v['type'].upper()
-				if t in type_check:
-					t = type_check[t]
-					ptr['t'] = t
-				else: raise Exception( "'{}': Unrecognized type '{}'.\n".format( k, v['type']))
-			#Check if default value is present
-			if "default" in v:
-				if ptr['t']:
-					if isinstance( v['default'], t):
-						ptr['d'] = t( v['default'].replace("'", "").replace("D", "E"))
-					else:
-						ptr['d'] = str( v['default'].replace("'", "").replace("D", "E"))
+			#Get var type
+			ta = v.get( 'type', None)
+			t = type_check.get( str( ta).upper())
+			ptr['t']=t
+
+			#Get default value
+			a = str( v.get( 'default', '')).replace("'", "").replace("D", "E")
+			try: ptr['d'] = t( a)
+			except: ptr['d'] = a
 			#Check if status is set to REQUIRED
-			if "status" in v:
-				if v['status'].strip().upper() == "REQUIRED":
-					 ptr['v'] = "***"
+			if str( v.get( 'status')).strip().upper() == "REQUIRED":
+				 ptr['v'] = "***"
 			#Check if possible option list is present
-			if "options" in v:
-				for k3, v3 in v['options'].items():
-					if isinstance( v3, dict):
-						if "info" in k3: continue
-						ptr['c'].append( k3)
+			for k3, v3 in v.get( 'options', {}).items():
+				if isinstance( v3, dict):
+					if "info" in k3: continue
+					ptr['c'].append( k3)
+
+
+		def _parse_card_ ( name, card):
+			ptr = nl[name]
+			def _parse_group_( card):
+				ta = card.get( 'type', None)
+				t = type_check.get( str( ta).upper())
+				l = []
+				for k, v in card.items():
+					if v == "":
+						l.append( {'n':k, 't':t})
+				return l
+			def _parse_table_elements_( card):
+				l=[]		
+				for k1, v1 in card.items():
+					if not isinstance( v1, dict): continue
+					if gkw( v1) == 'col':
+						l.append( {'n':k1, 't':v1.get( 'type')})
+					elif 'group' in gkw( v1):
+						l += _parse_group_( v1)
+					elif gkw( v1) == "optional":
+						l += [ _parse_table_elements_( v1)]
+					else: raise Exception( "Unexpected in _parse_table_elements_.\n")
+				return l
+
+			def _parse_table_( card):
+				l = []
+				s = None
+				e = None
+				for v in card.values():
+					if not isinstance( v, dict): continue
+					if gkw( v) == 'rows':
+						e = v.get( 'end')
+						s = v.get( 'start')
+						l = _parse_table_elements_( v)
+						break
+
+				print( "Table: ", (l, s, e))
+				return (l, s, e)
+
+			def _parse_syntax_( card):
+				if gkw( card) == 'syntax':
+					aname="syntax"
+					num = 0
+					while aname in ptr:
+						num += 1
+						aname = "syntax" + str(num)
+					ptr[aname]={
+						'cond':"",
+						'l':[],
+					}
+					ptr[aname]['cond'] = card.get( 'flag')
+					for k, v in card.items():
+						if not isinstance( v, dict): continue
+						if gkw( v) == 'line':
+							new=[]
+							for k1, v1 in v.items():
+								if not isinstance( v1, dict): continue
+								if gkw( v1) == 'var':
+									ta = v1.get( 'type', None)
+									t = type_check.get( str( ta).upper())
+									new.append( {'n':k1, 't':t})
+									#ptr[aname]['l'].append( t)
+								if 'group' in gkw( v1):
+									new += _parse_group_( v1)
+							ptr[aname]['l'].append( new)
+						if gkw( v) == 'table':
+							ptr[aname]['l'].append(  _parse_table_( v))
+
+					print( "SYNTAX: ", name)
+				else:
+					for v1 in card.values():
+						if isinstance( v1, dict):
+							_parse_syntax_( v1)
+
+
+
+			for k, v in card.items():
+				if isinstance( v, dict):
+					if gkw( v) == "flag":
+						ptr['c'] = v.get( 'enum').split( " | ")
+						ptr['d'] = v.get( 'default')
+			_parse_syntax_( card)
+
+
+			return
 
 		#Cicle through nested dict and parse it into the final dict
 		#Cicle through all namelists and cards					
-		for k1, v1 in app['input_description'].items():
+		for k1, v1 in intermediate['input_description'].items():
 			if "unnamed" in k1: continue
 			if isinstance( v1, dict):
-				nl[v1['keyword'].replace("namelist", "nl")].append( k1)
-				nl[k1]={}
+				nl[gkw( v1).replace("namelist", "nl")].append( k1)
 				#Cicle through all var/vargroup/group
-				for k2, v2 in v1.items():
-					_set_var_( namelist=k1, k=k2, v=v2)
+				if gkw( v1) == "namelist":
+					nl[k1]={}
+					for k2, v2 in v1.items():
+						_parse_nl_var_( namelist=k1, k=k2, v=v2)
+				elif gkw( v1) == "card":
+					nl[k1]={
+						'v':"",
+						'c':[],
+						'd':"",
+						'l':[]
+					}
+					_parse_card_( name=k1, card=v1)
 			
-		"""
+		#"""
 		from pprint import pprint as pp	
 		with open("report2", "w") as f:
 			pp( nl, stream=f, indent=2)
 			#f.write( json.dumps( nl, indent=2))
 		#"""
 
-		self._d = nl
+		self._templ_ = nl
 		return
 
 	def validate( self):
@@ -287,9 +414,9 @@ class qe_doc_parser():
 		"""
 		check_mand = False
 		err = ""
-		for n in self._d['nl']:
+		for n in self._templ_['nl']:
 			#Check for unused namelist (does not print it)
-			for el, v in self._d[n].items():
+			for el, v in self._templ_[n].items():
 				if v['v'] == "***":
 					check_mand = True
 					err += "ERROR: Mandatory input parameter {} in namelist {} not set.\n".format( el, n)
@@ -306,8 +433,8 @@ class qe_doc_parser():
 
 	def _maxl_( self):
 		longest = 0
-		for n in self._d['nl']:
-			for el, v in self._d[n].items():
+		for n in self._templ_['nl']:
+			for el, v in self._templ_[n].items():
 				if v['v']:
 					app = len( el)
 					if v['vec']: app += 4
@@ -328,10 +455,10 @@ class qe_doc_parser():
 					c += "{}".format( v).replace( "e", "D").replace( "E", "D")
 			return c
 
-		nl = self._d['nl'].copy()
-		for namelist in self._d['nl']:
+		nl = self._templ_['nl'].copy()
+		for namelist in self._templ_['nl']:
 			#Check for unused namelist (does not print it)
-			if not any( v['v'] for v in self._d[namelist].values()):
+			if not any( v['v'] for v in self._templ_[namelist].values()):
 				nl.pop( nl.index(namelist))
 
 		#Write all the used namlists/parameters
@@ -339,7 +466,7 @@ class qe_doc_parser():
 		longest = self._maxl_()
 		for namelist in nl:
 			content += "&{}\n".format(namelist)
-			for el, v in self._d[namelist].items():
+			for el, v in self._templ_[namelist].items():
 				if v['v']:
 					if v['vec']:
 						for n, val in enumerate( v['v']):
@@ -355,6 +482,13 @@ class qe_doc_parser():
 			content += "/\n\n"
 		return content
 
+	def check_nl( self, nl):
+		if nl in self._templ_['nl']: return True
+		return False
+
+	def get( self, nl, k):
+		return self._templ_[nl][k]['v']
+
 	def set( self, nl, k, v):
 		n=None
 		#print( nl, k, v)
@@ -364,9 +498,9 @@ class qe_doc_parser():
 			k=str( k.split( '(')[0])
 
 		#Check if k is present in preset namelist
-		#print ( self._d[nl])
-		if not k in self._d[nl]: raise NameError( "Ignored unrecognized parameter '{}'\n".format( k))
-		ptr = self._d[nl][k]
+		#print ( self._templ_[nl])
+		if not k in self._templ_[nl]: raise NameError( "Ignored unrecognized parameter '{}'\n".format( k))
+		ptr = self._templ_[nl][k]
 		t = ptr['t']
 		#If array case
 		if n:
@@ -375,12 +509,12 @@ class qe_doc_parser():
 			#Check if array index is within maximum possible value
 			s = ptr['vec'][0]
 			e = ptr['vec'][1]
-			if s in self._d[nl]:
-				if self._d[nl][s]['v']:
-					s=self._d[nl][s]['v']
-			if e in self._d[nl]:
-				if self._d[nl][e]['v']:
-					e=self._d[nl][e]['v']
+			if s in self._templ_[nl]:
+				if self._templ_[nl][s]['v']:
+					s=self._templ_[nl][s]['v']
+			if e in self._templ_[nl]:
+				if self._templ_[nl][e]['v']:
+					e=self._templ_[nl][e]['v']
 			if isinstance( s, int) and isinstance( e, int):
 				if not s <= n <= e: 
 					raise Exception( "'{}({})' out of array range '{}-{}'".format( k, n, s, e))
@@ -390,7 +524,7 @@ class qe_doc_parser():
 			if isinstance( v, str):
 				v=v.replace( "D", "e").replace( "d", "e")
 		try: v = t( v)
-		except: raise TypeError( "Parameter '{}'' must be '{}': value '{}' is invalid.\n".format( k, t, v))
+		except: raise TypeError( "Parameter '{}'' must be of type '{}': value '{}' is invalid.\n".format( k, t, v))
 
 		if n: ptr['v'][n-1] = v
 		else: ptr['v'] = v

@@ -3,10 +3,12 @@ import sys
 """
 Import a class capable of generating a namelist dict template by parsing a file
 This class should provide the following methods:
-	-parse(): Function to read the file and generate a namelist template
-	-validate(): Function to check namelist template after reading
-	-convert(): Function to set a value in the namelist template
-	-set:() Function to convert the list in a string QE input file
+	-parse(): Read the file and generate an internal namelist template
+	-validate(): Check namelist template after reading
+	-convert():  Convert the internal dict in a string QE input file
+	-check_nl( nl="namelist"): Check if nl is valid (present in the itnernal namelist)
+	-set:( nl="namelist", k="param", v="value to set") Set a value in the namelist template
+	-get:( nl="namelist", k="param") Retrieve the value of a parameter
 """
 from .qe_doc import qe_doc_parser as parser
 
@@ -26,9 +28,6 @@ def trim_ws( str):
 			check_str_2 = not check_str_2
 	return new
 
-
-pw_nl={}#qe_doc_read( fname="INPUT_PW.def")
-
 class qe_in( parser):
 	def __init__( self, fname="" , templ_file="", **kwargs):
 		#A namelist template '_d' must be declared in the child class!!!!!!
@@ -47,7 +46,6 @@ class qe_in( parser):
 		return
 
 	def __str__( self):
-		self.validate()
 		return self.convert()
 
 	def fprint( self, fname=""):
@@ -57,6 +55,7 @@ class qe_in( parser):
 		if fname: f = open( fname, "w+")
 		else: f = sys.stdout
 
+		self.validate()
 		f.write( self.__str__())
 
 		if fname: f.close()
@@ -83,7 +82,7 @@ class qe_in( parser):
 			#CASE: Namelist name
 			if '&' == ls[0]:
 				nl = ls[1:].upper()
-				if not nl in self._d['nl']:
+				if not self.check_nl( nl):
 					raise Exception( "Reading unrecognized namelist '{}'".format( nl))
 			#CASE other
 			else:
