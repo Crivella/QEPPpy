@@ -7,8 +7,13 @@ This class should provide the following methods:
 	-validate(): Check namelist template after reading
 	-convert():  Convert the internal dict in a string QE input file
 	-check_nl( nl="namelist"): Check if nl is valid (present in the itnernal namelist)
-	-set:( nl="namelist", k="param", v="value to set") Set a value in the namelist template
+	-set_nl:( nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
+	-set_card: ( card="", v="", el=[]) Set a card value in the namelist template
+		if v is set, set the card main value
+		if el is set set a card list value
+			el must be an entire lie to parse
 	-get:( nl="namelist", k="param") Retrieve the value of a parameter
+	-find: (name) Find a variable with name=name in the namelist template
 """
 from .qe_doc import qe_doc_parser as parser
 
@@ -36,7 +41,7 @@ class qe_in( parser):
 		if not self.templ_file: raise Exception( "Must give a template file.\n")
 		self.parse( self.templ_file)
 
-		if fname: self.namelist_read( fname=fname)
+		if fname: self.in_parse( fname=fname)
 		#Check if initialization keyword arguments are compliant with the given namelist template
 		for nl, v in kwargs.items():
 			if not isinstance( v, dict): raise Exception( "Invalid kwargs.\n{}".format( kwargs))
@@ -63,7 +68,7 @@ class qe_in( parser):
 		return
 
 
-	def namelist_read( self, fname=""):
+	def in_parse( self, fname=""):
 		"""
 		Read a the namelists of an input file
 		"""
@@ -75,6 +80,7 @@ class qe_in( parser):
 			content = f.readlines()
 		
 		nl = None
+		card = None
 		for l in content:
 			#Ignore comments
 			ls = l.strip().split( "!")[0]
@@ -86,22 +92,34 @@ class qe_in( parser):
 					raise Exception( "Reading unrecognized namelist '{}'".format( nl))
 			#CASE other
 			else:
-				#(not '/' in l or '=' in l) => Recognize namelist field from otehr fields or namelist end '/'
 				#nl => Recognize if reading field outside of namelist
-				if (not '/' in ls or '=' in ls) and nl:
-					if not nl: raise Exception( "Corrupted input file:\n{}".format( l))
-					#Read namelist fields separated by endline ('\n') or by commas (',')
-					for e in filter( None, ls.split( ",")):
-						l1 = trim_ws(e).split( "=")
-						if len(l1) != 2: raise Exception( "Corrupt input file:\n{}".format( l))
-						v = l1[1].replace("\"", "").replace("'", "")
-						
-						#Check if the field/parameter name is present in the namelist template
-						try: self.set( nl=nl, k=l1[0], v=v)
-						except NameError as e: print( e)
+				if nl:
+					#(not '/' in l or '=' in l) => Recognize namelist field from otehr fields or namelist end '/'
+					if not '/' in ls or '=' in ls:
+						#if not nl: raise Exception( "Corrupted input file:\n{}".format( l))
+						#Read namelist fields separated by endline ('\n') or by commas (',')
+						for e in filter( None, ls.split( ",")):
+							l1 = trim_ws(e).split( "=")
+							if len(l1) != 2: raise Exception( "Corrupt input file:\n{}".format( l))
+							v = l1[1].replace("\"", "").replace("'", "")
+							
+							#Check if the field/parameter name is present in the namelist template
+							try: self.set_nl( nl=nl, k=l1[0], v=v)
+							except NameError as e: print( e)
+					else:
+						nl = None
+				#Case reading a card
 				else:
-					nl = None
-
+					lt = ' '.join( filter( None, ls.replace( "{", "").replace( "}", "").split( " ")))
+					lt = lt.split( " ")
+					if self.check_card( lt[0]):
+						try: v = lt[1]
+						except: v = None
+						card=lt[0]
+						self.set_card( card=card, v=v)
+						#print( card, v)
+					else:
+						self.set_card( card=card, el=ls)
 		return
 
 
