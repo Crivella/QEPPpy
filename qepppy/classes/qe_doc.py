@@ -29,6 +29,7 @@ class qe_doc_parser():
 				v: (Value associated with the card)
 				c: (List of possible acceppted value for the card)
 				d: (Default value for v)
+				r: True/False (is card REQUIRED?)
 				l: (List of card elements)
 				syntax:{
 					cond: "..." (Condition on card value)
@@ -58,21 +59,22 @@ class qe_doc_parser():
 		ptr_list=[] #Stack of ptr storing the namelist lvl
 		#Keywords(KWs) that trigger the parser
 		#Every { found after a KW generate a new dictionary
-		nl_keywords = [ "", "info", "namelist", "var", "dimension", "group", 
-			"vargroup", "status", "options", "default", "opt", "input_description",]
-		cd_keywords = [ "card", "syntax", "table", "rows", "colgroup", "optional", "flag", "enum",
-			"choose", "when", "otherwise", "col", "elsewhen", "line"]
+		nl_keywords = [ '', 'info', 'namelist', 'var', 'dimension', 'group', 
+			'vargroup', 'status', 'options', 'default', 'opt', 'input_description',]
+		cd_keywords = [ 'card', 'syntax', 'table', 'rows', 'colgroup', 'optional', 'flag', 'enum', 'label',
+			'choose', 'when', 'otherwise', 'rowgroup', 'row', 'col', 'cols', 'elsewhen', 'line', 'conditional']
 		keywords = nl_keywords + cd_keywords
 
-
+		#endline as interrupt:
+		eflag_l = [ 'var', 'row', 'col']
 		#overwrite mode: overwrite entire dictionary associated to this keyword with a string
-		oflag_l = [ 'default', 'status', 'enum']
+		oflag_l = [ 'default', 'status', 'enum', 'label']
 		# { found if one of this flag are triggered are ignored (considered as text)
 		#string-like mode flag
 		sflag_l = [ 'info', 'opt', '']
 		sflag_l += oflag_l
 
-		gflag_l= [ 'vargroup', 'colgroup']
+		gflag_l= [ 'vargroup', 'colgroup', 'rowgroup']
 		
 		last=[] #Stack of keyword that where opened by {
 		
@@ -95,7 +97,7 @@ class qe_doc_parser():
 		for c in content:
 			#If endline in vargroup (every line is a var without {})
 			if c == "\n" and any( flag[gf] for gf in gflag_l):
-				if kw == "var" or kw == "col":
+				if kw in eflag_l:
 					#Check against nameless var
 					if not name:
 						if not parse: raise Exception( "Corrupt .def file\n")
@@ -177,19 +179,13 @@ class qe_doc_parser():
 								if not name in ptr: break
 					ptr_list.append( ptr)
 					if name:
+						#Handle and merge repeated dictionaries by adding a number
 						aname=name
 						num = 0
 						while aname in ptr:
 							num += 1
 							aname = name + str( num)
-						"""
-						#Handle and merge repeated dictionaries (eg: {..., group:{a,b}, group:{c,d}} => {..., group{a,b,c,d}})
-						if name in ptr:
-							if not isinstance( ptr, dict):
-								ptr[name]={}
-						#Create new dictionary
-						else:
-						"""
+
 						ptr[aname]={}
 						ptr=ptr[aname]
 						#Store -arg and KW inside new dictionary
@@ -215,8 +211,8 @@ class qe_doc_parser():
 		def _parse_nl_var_( k="", v={}, namelist=""):
 			#Function to set a var in the final namelist parsing the temporary nested dict
 			t = None #Handle variable type
-			s = None #Handle array var start/end
-			e = None
+			s = None #Handle array var start
+			e = None #Handle array var end
 
 			if "unnamed" in k: return #Skip unnamed dicitonaries
 			if "info" in k: return #Skip info dicitonaries
@@ -290,6 +286,13 @@ class qe_doc_parser():
 
 
 		def _parse_card_ ( name, card):
+			nl[name]={
+				'v':"",
+				'c':[],
+				'd':"",
+				'r':True,
+				'l':[]
+			}
 			ptr = nl[name]
 			def _parse_group_( card):
 				ta = card.get( 'type', None)
@@ -303,22 +306,25 @@ class qe_doc_parser():
 				l=[]		
 				for k1, v1 in card.items():
 					if not isinstance( v1, dict): continue
-					if gkw( v1) == 'col':
+					kw = gkw( v1)
+					if kw== 'col' or kw == 'row':
 						l.append( {'n':k1, 't':v1.get( 'type')})
-					elif 'group' in gkw( v1):
+					elif 'group' in kw:
 						l += _parse_group_( v1)
-					elif gkw( v1) == "optional":
+					elif kw == "optional" or kw == "conditional":
 						l += [ _parse_table_elements_( v1)]
-					else: raise Exception( "Unexpected in _parse_table_elements_.\n")
+					else: raise Exception( "Unexpected '{}' in _parse_table_elements_.\n".format( kw))
 				return l
 
 			def _parse_table_( card):
 				l = []
 				s = None
 				e = None
+				#print( "Parsing: ", card)
 				for v in card.values():
 					if not isinstance( v, dict): continue
-					if gkw( v) == 'rows':
+					kw = gkw( v)
+					if kw == 'rows' or kw == 'cols':
 						e = v.get( 'end')
 						s = v.get( 'start')
 						l = _parse_table_elements_( v)
@@ -345,12 +351,13 @@ class qe_doc_parser():
 							new=[]
 							for k1, v1 in v.items():
 								if not isinstance( v1, dict): continue
-								if gkw( v1) == 'var':
+								kw = gkw( v1)
+								if kw == 'var':
 									ta = v1.get( 'type', None)
 									t = type_check.get( str( ta).upper())
 									new.append( {'n':k1, 't':t})
 									#ptr[aname]['l'].append( t)
-								if 'group' in gkw( v1):
+								if 'group' in kw:
 									new += _parse_group_( v1)
 							ptr[aname]['l'].append( new)
 						if gkw( v) == 'table':
@@ -362,8 +369,8 @@ class qe_doc_parser():
 						if isinstance( v1, dict):
 							_parse_syntax_( v1)
 
-
-
+			a = str( card.get( 'label'))
+			ptr['r'] = not "optional card" in a.lower()
 			for k, v in card.items():
 				if isinstance( v, dict):
 					if gkw( v) == "flag":
@@ -386,12 +393,6 @@ class qe_doc_parser():
 					for k2, v2 in v1.items():
 						_parse_nl_var_( namelist=k1, k=k2, v=v2)
 				elif gkw( v1) == "card":
-					nl[k1]={
-						'v':"",
-						'c':[],
-						'd':"",
-						'l':[]
-					}
 					_parse_card_( name=k1, card=v1)
 			
 		#"""
