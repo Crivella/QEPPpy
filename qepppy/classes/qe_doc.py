@@ -54,7 +54,7 @@ Produce a  template dictionary with the following structure:
 }
 """
 class qe_doc_parser():
-	type_check = { "CHARACTER":str, "INTEGER":int, "LOGICAL":bool, "REAL":float}
+	type_check = { "CHARACTER":str, "INTEGER":int, "LOGICAL":bool, "REAL":float, "STRING":str}
 	
 	def check_nl( self, nl):
 		#Check if namelist exist in template
@@ -654,7 +654,8 @@ class qe_doc_parser():
 		try: ptr['d'] = t( a)
 		except: ptr['d'] = a
 		#Check if status is set to REQUIRED
-		if str( v.get( 'status')).strip().upper() == "REQUIRED":
+		reqstat =str( v.get( 'status')).strip().upper()
+		if reqstat == "REQUIRED" or reqstat == "MANDATORY":
 			 ptr['v'] = "***"
 		#Check if possible option list is present
 		for k3, v3 in v.get( 'options', {}).items():
@@ -744,7 +745,7 @@ class qe_doc_parser():
 		for el, v in self._templ_[nl].items():
 			if v['v'] == "***":
 				check_mand = True
-				err += "ERROR: Mandatory input parameter {} in namelist {} not set.\n".format( el, nl)
+				err += "ERROR: Mandatory input parameter '{}' in namelist '{}' not set.\n".format( el, nl)
 			elif v['v']:
 				if v['c']:
 					if not any( v == opt for opt in v['c']):

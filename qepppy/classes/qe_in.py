@@ -46,7 +46,7 @@ class qe_in( parser):
 		for nl, v in kwargs.items():
 			if not isinstance( v, dict): raise Exception( "Invalid kwargs.\n{}".format( kwargs))
 			for k, v1 in v.items():
-				self.set( nl, k, v1)
+				self.set_nl( nl, k, v1)
 
 		return
 
