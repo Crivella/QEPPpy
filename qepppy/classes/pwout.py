@@ -1,5 +1,5 @@
 import os.path
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
 
 import numpy as np
 
@@ -151,7 +151,7 @@ class pwout( ):
 		lcb  = base[:,cb]
 		lvb  = base[:,vb]
 		lcb1 = base[:,cb+1]
-		lg1  = lcb - lvb
+		#lg1  = lcb - lvb
 
 		lll  = list( filter( lambda x: x[1]>= 0, zip( range( n_kpt), mod, kpt, lvb, lcb, lcb1)))
 		found = len( lll)
@@ -167,13 +167,13 @@ class pwout( ):
 		print( "\nMin_cb_energy: cb= {:f} eV".format( res[4]))
 		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
 
-		if( mg1 == mg2):
-			print( "DIRECT GAP %lf eV" % (m2 - m1))
+		if( mg1[0] == mg2[0]):
+			print( "DIRECT GAP {:.4f} eV".format( mg2[4] - mg1[3]))
 		else:
 			if( mg2[4] < mg1[3]):
 				print( "METALLIC")
 			else:
-				print( "INDIRECT GAP %lf eV" % (mg2[4] - mg1[3]))
+				print( "INDIRECT GAP {:.5f} eV".format(mg2[4] - mg1[3]))
 
 		if( ef == ef):
 			res = min( (i for i in lll if i[3] < ef < i[4]), key = lambda a: a[4] - a[3])
@@ -199,7 +199,7 @@ class pwout( ):
 		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
 		print("\t%lf -> %lf   Ef: %lf eV" % (res[4], res[5], ef))	
 
-		return 0
+		return 
 
 		
 

@@ -102,9 +102,9 @@ if __name__ == "__main__":
 	if( argc==3):
 		sum_pdos( sys.argv[1], sys.argv[2])
 	if( argc==4):
-		sum_pdos( sys.argv[1], sys.argv[2], sys.argv[3])
+		sum_pdos( sys.argv[1], sys.argv[2], bool( sys.argv[3]))
 	if( argc==5):
-		sum_pdos( sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+		sum_pdos( sys.argv[1], sys.argv[2], bool( sys.argv[3]), bool( sys.argv[4]))
 
 
 
