@@ -15,7 +15,7 @@ This class should provide the following methods:
 	-get:( nl="namelist", k="param") Retrieve the value of a parameter
 	-find: (name) Find a variable with name=name in the namelist template
 """
-from .qe_doc import qe_doc_parser as parser
+from ..qe_doc_parser.qe_templ import qe_templ as templ
 
 def trim_ws( str):
 	#Trim all withspace not included in a string
@@ -33,13 +33,13 @@ def trim_ws( str):
 			check_str_2 = not check_str_2
 	return new
 
-class qe_in( parser):
+class qe_in( templ):
 	def __init__( self, fname="" , templ_file="", **kwargs):
 		#A namelist template '_d' must be declared in the child class!!!!!!
 		if templ_file:
 			self.templ_file = templ_file
 		if not self.templ_file: raise Exception( "Must give a template file.\n")
-		self.parse( self.templ_file)
+		self.load_templ( self.templ_file)
 
 		if fname: self.in_parse( fname=fname)
 		#Check if initialization keyword arguments are compliant with the given namelist template

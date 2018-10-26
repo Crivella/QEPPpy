@@ -4,7 +4,7 @@ from qepppy.classes.structure import structure as structure#, bravais_index as b
 from qepppy.classes.qe_in import qe_in
 
 class pw_in( qe_in):
-	templ_file = "INPUT_PW.def"
+	templ_file = "pw.templ"
 	def __iadd__(self, other):
 		if isinstance( other, structure):
 			self._add_stc_( other)
