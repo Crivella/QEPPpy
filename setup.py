@@ -12,23 +12,6 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 from setuptools.command.test import test as TestCommand
 
-
-class PyTest(TestCommand):
-    user_options = [("pytest-args=", "a", "Arguments to pass to pytest")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = ""
-
-    def run_tests(self):
-        import shlex
-
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-
-        errno = pytest.main(shlex.split(self.pytest_args))
-        sys.exit(errno)
-
 # Package meta-data.
 NAME = 'qepppy'
 DESCRIPTION = 'Python post-processing and input-output handling library for Quantum ESPRESSO'
@@ -138,7 +121,11 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=('*.tests','*.qe_doc_parser')),
+    package_dir={'qepppy': 'qepppy'},
+    package_data={'qepppy': ['data/*.templ']},
+    include_package_data=True,
+    #data_files=[('templates', ['data/*templ'])],
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['mypackage'],
 
@@ -147,7 +134,6 @@ setup(
     # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
-    include_package_data=True,
     license='MIT',
     classifiers=[
         # Trove classifiers
