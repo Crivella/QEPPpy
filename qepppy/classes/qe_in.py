@@ -15,7 +15,7 @@ This class should provide the following methods:
 	-get:( nl="namelist", k="param") Retrieve the value of a parameter
 	-find: (name) Find a variable with name=name in the namelist template
 """
-from ..qe_doc_parser.qe_templ import qe_templ as templ
+from .qe_templ import qe_templ as templ
 
 def trim_ws( str):
 	#Trim all withspace not included in a string

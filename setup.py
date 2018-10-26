@@ -111,7 +111,6 @@ class PyTest( TestCommand):
 
 
 # Where the magic happens:
-print( find_packages(exclude=('tests',)))
 setup(
     name=NAME,
     version=about['__version__'],
@@ -122,7 +121,7 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=('tests',)),
+    packages=find_packages(exclude=('*.tests','*.qe_doc_parser')),
     package_dir={'qepppy': 'qepppy'},
     package_data={'qepppy': ['data/*.templ']},
     include_package_data=True,
