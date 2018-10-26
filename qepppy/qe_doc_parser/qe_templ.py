@@ -132,18 +132,18 @@ class qe_templ():
 		return v
 
 	def load_templ( self, fname=""):
-		with open( fname) as f:
-			import ast
-			file = f.read()
-			"""
-			file = file.replace( "\n", "")
-			file = file.replace( "<class 'str'>", "str")
-			file = file.replace( "<class 'int'>", "int")
-			file = file.replace( "<class 'float'>", "float")
-			file = file.replace( "<class 'bool'>", "bool")
-			print( file)
-			"""
-			self._templ_ = ast.literal_eval( file)
+		import os
+		if os.path.isfile( fname):
+			with open( fname) as f:
+				file = f.read()
+		else:
+			from pkg_resources import resource_string, resource_listdir
+			print( resource_listdir('qepppy.data', ''))
+			if fname in resource_listdir('qepppy.data', ''):
+				file = resource_string( 'qepppy.data', fname).decode('utf-8')
+
+		import ast
+		self._templ_ = ast.literal_eval( file)
 		return
 
 	def set_card( self, card, v="", el=[]):
