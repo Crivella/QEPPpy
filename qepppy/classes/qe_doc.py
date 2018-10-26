@@ -126,7 +126,9 @@ class qe_doc_parser():
 		for nl in self._templ_['nl']:
 			f = self._templ_[nl].get( tof)
 			if f: 
-				if n: ret = f['v'][n]
+				if n: 
+					try: ret = f['v'][n-1]
+					except: ret = None
 				else: ret = f['v']
 				return ret
 		for card in self._templ_['card']:
@@ -134,8 +136,11 @@ class qe_doc_parser():
 				if not 'syntax' in k: continue
 				f = self._syntax_find_( v['l'], tof=tof)
 				if f != None: 
-					if n: return f[n]
-					else: return f
+					if n: 
+						try: ret = f[n-1]
+						except: ret = None
+					else: ret = f
+					return ret
 		return None
 
 	def get( self, nl, k):
