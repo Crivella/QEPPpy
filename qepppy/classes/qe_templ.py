@@ -36,7 +36,8 @@ Template format:
 }
 """
 
-class qe_templ(): 
+class qe_templ():
+	debug = False #Enable convert of an empty template (Print all empty values. Put the max value for array var to 7 if not defined)
 	def check_nl( self, nl):
 		#Check if namelist exist in template
 		if nl in self._templ_['nl']: return True
@@ -54,17 +55,21 @@ class qe_templ():
 		nl = self._templ_['nl'].copy()
 		#Check for unused namelist (does not print it)
 		for namelist in self._templ_['nl']:
-			if not any( v['v'] for v in self._templ_[namelist].values()):
+			if not any( v['v'] for v in self._templ_[namelist].values()) and not self.debug:
 				nl.pop( nl.index(namelist))
 		#Write all the used namlists/parameters
 		longest = self._maxl_()
 		for namelist in nl:
 			content += "&{}\n".format(namelist)
 			for el, v in self._templ_[namelist].items():
-				if v['v'] != None and v['v'] != '':
+				if v['v'] != None and v['v'] != '' or self.debug:
 					if v['vec']:
+						if self.debug:
+							try: end = self._get_arr_ext_( v['vec'][0], v['vec'][1])[1]
+							except: end = 7
+							if not v['v']: v['v'] = ['']*end
 						for n, val in enumerate( v['v']):
-							if not val: continue
+							if not val and not self.debug: continue
 							app = el + "({})".format( n+1)
 							content += "{0:>{1}} = ".format( app, longest,)
 							content += self._format_( val)
@@ -79,7 +84,7 @@ class qe_templ():
 		cards = self._templ_['card'].copy()
 		#Check for unused cards (does not print it)
 		for card in self._templ_['card']:
-			if not self._templ_[card]['u']:
+			if not self._templ_[card]['u'] and not self.debug:
 				cards.pop( cards.index(card))
 
 		for card in cards:
@@ -138,7 +143,7 @@ class qe_templ():
 				file = f.read()
 		else:
 			from pkg_resources import resource_string, resource_listdir
-			print( resource_listdir('qepppy.data', ''))
+			#print( resource_listdir('qepppy.data', ''))
 			if fname in resource_listdir('qepppy.data', ''):
 				file = resource_string( 'qepppy.data', fname).decode('utf-8')
 
@@ -293,7 +298,7 @@ class qe_templ():
 		except: st = self.find( sa)
 		try: et= int( ea)
 		except: et = self.find( ea)
-		#if not isinstance( et, int): et = 11
+		if not isinstance( et, int) and self.debug: et = 7
 		if any( not isinstance( a, int) for a in [st,et]):
 			raise Exception( "Failed to find boundary '{}-{}'.\n".format( sa, ea))
 		if n >= 0:
@@ -464,7 +469,7 @@ class qe_templ():
 		longest = 0
 		for n in self._templ_['nl']:
 			for el, v in self._templ_[n].items():
-				if v['v']:
+				if v['v'] != None and v['v'] != '' or self.debug:
 					app = len( el)
 					if v['vec']: app += 4
 					if longest < app: longest = app
