@@ -80,7 +80,7 @@ class qe_doc_parser():
 		for namelist in nl:
 			content += "&{}\n".format(namelist)
 			for el, v in self._templ_[namelist].items():
-				if v['v']:
+				if v['v'] != None and v['v'] != '':
 					if v['vec']:
 						for n, val in enumerate( v['v']):
 							if not val: continue
@@ -502,6 +502,7 @@ class qe_doc_parser():
 		}
 		ptr = self._templ_[name]
 		def _parse_group_( card, tab=False):
+			#Internal function to parse group elements
 			ta = card.get( 'type', None)
 			t = self.type_check.get( str( ta).upper())
 			l = []
@@ -511,6 +512,7 @@ class qe_doc_parser():
 					else: l.append( {'n':k, 'v':'', 't':t})
 			return l
 		def _parse_table_elements_( card):
+			#Internal function to parse the elements of a table
 			l=[]		
 			for k1, v1 in card.items():
 				if not isinstance( v1, dict): continue
@@ -526,6 +528,7 @@ class qe_doc_parser():
 				else: raise Exception( "Unexpected '{}' in _parse_table_elements_.\n".format( kw))
 			return l
 		def _parse_table_( card):
+			#Internal function to parse the table elements in syntax
 			l = []
 			s = None
 			e = None
@@ -542,6 +545,10 @@ class qe_doc_parser():
 			#print( "Table: ", (l, s, e))
 			return (l, s, e, k)
 		def _parse_syntax_( card):
+			"""
+			Internal function to parse all syntax elements in a card
+			Made to check recursively all the subelements of the card
+			"""
 			if self.gkw( card) == 'syntax':
 				aname="syntax"
 				num = 0
@@ -586,7 +593,7 @@ class qe_doc_parser():
 		_parse_syntax_( card)
 		return
 
-	def _parse_nl_var_( self, k="", v={}, namelist=""):
+	def _parse_nl_var_( self, namelist="", k="", v={}):
 		#Function to set a var in the final namelist parsing the temporary nested dict
 		t = None #Handle variable type
 		s = None #Handle array var start
@@ -596,8 +603,9 @@ class qe_doc_parser():
 		if "info" in k: return #Skip info dicitonaries
 		if not isinstance( v , dict): return #Check if element is a dictionary
 
+		kw = self.gkw(v)
 		#Case vargroup: read all variable inside
-		if "vargroup" in self.gkw(v):
+		if "vargroup" in kw:
 			#print ("Vargroup found: ", namelist, k, v)
 			if not isinstance( v, dict):
 				raise Exception( "The keyword '{}' in namelist '{}' has not been parsed as a dict...\n".format( 
@@ -616,10 +624,16 @@ class qe_doc_parser():
 			return
 
 		#Case group: read all variable inside (recursive)
-		if "group" == self.gkw(v):
+		if "group" == kw:
 			#print ("Group found: ", namelist, k, v)
 			for k2, v2 in v.items():
 				self._parse_nl_var_( namelist=namelist, k=k2, v=v2)
+			return
+
+		if "choose" == kw:
+			for k2, v2 in v.items():
+				if self.gkw( v2) in ['when','elsewhen','otherwise']:
+					for k3, v3 in v2.items(): self._parse_nl_var_( namelist=namelist, k=k3, v=v3)
 			return
 
 		#Case var
@@ -641,7 +655,7 @@ class qe_doc_parser():
 				try: e = int( e)
 				except : e = str( e)
 			else:
-				raise Exception( "No top value for the array.\n")
+				raise Exception( "No END value for the array.\n")
 			ptr['vec'] = (s,e)
 			ptr['v'] = []
 		#Get var type
@@ -653,7 +667,7 @@ class qe_doc_parser():
 		a = str( v.get( 'default', '')).replace("'", "").replace("D", "E")
 		try: ptr['d'] = t( a)
 		except: ptr['d'] = a
-		#Check if status is set to REQUIRED
+		#Check if status is set to REQUIRED/MANDATORY
 		reqstat =str( v.get( 'status')).strip().upper()
 		if reqstat == "REQUIRED" or reqstat == "MANDATORY":
 			 ptr['v'] = "***"
@@ -664,19 +678,24 @@ class qe_doc_parser():
 				ptr['c'].append( k3)
 
 	def _set_line_( self, line=[], s=[], col="", card=""):
+		#Parse a line inside a card and set it on the first usnet syntax line
 		if not isinstance( s, list): return
 		#print( line)
 		for e in s:
 			if isinstance( e, dict):
+				#Look for the first unset line in the syntax
 				if e['v']: 
 					if not isinstance( e['v'], list): return
+				#Col case
 				if col == 'cols':
 					if e['v']: continue
 					for v in line:
 						try: val = e['t']( v)
-						except: raise Exception( "'{}' is not of type '{}'.\n".format( v, e['t']))
+						except: raise Exception( "\nSyntax error in card:\n{}: {}.\ninput: {}\nexpec: {}".format( 
+							card, e['n'], v, e['t']))
 						e['v'].append( val)
 					return True
+				#Set all elements of the line
 				app = line.copy()
 				app.reverse()
 				sprint = list( a['n'] for a in s if isinstance(a, dict))
@@ -708,9 +727,9 @@ class qe_doc_parser():
 						else: el['v'] = val
 						#print ( el)
 					else:
-						raise Exception( "\nFailed to set value.\n")
+						raise Exception( "\nUnrecognized syntax, expected dict or list.\n")
 				if app:
-					raise Exception( "Syntax error in card:\n{}.\ninput: {}\nexpec: {}".format( 
+					raise Exception( "\nSyntax error in card:\n{}.\ninput: {}\nexpec: {}".format( 
 						card, line, sprint))
 				return True
 			if isinstance( e, list): 
@@ -720,7 +739,7 @@ class qe_doc_parser():
 		return
 
 	def _syntax_find_( self, el, tof):
-		#Recursive finde to descend into syntax elements
+		#Recursive find to descend into syntax elements
 		if not isinstance( el, list): return None
 		for e in el:
 			f = None
@@ -764,7 +783,7 @@ class qe_doc_parser():
 		"""
 		Validate card after a read call. Checks:
 			-Card value is valid
-			-all card element are compliant with their syntax
+			-all lines are compliant with the syntax
 		Return True if valid otherwise raise Exception
 		"""
 		def _validate_syntax_( l, lvl=0, arr=0):
@@ -822,6 +841,8 @@ class qe_doc_parser():
 		return True
 
 	def _maxl_( self):
+		#Get the longest element ot print among all namelists
+		#Uset to align all the '=' in the printed QE input file
 		longest = 0
 		for n in self._templ_['nl']:
 			for el, v in self._templ_[n].items():
