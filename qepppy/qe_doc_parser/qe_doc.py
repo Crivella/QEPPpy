@@ -63,7 +63,9 @@ class qe_doc_parser():
 			import os
 			for e in list(os.walk("."))[0][2]:
 				if ".def" in e:
+					print( e)
 					self.parse( e, "{}.templ".format( e[:-4]))
+					input()
 		return
 
 	def parse( self, fname="", out="templ"):
@@ -165,7 +167,15 @@ class qe_doc_parser():
 						if not parse: raise Exception( "Corrupt .def file\n")
 						name = parse
 					#Create empty var in vargroup dictionary
-					ptr[name]=""
+					if not mlist:
+						ptr[name]=""
+					else:
+						ptr[name]={}
+						mlist.append(("keyword", kw))
+						while mlist:
+							a = mlist.pop()
+							ptr[name][a[0]] = a[1]
+
 					kw = ""; name = ""; parse = ""
 			#If endline switch out of comment mode and skip  the rest
 			elif c == "\n": comm = False; continue
