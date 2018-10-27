@@ -1,28 +1,28 @@
 import os.path
-#import xml.etree.ElementTree as ET
-
 import numpy as np
 
-from qepppy.classes.bands     import bands     as bands
-from qepppy.classes.structure import structure as structure
-#from .eigenv  import egv
+from .bands     import bands     as bands
+from .structure import structure as structure
 
 class pwout( ):
 	__name__ = "pwout"
-	def __init__( self, fname=""):
-		if not fname:
-			raise Exception( "Must initialize class giving the name of the .xml file")
-		if not os.path.isfile( fname):
-			raise IOError( "File '{}' does not exist".format( fname))
-		if ".xml" not in fname:
-			raise IOError( "File extension must be '.xml'")
+	def __init__( self, fname="", **kwargs):
+		#if not fname:
+		#	raise Exception( "Must initialize class giving the name of the .xml file")
+		#if not os.path.isfile( fname):
+		#	raise IOError( "File '{}' does not exist".format( fname))
+		#if ".xml" not in fname:
+		#	raise IOError( "File extension must be '.xml'")
 		self.fname = fname
-		self.bnd   = bands( fname)
-		self.stc   = structure( fname)
-		self.smallest_gap = self.smallest_gap
+		self.bnd   = bands( fname, **kwargs)
+		#print( "bnd dict: ", self.bnd.__dict__)
+		self.stc   = structure( fname, **kwargs)
+		#print( "stc dict: ", self.stc.__dict__)
+		#self.smallest_gap = self.smallest_gap
 		#self._parse_xml_()
 
 	def __getattr__( self, key):
+		#print( self.__dict__, self.bnd.__dict__, self.stc.__dict__)
 		if key in self.bnd.__dict__:
 			return self.bnd.__getattr__( key)
 		if key in self.stc.__dict__:
@@ -203,7 +203,7 @@ class pwout( ):
 
 		
 
-
+"""
 if __name__ == "__main__":
 	import sys
 	import ast
@@ -224,6 +224,7 @@ if __name__ == "__main__":
 			func( radius = float( sys.argv[3]), comp_point=ast.literal_eval( sys.argv[4]))
 		if( argc > 5):
 			raise Exception( "Invalid number of arguments for function 'smallest_gap'")
+"""
 
 
 
