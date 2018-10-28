@@ -1,63 +1,18 @@
-import os.path
-#import xml.etree.ElementTree as ET
-
 import numpy as np
 
-from qepppy.classes.bands     import bands     as bands
-from qepppy.classes.structure import structure as structure
-#from .eigenv  import egv
+from .bands     import bands     as bands
+from .structure import structure as structure
 
-class pwout( ):
+class pw_out( bands, structure):
 	__name__ = "pwout"
-	def __init__( self, fname=""):
-		if not fname:
-			raise Exception( "Must initialize class giving the name of the .xml file")
-		if not os.path.isfile( fname):
-			raise IOError( "File '{}' does not exist".format( fname))
-		if ".xml" not in fname:
-			raise IOError( "File extension must be '.xml'")
-		self.fname = fname
-		self.bnd   = bands( fname)
-		self.stc   = structure( fname)
-		self.smallest_gap = self.smallest_gap
-		#self._parse_xml_()
 
-	def __getattr__( self, key):
-		if key in self.bnd.__dict__:
-			return self.bnd.__getattr__( key)
-		if key in self.stc.__dict__:
-			return self.stc.__getattr__( key)
-		raise AttributeError( "'{}' object does not have attribute '{}'".format( self.__name__, key))
-
-	def __str__( self):
-		msg = ""
-		msg += self.bnd.__str__( )
-		msg += self.stc.__str__( )
-		return msg
-
-	def __getitem__( self, key):
-		if key in self.__dict__:
-			return self.__dict__[key]
-		if( isinstance( key, int)):
-			return self.bnd.__getitem__( key)
-		if( isinstance( key, str)):
-			if key in self.bnd.__dict__:
-				return self.bnd.__getitem__( key)
-			if key in self.stc.__dict__:
-				return self.stc.__getitem__( key)
-		raise KeyError( "'{}' object does not support key '{}'".format( self.__name__, key))
-
-	def __iter__( self):
-		return self.bnd.__iter__( )
-
-	def __enter__( self):
-		return self
-
-	def __exit__( self, *args):
-		del self
+	def __init__( self, **kwargs):
+		super().__init__( **kwargs)
+		self.validate()
 
 	def band_structure( self, fname="plotted.dat", plot=True):
-		kpt   = np.array( self.kpt)
+		kpt   = np.array( [a['kpt'] for a in self.kpt])
+		egv = [ a['egv'] for a in self.egv]
 		n_bnd = self.n_bnd
 		x = [0]
 		for i in range( 1, len( kpt)):
@@ -66,15 +21,14 @@ class pwout( ):
 		#mod = list( map( np.linalg.norm, self.kpt))
 		#x   = list( map( lambda x: sum( mod[0:mod.index(x)]), mod))
 		x = np.array( x)
-		print( x)
-		egv = self.egv
+		#print( x)
 
 		#print( list( zip ( x, egv)))
 		#res = np.array( list( zip ( x, egv)))
 		#res = np.concatenate( [x, egv], axis=1)
 		res = np.column_stack( ( x, egv))
 		#res = hstack( (x, egv))
-		print( res[:,0], "\n\n", res[:,1:])
+		#print( res[:,0], "\n\n", res[:,1:])
 
 		np.savetxt( fname=fname, X=res, fmt="%13.8f"+"".join('%11.6f'*n_bnd))
 
@@ -124,12 +78,14 @@ class pwout( ):
 				print( "Invalid type %s for 'comp_point'" % type(x))
 				return 1
 
-		print( "E_fermi(from file):\t{:f} eV".format( self.fermi))
-
-		kpt   = self.kpt
+		kpt   = np.array( [a['kpt'] for a in self.kpt])
+		egv = [ a['egv'] for a in self.egv]
 		n_kpt = self.n_kpt
 		n_el  = self.n_el
 		ef    = self.fermi
+		if ef == None: ef = float('Nan')
+
+		print( "E_fermi(from file):\t{:f} eV".format( ef))
 		if ( self.lsda):
 			n_el /= 2
 		if ( self.noncolin):
@@ -142,7 +98,7 @@ class pwout( ):
 		cb = vb + 1
 		print( "vb = %d, cb = %d" % (vb+1, cb+1));
 
-		base = np.array( self.egv)
+		base = np.array( egv)
 		cp = np.array( comp_point)
 		if( radius > 0):
 			mod = map( lambda x: radius - np.linalg.norm(cp-x), self.kpt)
@@ -203,7 +159,7 @@ class pwout( ):
 
 		
 
-
+"""
 if __name__ == "__main__":
 	import sys
 	import ast
@@ -224,6 +180,7 @@ if __name__ == "__main__":
 			func( radius = float( sys.argv[3]), comp_point=ast.literal_eval( sys.argv[4]))
 		if( argc > 5):
 			raise Exception( "Invalid number of arguments for function 'smallest_gap'")
+"""
 
 
 

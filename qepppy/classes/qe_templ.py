@@ -98,36 +98,52 @@ class qe_templ():
 			content += "\n"
 		return content
 
-	def find( self, name):
+	def find( self, *args):
 		"""
 		Find a var in all possible namelists and cards.
 		Return its value if found otherwise return None
 		"""
-		n = None
-		tof = name
-		if "(" in name:
-			tof = name.split( "(")[0]
-			n = int( name.split( "(")[1].split( ")")[0])
+		def _internal_( name):
+			tof_up = None
+			if "/" in name:
+				tof_up = name.split( "/")[0]
+				name = name.split( "/")[1]
+			n = None
+			tof = name
+			if "(" in name:
+				tof = name.split( "(")[0]
+				n = int( name.split( "(")[1].split( ")")[0])
 
-		for nl in self._templ_['nl']:
-			f = self._templ_[nl].get( tof)
-			if f: 
-				if n: 
-					try: ret = f['v'][n-1]
-					except: ret = None
-				else: ret = f['v']
-				return ret
-		for card in self._templ_['card']:
-			for k, v in self._templ_[card].items():
-				if not 'syntax' in k: continue
-				f = self._syntax_find_( v['l'], tof=tof)
-				if f != None: 
+			for nl in self._templ_['nl']:
+				if tof_up:
+					if tof_up != nl: continue
+				f = self._templ_[nl].get( tof)
+				if f: 
 					if n: 
-						try: ret = f[n-1]
+						try: ret = f['v'][n-1]
 						except: ret = None
-					else: ret = f
+					else: ret = f['v']
 					return ret
-		return None
+			for card in self._templ_['card']:
+				if tof_up:
+					if tof_up != card: continue
+				for k, v in self._templ_[card].items():
+					if not 'syntax' in k: continue
+					f = self._syntax_find_( v['l'], tof=tof)
+					if f != None: 
+						if n: 
+							try: ret = f[n-1]
+							except: ret = None
+						else: ret = f
+						return ret
+			return None
+
+		l = []
+		for e in args:
+			l.append( _internal_( e))
+		if len( l) == 1: l = l[0]
+		else: l = tuple( l)
+		return l
 
 	def get( self, nl, k):
 		#Get a value fron the internal namelist
