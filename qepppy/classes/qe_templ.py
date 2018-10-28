@@ -36,8 +36,15 @@ Template format:
 }
 """
 
-class qe_templ():
-	debug = False #Enable convert of an empty template (Print all empty values. Put the max value for array var to 7 if not defined)
+debug = False #Enable convert of an empty template (Print all empty values. Put the max value for array var to 7 if not defined)
+
+class namelist( object):
+	pass
+
+class card( object):
+	pass
+
+class qe_templ( namelist, card):
 	def check_nl( self, nl):
 		#Check if namelist exist in template
 		if nl in self._templ_['nl']: return True
@@ -55,21 +62,21 @@ class qe_templ():
 		nl = self._templ_['nl'].copy()
 		#Check for unused namelist (does not print it)
 		for namelist in self._templ_['nl']:
-			if not any( v['v'] for v in self._templ_[namelist].values()) and not self.debug:
+			if not any( v['v'] for v in self._templ_[namelist].values()) and not debug:
 				nl.pop( nl.index(namelist))
 		#Write all the used namlists/parameters
 		longest = self._maxl_()
 		for namelist in nl:
 			content += "&{}\n".format(namelist)
 			for el, v in self._templ_[namelist].items():
-				if v['v'] != None and v['v'] != '' or self.debug:
+				if v['v'] != None and v['v'] != '' or debug:
 					if v['vec']:
-						if self.debug:
+						if debug:
 							try: end = self._get_arr_ext_( v['vec'][0], v['vec'][1])[1]
 							except: end = 7
 							if not v['v']: v['v'] = ['']*end
 						for n, val in enumerate( v['v']):
-							if not val and not self.debug: continue
+							if not val and not debug: continue
 							app = el + "({})".format( n+1)
 							content += "{0:>{1}} = ".format( app, longest,)
 							content += self._format_( val)
@@ -84,7 +91,7 @@ class qe_templ():
 		cards = self._templ_['card'].copy()
 		#Check for unused cards (does not print it)
 		for card in self._templ_['card']:
-			if not self._templ_[card]['u'] and not self.debug:
+			if not self._templ_[card]['u'] and not debug:
 				cards.pop( cards.index(card))
 
 		for card in cards:
@@ -98,59 +105,60 @@ class qe_templ():
 			content += "\n"
 		return content
 
-	def find( self, *args):
+	def find( self, *args, up=""):
 		"""
 		Find a var in all possible namelists and cards.
 		Return its value if found otherwise return None
 		"""
-		def _internal_( name):
-			tof_up = None
-			if "/" in name:
-				tof_up = name.split( "/")[0]
-				name = name.split( "/")[1]
+		def _syntax_find_( el, tof):
+			#Recursive find to descend into syntax elements
+			if not isinstance( el, list): return None
+			for e in el:
+				f = None
+				if isinstance( e, dict):
+					if e['n'] == tof: f = e['v']
+				if isinstance( e, list):
+					f = _syntax_find_( e, tof=tof)
+				if isinstance( e, tuple): 
+					f = _syntax_find_( e[0], tof=tof)
+				if f != None: return f
+			return None
+
+		l=[]
+		for name in args:
 			n = None
 			tof = name
 			if "(" in name:
 				tof = name.split( "(")[0]
 				n = int( name.split( "(")[1].split( ")")[0])
 
+			ret = None
 			for nl in self._templ_['nl']:
-				if tof_up:
-					if tof_up != nl: continue
+				if up:
+					if up != nl: continue
 				f = self._templ_[nl].get( tof)
 				if f: 
 					if n: 
 						try: ret = f['v'][n-1]
-						except: ret = None
+						except: pass
 					else: ret = f['v']
-					return ret
+					break
 			for card in self._templ_['card']:
-				if tof_up:
-					if tof_up != card: continue
-				for k, v in self._templ_[card].items():
-					if not 'syntax' in k: continue
-					f = self._syntax_find_( v['l'], tof=tof)
-					if f != None: 
-						if n: 
-							try: ret = f[n-1]
-							except: ret = None
-						else: ret = f
-						return ret
-			return None
+				if up:
+					if up != card: continue
+				synt = self._get_syntax_( self._templ_[card])
+				f = _syntax_find_( synt, tof=tof)
+				if f != None: 
+					if n: 
+						try: ret = f[n-1]
+						except: pass
+					else: ret = f
+					break
+			l.append( ret)
 
-		l = []
-		for e in args:
-			l.append( _internal_( e))
 		if len( l) == 1: l = l[0]
 		else: l = tuple( l)
 		return l
-
-	def get( self, nl, k):
-		#Get a value fron the internal namelist
-		ptr = self._templ_.get( nl)
-		ptr = ptr.get( k)
-		v = ptr.get( 'v')
-		return v
 
 	def load_templ( self, fname=""):
 		import os
@@ -245,8 +253,7 @@ class qe_templ():
 			if isinstance( v, str):
 				v=v.replace( "D", "e").replace( "d", "e")
 		try: val = ty( v)
-		except: raise TypeError( "\ninput: {}\nexpec: {}\n".format( 
-			v, ty))
+		except: raise TypeError( "\ninput: {}\nexpec: {}\n".format( v, ty))
 		return val
 
 	def _conv_syntax_( self, l, lvl=0, arr_lvl=0):
@@ -314,7 +321,7 @@ class qe_templ():
 		except: st = self.find( sa)
 		try: et= int( ea)
 		except: et = self.find( ea)
-		if not isinstance( et, int) and self.debug: et = 7
+		if not isinstance( et, int) and debug: et = 7
 		if any( not isinstance( a, int) for a in [st,et]):
 			raise Exception( "Failed to find boundary '{}-{}'.\n".format( sa, ea))
 		if n >= 0:
@@ -376,21 +383,6 @@ class qe_templ():
 			if isinstance( e, tuple): 
 				if self._set_line_( line, s=e[0], col=e[3], card=card): return
 		return
-
-	def _syntax_find_( self, el, tof):
-		#Recursive find to descend into syntax elements
-		if not isinstance( el, list): return None
-		for e in el:
-			f = None
-			if isinstance( e, dict):
-				if e['n'] == tof: f = e['v']
-			if isinstance( e, list):
-				f = self._syntax_find_( e, tof=tof)
-			if isinstance( e, tuple): 
-				f = self._syntax_find_( e[0], tof=tof)
-			if f != None: return f
-		return None
-
 
 	def _validate_namelist_( self, nl):
 		"""
@@ -485,7 +477,7 @@ class qe_templ():
 		longest = 0
 		for n in self._templ_['nl']:
 			for el, v in self._templ_[n].items():
-				if v['v'] != None and v['v'] != '' or self.debug:
+				if v['v'] != None and v['v'] != '' or debug:
 					app = len( el)
 					if v['vec']: app += 4
 					if longest < app: longest = app

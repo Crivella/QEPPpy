@@ -1,17 +1,16 @@
 import sys
 
 """
-Import a class capable of generating a namelist dict template by parsing a file
+Import a class capable of nadleing a namelist dict template
 This class should provide the following methods:
-	-parse(): Read the file and generate an internal namelist template
 	-validate(): Check namelist template after reading
 	-convert():  Convert the internal dict in a string QE input file
-	-check_nl( nl="namelist"): Check if nl is valid (present in the itnernal namelist)
+	-check_nl( nl="namelist"): Check if nl is valid (present in the imternal namelist)
 	-set_nl:( nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
 	-set_card: ( card="", v="", el=[]) Set a card value in the namelist template
 		if v is set, set the card main value
 		if el is set set a card list value
-			el must be an entire lie to parse
+			el must be an entire line to parse
 	-get:( nl="namelist", k="param") Retrieve the value of a parameter
 	-find: (name) Find a variable with name=name in the namelist template
 """

@@ -13,25 +13,22 @@ bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (f
 data={
 	'bravais_n':{'x':'attr', 'f':'output//atomic_structure', 'n':'bravais_index', 't':int},
 	'lp':{'x':'attr', 'f':'output//atomic_structure', 'n':'alat', 't':float},
-	'a':{'x':'allchild', 'f':'output//cell', 'n':None, 't':np.array},
-	'b':{'x':'allchild', 'f':'output//reciprocal_lattice', 'n':None, 't':np.array},
-	'atoms':{'x':'allchild', 'f':'output//atomic_positions', 'n':'coord', 't':list},
-	'atom_spec':{'x':'allchild', 'f':'input/atomic_species', 'n':'coord', 't':list},
-	'symm':{'x':'nodelistnested', 'f':'output//symmetry', 'n':'rotation', 't':list}
+	'a':{'x':'nodelist', 'f':'output//cell', 'n':None, 't':list},
+	'b':{'x':'nodelist', 'f':'output//reciprocal_lattice', 'n':None, 't':list},
+	'atoms':{'x':'nodelist', 'f':'output//atom', 'n':'coord', 't':list},
+	'atom_spec':{'x':'nodelist', 'f':'input//species', 'n':None, 't':list},
+	'symm':{'x':'nodelist', 'f':'output//symmetry', 'n':None, 't':list}
 	}
 
 class structure( dfp):
 	__name__ = "structure";
-	#"""
 	def __init__( self, d={}, **kwargs):
 		d.update( data)
 		super().__init__( d=d, **kwargs)
 		return
-	#"""
 
 	def __str__( self, info=0):
-		try: msg = super().__str__()
-		except: msg = ""
+		msg = super().__str__()						
 		if self.bravais_n == 0 or info > 0:
 			msg += "CELL_PARAMETERS"
 			for l in self.a:
@@ -58,6 +55,31 @@ class structure( dfp):
 
 		return msg
 
+	def pwin_read( self, fname=""):
+		from .pwin import pw_in
+		inp = pw_in( fname)
+		inp.validate()
+
+		atm = inp.find( "X", "x", "y", "z", up="ATOMIC_POSITIONS")
+		self.atoms = []
+		for n in range( len( atm[0])):
+			self.atoms.append( {
+				'name':atm[0][n],
+				'coord':[atm[1][n],atm[2][n],atm[3][n]]
+				})
+
+		spc = inp.find( "X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
+		self.atom_spec = []
+		for n in range( len( spc[0])):
+			self.atom_spec.append( {
+				'name':spc[0][n],
+				'mass':spc[1][n],
+				'pseudo_file':spc[2][n]
+				})
+
+		self.a = np.array( inp.find( "v1", "v2", "v3"))
+		return
+
 	def validate( self):
 		l = [ self.bravais_n, self.atom_spec, self.atoms]
 		if any( a == None for a in l): return False
@@ -72,30 +94,7 @@ class structure( dfp):
 				#raise Exception( "Basis vector must be set with ibrav = 0")
 		return True and super().validate()
 
-	def pwin_read( self, fname=""):
-		from .pwin import pw_in
-		inp = pw_in( fname)
-		inp.validate()
 
-		atm = inp.find( "ATOMIC_POSITIONS/X", "x", "y", "z")
-		self.atoms = []
-		for n in range( len( atm[0])):
-			self.atoms.append( {
-				'name':atm[0][n],
-				'coord':[atm[1][n],atm[2][n],atm[3][n]]
-				})
-
-		spc = inp.find( "ATOMIC_SPECIES/X", "Mass_X", "PseudoPot_X")
-		self.atom_spec = []
-		for n in range( len( spc[0])):
-			self.atom_spec.append( {
-				'name':spc[0][n],
-				'mass':spc[1][n],
-				'pseudo_file':spc[2][n]
-				})
-
-		self.a = np.array( inp.find( "v1", "v2", "v3"))
-		return
 
 
 

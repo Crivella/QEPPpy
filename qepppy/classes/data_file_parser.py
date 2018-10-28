@@ -11,7 +11,7 @@ Example of an element in data:
 'varname':{
 	't':type, (int/float/ndarray/...)
 	'f':element to find, (string)
-	'x':xmlacquisition rule, ('attr'/text/allchild/nodelist/nodelistnested)
+	'x':xmlacquisition rule, ('attr'/text/nodelist)
 	'n':name 
 }
 """
@@ -60,85 +60,42 @@ class data_file_parser( object):
 					else: v = var
 			return v
 
-		def _xml_attr_( node, f, n):
+		def _xml_attr_( node, f="", n=""):
 			if f: node = node.find( f)
 			return _format_( node.get( n))
 
-		def _xml_text_( node, f, n):
+		def _xml_text_( node, f="", n=""):
 			if f: node = node.find( f)
 			return _format_( node.text)
 
-		def _xml_all_child_( node, f, n):
-			if f: node = node.find( f)
-			ret = []
-			for child in node.getchildren():
-				text = child.text.strip()
-				#print( child.attrib, ", '{}'".format( text))
-				if text:
-					l = text.split( " ")
-					l = list( map( _format_, l))
-					if len( l) == 1: l = l[0]
-					if n:
-						d = child.attrib.copy()
-						for k, v in d.items():
-							d[k] = _format_( v)
-						d[n] = l
-					else: 
-						d = l
-					ret.append( d)
-				else:
-					d = child.attrib
-					#print( "TEST, ", child.getchildren())
-					for c in child.getchildren():
-						d[c.tag] = _format_( c.text)
-					ret.append( d)
-			return ret
-
-		def _xml_node_list_( node, f, n):
+		def _xml_node_list_( node, f="", n=""):
 			if f: node=node.findall( f)
 			ret = []
 			for c in node:
-				d={}
+				d=c.attrib
 				#add = c.text.strip().split( "\n")
 				add = c.text.strip().replace( "\n", " ")
-				add = list( filter( None, add.split( " ")))
-				#add = list( map( lambda x: list( filter( None, x.split( " "))), add))
-				if len( add) == 1: add = add[0]
-				#if len( add) == 1: add = add[0]
-				if isinstance( add, list):
-					add = np.array( add, dtype=float)
-				if n: tag = n
-				else: tag = c.tag
-				d[tag] = _format_( add)
-				d.update( c.attrib)
-				ret.append( d)
-			return ret
-
-		def _xml_node_list_nest_( node, f, n):
-			if f: node=node.findall( f)
-			ret = []
-			for child in node:
-				d={}
-				for c in child:
-					#add = c.text.strip().split( "\n")
-					add = c.text.strip().replace( "\n", " ")
+				if add:
 					add = list( filter( None, add.split( " ")))
 					#add = list( map( lambda x: list( filter( None, x.split( " "))), add))
 					if len( add) == 1: add = add[0]
 					#if len( add) == 1: add = add[0]
 					if isinstance( add, list):
 						add = np.array( add, dtype=float)
-					d[c.tag] = _format_( add)
-					d.update( c.attrib)
+					if n: tag = n
+					else: tag = c.tag
+					d[tag] = _format_( add)
+				else:
+					for e in  _xml_node_list_( c.getchildren()):
+						d.update( e)
 				ret.append( d)
+
 			return ret
 
 		xml_acq_rule={
 			'attr':_xml_attr_,
 			'text':_xml_text_,
-			'allchild':_xml_all_child_,
 			'nodelist':_xml_node_list_,
-			'nodelistnested':_xml_node_list_nest_
 		}
 
 		for k, v in self.data.items():
