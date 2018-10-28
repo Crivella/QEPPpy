@@ -15,35 +15,34 @@ Example of an element in data:
 	'n':name 
 }
 """
-class data_file_parser():
+
+class data_file_parser( object):
 	data={}
 	__name__ = "data_file_parser"
-	__toinit__ = []
-	def __init__( self, fname="", **kwargs):
-		for i in self.__toinit__:
+	def __init__( self, fname="", d={}, **kwargs):
+		#print( d)
+		self.data = d
+		for i in d:
 			self.__dict__[i] = None
 		if fname:
-			#if not os.path.isfile( fname):
-			#	raise IOError( "File '{}' does not exist".format( fname))
 			self.fname = fname
 			self.parse_xml( fname)
-		elif kwargs:
+		if kwargs:
 			for k, v in kwargs.items():
 				if k in self.__dict__:
 					self.__dict__[k] = v
 				else:
-					#pass
 					raise Exception( "{}: Unrecognized keyword argument '{}'.\n".format( self.__name__, k))
 		else:
 			pass
 			#raise Exception( "{}: Failed to initialize object.\n".format( self.__name__))
 		return
 
-	def __getattr__( self, key):
-		if key in self.__dict__:
-			return self.__dict__[key]
-		else:
-			raise AttributeError( "'{}' object has no attribute '{}'".format( self.__name__, key))
+	def __getitem__( self, key):
+		return self.__dict__.get( key)
+
+	def __str__( self):
+		return ""
 
 	def parse_xml( self, fname=""):
 		import xml.etree.ElementTree as ET
@@ -108,7 +107,9 @@ class data_file_parser():
 				#if len( add) == 1: add = add[0]
 				if isinstance( add, list):
 					add = np.array( add, dtype=float)
-				d[c.tag] = _format_( add)
+				if n: tag = n
+				else: tag = c.tag
+				d[tag] = _format_( add)
 				d.update( c.attrib)
 				ret.append( d)
 			return ret
@@ -153,5 +154,8 @@ class data_file_parser():
 			if t == np.array: self.__dict__[k] = t( res, dtype=float)
 			else: self.__dict__[k] = t( res)
 		return
+
+	def validate( self):
+		return True
 
 

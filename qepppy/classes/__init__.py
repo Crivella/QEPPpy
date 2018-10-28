@@ -1,6 +1,6 @@
 #__all__
 
-from .pwout     import pwout
+from .pwout     import pw_out
 from .pwin	    import pw_in
 from .bands     import bands
 from .structure import structure
