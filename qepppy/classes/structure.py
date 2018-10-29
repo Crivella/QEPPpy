@@ -91,7 +91,6 @@ class structure( dfp):
 		if self.bravais_n == 0:
 			if not isinstance( self.a, np.ndarray):
 				return False
-				#raise Exception( "Basis vector must be set with ibrav = 0")
 		return True and super().validate()
 
 

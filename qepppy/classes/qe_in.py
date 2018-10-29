@@ -16,6 +16,7 @@ This class should provide the following methods:
 """
 from .qe_templ import qe_templ as templ
 
+
 def trim_ws( str):
 	#Trim all withspace not included in a string
 	ws=[ " ", "\t", "\n"]
@@ -43,7 +44,8 @@ class qe_in( templ):
 		if fname: self.in_parse( fname=fname)
 		#Check if initialization keyword arguments are compliant with the given namelist template
 		for nl, v in kwargs.items():
-			if not isinstance( v, dict): raise Exception( "Invalid kwargs.\n{}".format( kwargs))
+			if not isinstance( v, dict):
+				raise Exception( "Invalid kwargs.\n{}".format( kwargs))
 			for k, v1 in v.items():
 				self.set_nl( nl, k, v1)
 
@@ -103,8 +105,7 @@ class qe_in( templ):
 							v = l1[1].replace("\"", "").replace("'", "")
 							
 							#Check if the field/parameter name is present in the namelist template
-							try: self.set_nl( nl=nl, k=l1[0], v=v)
-							except NameError as e: print( e)
+							self.set_nl( nl=nl, k=l1[0], v=v)
 					else:
 						nl = None
 				#Case reading a card
