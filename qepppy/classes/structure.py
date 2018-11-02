@@ -1,6 +1,10 @@
 import numpy as np
 from .data_file_parser import data_file_parser as dfp
 
+import logging
+logger = logging.getLogger( __name__)
+logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
+
 
 bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (fcc)', '3':'body-centered cubic (bcc)',
 	'-3':'bcc more symm. axis', '4':'hexagonal', '5':'trigonal', '-5':'trigonal <111>', '6':'simple tetragonal (st)',
@@ -18,9 +22,124 @@ data={
 	'symm':{'x':'nodelist', 'f':'output//symmetry', 'n':None, 't':list}
 	}
 
+colormap={
+	'H':"",
+	'He':"",
+	'Li':"",
+	'Be':"",
+	'B':"",
+	'C':"",
+	'N':"",
+	'O':"",
+	'F':"",
+	'Ne':"",
+	'Na':"",
+	'Mg':"",
+	'Al':"",
+	'Si':"blue",
+	'P':"",
+	'S':"",
+	'Cl':"",
+	'Ar':"",
+	'K':"",
+	'Ca':"",
+	'Sc':"",
+	'Ti':"",
+	'V':"",
+	'Cr':"",
+	'Mn':"",
+	'Fe':"",
+	'Co':"",
+	'Ni':"",
+	'Cu':"",
+	'Zn':"",
+	'Ga':"yellow",
+	'Ge':"",
+	'As':"",
+	'Se':"",
+	'Br':"",
+	'Kr':"",
+	'Rb':"",
+	'Sr':"",
+	'Y':"",
+	'Zr':"",
+	'Nb':"",
+	'Mo':"",
+	'Tc':"",
+	'Ru':"",
+	'Rh':"",
+	'Pd':"",
+	'Ag':"",
+	'Cd':"",
+	'In':"",
+	'Sn':"",
+	'Sb':"",
+	'Te':"",
+	'I':"",
+	'Xe':"",
+	'Cs':"",
+	'Ba':"",
+	'La':"",
+	'Ce':"",
+	'Pr':"",
+	'Nd':"",
+	'Pm':"",
+	'Sm':"",
+	'Eu':"",
+	'Gd':"",
+	'Tb':"",
+	'Dy':"",
+	'Ho':"",
+	'Er':"",
+	'Tm':"",
+	'Yb':"",
+	'Lu':"",
+	'Hf':"",
+	'Ta':"",
+	'W':"",
+	'Re':"",
+	'Os':"",
+	'Ir':"",
+	'Pt':"",
+	'Au':"",
+	'Hg':"",
+	'Tl':"",
+	'Pb':"",
+	'Bi':"",
+	'Po':"",
+	'At':"",
+	'Rn':"",
+	'Fr':"",
+	'Ra':"",
+	'Ac':"",
+	'Th':"",
+	'Pa':"",
+	'U':"",
+	'Np':"",
+	'Pu':"",
+	'Am':"",
+	'Cm':"",
+	'Bk':"",
+	'Cf':"",
+	'Es':"",
+	'Fm':"",
+	'Md':"",
+	'No':"",
+	'Lr':"",
+	'Rf':"",
+	'Db':"",
+	'Sg':"",
+	'Bh':"",
+	'Hs':"",
+	'Mt':"",
+	}
+
 class structure( dfp):
 	__name__ = "structure";
 	def __init__( self, d={}, **kwargs):
+		self.atom_p = 'bohr'
+		self.cell_p = 'bohr'
+
 		d.update( data)
 		super().__init__( d=d, **kwargs)
 		return
@@ -70,6 +189,9 @@ class structure( dfp):
 
 		self.alat  = inp.find( "celldm(1)")
 		self.ibrav = inp.find( "ibrav")
+		self.atom_p = inp.find( "ATOMIC_POSITIONS")
+		self.cell_p = inp.find( "CELL_PARAMETERS")
+		#print( self.atom_p, self.cell_p)
 		return
 
 	def validate( self):
@@ -78,7 +200,9 @@ class structure( dfp):
 		#if self.atom_spec_n != len( self.atom_spec): return False
 
 		for a in self.atoms:
-			if not any( a['name'] == s['name'] for s in self.atom_spec): return False
+			if not any( a['name'] == s['name'] for s in self.atom_spec):
+				logger.warning( "Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
+				return False
 
 		if self.ibrav == 0:
 			if not isinstance( self.a, np.ndarray):
@@ -95,37 +219,52 @@ class structure( dfp):
 		#U = np.array([a for a in self.cell[0].values()])
 		#print( U)
 		#L0 = np.array([U.dot( a['coord']) for a in self.atoms])
-		L = np.array( [a['coord'] for a in self.atoms])
+		typ = [a['name'] for a in self.atoms]
 
-		v1 = self.cell[0]['a1']
-		v2 = self.cell[0]['a2']
-		v3 = self.cell[0]['a3']
+		fact = self.alat if self.cell_p == 'alat' else 1
+		v1 = np.array( self.cell[0]['a1']) * fact
+		v2 = np.array( self.cell[0]['a2']) * fact
+		v3 = np.array( self.cell[0]['a3']) * fact
+
+		fact = self.alat if self.atom_p == 'alat' else 1
+		if self.atom_p != 'crystal':
+			L = np.array( [np.array(a['coord'])*fact for a in self.atoms])
+		else:
+			U = np.array([v1,v2,v3])
+			L = np.array([U.dot( a['coord']) for a in self.atoms])
 
 		L0 = L.copy()
 		T = v1
+		typ = typ * repX
 		for n in range( 1, repX):
 			L = np.vstack( ( L, L0 + T*n))
 
 		L0 = L.copy()
 		T = v2
+		typ = typ * repY
 		for n in range ( 1, repY):
 			L = np.vstack( ( L, L0 + T*n))
 
 		L0 = L.copy()
 		T = v3
+		typ = typ * repZ
 		for n in range( 1, repZ):
 			L = np.vstack( ( L, L0 + T*n))
 
-		X = L[:,0]
-		Y = L[:,1]
-		Z = L[:,2]
-		ax.scatter( 
-			X, Y, Z, 
-			s=50,
-			marker="o",
-			depthshade=False,
-			#c="black"
-			)
+
+		for t in self.atom_spec:
+			n = t['name']
+			LP = np.array( [a[1] for a in filter( lambda x: x[0] == n, zip( typ, L))])
+			X = LP[:,0]
+			Y = LP[:,1]
+			Z = LP[:,2]
+			ax.scatter( 
+				X, Y, Z, 
+				s=50,
+				marker="o",
+				depthshade=False,
+				c=colormap[n]
+				)
 
 		if cell:
 			V = [v1,v2,v3]
@@ -133,16 +272,15 @@ class structure( dfp):
 				orig = np.array([0,0,0])
 				v0 = V[n1]
 				for n2 in range( 4):
-					print( orig, v0)
+					#print( orig, v0)
 					v = np.vstack( (orig, orig + v0))
 					if n2 == n1:
-						orig = np.array(V[(n2+1)%3]) + np.array(V[(n2+2)%3])
+						orig = V[(n2+1)%3] + V[(n2+2)%3]
 					else:
-						orig = np.array( V[n2%3])
-					ax.plot( v[:,0], v[:,1], v[:,2])
-				ax.plot( v[:,0], v[:,1], v[:,2], c="black")
+						orig = V[n2%3]
+					ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
+				ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 				
-		#ax.plot( X, Y, Z)
 		plt.show()
 
 
