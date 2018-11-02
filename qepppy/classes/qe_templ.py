@@ -50,7 +50,6 @@ class qe_templ( CARD, NL):
 	    check_nl( nl="namelist"): Check if nl is valid (present in the internal namelist)
 	    set_nl:( nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
 	    set_card: ( card="", v="", el=[]) Set a card value in the namelist template line by line
-	    get:( nl="namelist", k="param") Retrieve the value of a parameter
 	    find: (name) Find a variable (or list ) with name=name in the namelist template
 
 	Template format:
@@ -90,8 +89,12 @@ class qe_templ( CARD, NL):
 	"""
 	def find( self, *args, up=""):
 		"""
-		Find a list of variable by name in all possible namelists and cards.
+		*args: sequence of names of param to find.
+		up: If not set, look for the names in all possible NAMELISTs and CARDs.
+		    If set, look only in the NAMELIST or CARD with the specified name.
 		Return a tuple of the found values (None if not found)
+		NOTE: Looking for array variables (e.g. celldm) without specifying the index (celldm(1)),
+		      will return a list of all the values for that param.
 		"""
 		def _syntax_find_( el, tof):
 			#Recursive find to descend into syntax elements
@@ -129,6 +132,8 @@ class qe_templ( CARD, NL):
 			for card in self._templ_['card']:
 				if up:
 					if up != card: continue
+				if card == tof:
+					return self._templ_[card]['v']
 				synt = self._get_syntax_( self._templ_[card])
 				f = _syntax_find_( synt, tof=tof)
 				if f != None: 
@@ -176,7 +181,7 @@ class qe_templ( CARD, NL):
 		- check that all the lines are properly filled (groups of param required/optional)
 		  have to be all assigned is one of them is.
 		"""
-		return super.validate()
+		return super().validate()
 
 
 
