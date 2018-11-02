@@ -63,11 +63,17 @@ class templ_base( object):
 
 class namelist( templ_base):
 	def check_nl( self, nl):
-		#Check if namelist exist in template
+		"""
+		Check if NAMELIST name actually exist in template
+		"""
 		if nl in self._templ_['nl']: return True
 		return False
 
 	def convert( self):
+		"""
+		Convert the filled template in a QE input file and return it.
+		Return instance: str
+		"""
 		content = super().convert()
 		nl = self._templ_['nl'].copy()
 		#Check for unused namelist (does not print it)
@@ -99,6 +105,9 @@ class namelist( templ_base):
 		return content
 
 	def set_nl( self, nl, k, v):
+		"""
+		Set the value "v" for param "k" in the NAMELIST "nl"
+		"""
 		n=None
 		#print( nl, k, v)
 		#If array case
@@ -179,11 +188,17 @@ class namelist( templ_base):
 
 class card( templ_base):
 	def check_card( self, card):
-		#Check if card exist in template
+		"""
+		Check if a CARD name actually exist in the template
+		"""
 		if card in self._templ_['card']: return True
 		return False
 
 	def convert( self):
+		"""
+		Convert the filled template in a QE input file and return it.
+		Return instance: str
+		"""
 		content = super().convert()
 
 		def _conv_syntax_( l, lvl=0, arr_lvl=0):
@@ -238,6 +253,11 @@ class card( templ_base):
 		return content
 
 	def set_card( self, card, v="", el=[]):
+		"""
+		Set the values inside a CARD.
+		"v" sets the value supposed to be next the card name.
+		"el" sets the card values line by line.
+		"""
 		ptr = self._templ_[card]
 		synt= self._get_syntax_( ptr)
 		ptr['u'] = True
@@ -258,7 +278,7 @@ class card( templ_base):
 		Validate card after a read call. Checks:
 			-Card value is valid
 			-all lines are compliant with the syntax
-		Return True if valid otherwise raise Exception
+		Return True if valid
 		"""
 		def _validate_syntax_( l, lvl=0, arr=0):
 			#print( "Validate: ", l, lvl, arr)

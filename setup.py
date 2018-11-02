@@ -17,7 +17,7 @@ NAME = 'qepppy'
 DESCRIPTION = 'Python post-processing and input-output handling library for Quantum ESPRESSO'
 URL = 'https://github.com/Crivella/QEPPpy'
 EMAIL = 'davide.grassano@roma2.infn.it'
-AUTHOR = 'Awesome Soul'
+AUTHOR = 'Davide Grassano'
 REQUIRES_PYTHON = '>=3.5.2'
 VERSION = None
 
@@ -25,13 +25,18 @@ VERSION = None
 REQUIRED = [
 	'numpy',
 	'matplotlib'
-    # 'requests', 'maya', 'records',
 ]
 
 # What packages are optional?
 EXTRAS = {
     # 'fancy feature': ['django'],
 }
+
+SCRIPTS = [
+    "qepppy/tools/pdos_char.py",
+    "qepppy/tools/broad.py",
+    "qepppy/tools/sum_pdos.py"
+]
 
 # The rest you shouldn't have to touch too much :)
 # ------------------------------------------------
@@ -134,6 +139,7 @@ setup(
     # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
+    scripts=SCRIPTS,
     license='MIT',
     classifiers=[
         # Trove classifiers
@@ -150,7 +156,7 @@ setup(
         'upload': UploadCommand,
         'test': PyTest
     },
-    zip_safe=True,
     #setup_require=['pytest-runner'],
     test_require=['pytest'],
+    zip_safe=True,
 )

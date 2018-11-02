@@ -12,9 +12,9 @@ bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (f
 
 data={
 	'bravais_n':{'x':'attr', 'f':'output//atomic_structure', 'n':'bravais_index', 't':int},
-	'lp':{'x':'attr', 'f':'output//atomic_structure', 'n':'alat', 't':float},
-	'a':{'x':'nodelist', 'f':'output//cell', 'n':None, 't':list},
-	'b':{'x':'nodelist', 'f':'output//reciprocal_lattice', 'n':None, 't':list},
+	'alat':{'x':'attr', 'f':'output//atomic_structure', 'n':'alat', 't':float},
+	'cell':{'x':'nodelist', 'f':'output//cell', 'n':None, 't':list},
+	'recip':{'x':'nodelist', 'f':'output//reciprocal_lattice', 'n':None, 't':list},
 	'atoms':{'x':'nodelist', 'f':'output//atom', 'n':'coord', 't':list},
 	'atom_spec':{'x':'nodelist', 'f':'input//species', 'n':None, 't':list},
 	'symm':{'x':'nodelist', 'f':'output//symmetry', 'n':None, 't':list}

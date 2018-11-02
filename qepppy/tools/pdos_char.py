@@ -1,4 +1,5 @@
-import sys
+#! python
+
 import os.path
 import re
 

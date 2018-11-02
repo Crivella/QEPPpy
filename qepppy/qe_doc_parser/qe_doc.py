@@ -1,59 +1,41 @@
-"""
-Importable a class capable of generating a namelist dict template by parsing a file
-This class provides the following public methods:
-	-parse(): Read the file and generate an internal namelist template
-	-validate(): Check set values against the namelist template (eg: use after reading)
-	-convert():  Convert the internal dict in a string QE input file
-	-check_nl( nl="namelist"): Check if nl is valid (present in the internal namelist)
-	-check_card( card=name): Check if card is valid (present in the internal cardlist)
-	-set_nl:( nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
-	-set_card: ( card="", v="", el=[]) Set a card value in the namelist template
-		if v is set, set the card main value
-		if el is set set a card list value
-			el must be an entire lie to parse
-	-get:( nl="namelist", k="param") Retrieve the value of a namelist parameter
-	-find(name): Find a variable with name=name in the namelist/card template
-"""
-
-"""
-Parse a .def file from the Quantum ESPRESSO documentation.
-Produce a  template dictionary with the following structure:
-{
-	nl:   ['", ... (List of namelists name)]
-	card: ['", ... (List of cards name)]
-	NAMELIST_NAME1: {
-		VAR_NAME: {
-			v: (Value of the parameter)
-			t: (Type of the parameter)
-			d: (Default value)
-			c: (List of possible acceppted value for the parameter)
-			vec:None/(start,end) (Info for array like variables)
-			}
-		...
-		}
-	NAMELIST_NAME2={...}
-	...
-
-	CARD_NAME1:{
-		v: (Value associated with the card)
-		c: (List of possible acceppted value for the card)
-		d: (Default value for v)
-		r: True/False (is card REQUIRED?)
-		u: True/False (True if any values are set in syntax)
-		syntax:{
-			cond: "..." (Condition on card value)
-			l:[ [{n: varname, v: value, t: TYPE}, ..., [{...}, ...]], [...], ([{...}, {...}, ..., ], s, e, kw), ...]
-				(Every element of the list represent a line
-				A Tuple represent a repeating line ( [line], start, end, keyword)
-				A List within a list marks optional arguments)
-		}
-		syntax1:{...} (if multiple syntaxes are provided)
-	}
-	CARD_NAME2:{...}
-	...
-}
-"""
 class qe_doc_parser():
+	"""
+	Instance used to parse a .def file from the Quantum ESPRESSO documentation.
+	Produce a  template dictionary with the following structure:
+	{ (Template dictionary)
+	    nl:   ["...", ... (List of namelists name)]
+	    card: ["...", ... (List of cards name)]
+	    NAMELIST_NAME1: { (dictionary containing all the namelist parameters)
+	        VAR_NAME: { (dictionary containing the details of the parameter)
+	            v: (Value of the parameter)
+	            t: (Type of the parameter as a string)
+	            d: (Default value)
+	            c: (List of possible accepted value for the parameter)
+	            vec:None/(start,end) (Info for array like variables e.g. celldm(1/2/3/4/5/6))
+	            }
+	        ...
+	        }
+	    NAMELIST_NAME2={...}
+	    ...
+	    CARD_NAME1:{ (Dictionary containing the data and syntax of a card)
+	        v: (Value associated with the card)
+	        c: (List of possible accepted value for the card)
+	        d: (Default value for v)
+	        r: True/False (is card REQUIRED?)
+	        u: True/False (True if any values are set in syntax)
+	        syntax:{ (Dictionary defining the syntax that the card should follow)
+	            cond: "..." (Condition on card value)
+	            l:[ [{n: varname, v: value, t: TYPE}, ..., [{...}, ...]], [...], ([{...}, {...}, ..., ], s, e, kw), ...]
+	                Every element of the list represent a line
+	                A Tuple represent a repeating line ( [line], start, end, keyword)
+	                A List within a list marks optional arguments
+	        }
+	        syntax1:{...} (if multiple syntaxes are provided)
+	    }
+	    CARD_NAME2:{...}
+	    ...
+	}
+	"""
 	type_check = { "CHARACTER":str, "INTEGER":int, "LOGICAL":bool, "REAL":float, "STRING":str}
 
 	def __init__( self, fname="", out=""):
@@ -114,6 +96,10 @@ class qe_doc_parser():
 		return ""
 
 	def _intermediate_parse_( self, fname=""):
+		"""
+		Parser for the .def file that produced an intermediate dictionary to be
+		further processed to get to the final template structure.
+		"""
 		with open(fname) as f:
 			content = f.read()
 
@@ -291,7 +277,9 @@ class qe_doc_parser():
 		}
 		ptr = self._templ_[name]
 		def _parse_group_( card, tab=False):
-			#Internal function to parse group elements
+			"""
+			Internal function to parse group elements
+			"""
 			ta = card.get( 'type', None)
 			#t = self.type_check.get( str( ta).upper())
 			l = []
@@ -317,7 +305,9 @@ class qe_doc_parser():
 				else: raise Exception( "Unexpected '{}' in _parse_table_elements_.\n".format( kw))
 			return l
 		def _parse_table_( card):
-			#Internal function to parse the table elements in syntax
+			"""
+			Internal function to parse the table elements in syntax
+			"""
 			l = []
 			s = None
 			e = None
@@ -383,7 +373,9 @@ class qe_doc_parser():
 		return
 
 	def _parse_nl_var_( self, namelist="", k="", v={}):
-		#Function to set a var in the final namelist parsing the temporary nested dict
+		"""
+		Function to set a var in the final namelist parsing the temporary nested dict
+		"""
 		t = None #Handle variable type
 		s = None #Handle array var start
 		e = None #Handle array var end

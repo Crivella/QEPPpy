@@ -4,47 +4,94 @@ from ._qe_templ_base_ import namelist as NL, card as CARD
 """
 Template format:
 {
-	nl:   ['", ... (List of namelists name)]
-	card: ['", ... (List of cards name)]
-	NAMELIST_NAME1: {
-		VAR_NAME: {
-			v: (Value of the parameter)
-			t: (Type of the parameter)
-			d: (Default value)
-			c: (List of possible acceppted value for the parameter)
-			vec:None/(start,end) (Info for array like variables)
-			}
-		...
-		}
-	NAMELIST_NAME2={...}
-	...
+    nl:   ["...", ... (List of namelists name)]
+    card: ["...", ... (List of cards name)]
+    NAMELIST_NAME1: { (dictionary containing all the namelist parameters)
+        VAR_NAME: { (dictionary containing the details of the parameter)
+            v: (Value of the parameter)
+            t: (Type of the parameter as a string)
+            d: (Default value)
+            c: (List of possible acceppted value for the parameter)
+            vec:None/(start,end) (Info for array like variables e.g. celldm(1/2/3/4/5/6))
+            }
+        ...
+        }
+    NAMELIST_NAME2={...}
+    ...
 
-	CARD_NAME1:{
-		v: (Value associated with the card)
-		c: (List of possible acceppted value for the card)
-		d: (Default value for v)
-		r: True/False (is card REQUIRED?)
-		u: True/False (True if any values are set in syntax)
-		syntax:{
-			cond: "..." (Condition on card value)
-			l:[ [{n: varname, v: value, t: TYPE}, ..., [{...}, ...]], [...], ([{...}, {...}, ..., ], s, e, kw), ...]
-				(Every element of the list represent a line
-				A Tuple represent a repeating line ( [line], start, end, keyword)
-				A List within a list marks optional arguments)
-		}
-		syntax1:{...} (if multiple syntaxes are provided)
-	}
-	CARD_NAME2:{...}
-	...
+    CARD_NAME1:{ (Dictionary containing the data and syntax of a card)
+        v: (Value associated with the card)
+        c: (List of possible acceppted value for the card)
+        d: (Default value for v)
+        r: True/False (is card REQUIRED?)
+        u: True/False (True if any values are set in syntax)
+        syntax:{ (Dictionary defining the syntax that the card should follow)
+            cond: "..." (Condition on card value)
+            l:[ [{n: varname, v: value, t: TYPE}, ..., [{...}, ...]], [...], ([{...}, {...}, ..., ], s, e, kw), ...]
+                Every element of the list represent a line
+                A Tuple represent a repeating line ( [line], start, end, keyword)
+                A List within a list marks optional arguments
+        }
+        syntax1:{...} (if multiple syntaxes are provided)
+    }
+    CARD_NAME2:{...}
+    ...
 }
 """
 
 
 class qe_templ( CARD, NL):
+	"""
+	Instance for handling the QE namelist dict template in the data folder.
+
+	This class provides the following methods:
+	    validate(): Check namelist template after reading
+	    convert():  Convert the internal dict in a string QE input file
+	    check_nl( nl="namelist"): Check if nl is valid (present in the internal namelist)
+	    set_nl:( nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
+	    set_card: ( card="", v="", el=[]) Set a card value in the namelist template line by line
+	    get:( nl="namelist", k="param") Retrieve the value of a parameter
+	    find: (name) Find a variable (or list ) with name=name in the namelist template
+
+	Template format:
+	{ (Template dictionary)
+	    nl:   ["...", ... (List of namelists name)]
+	    card: ["...", ... (List of cards name)]
+	    NAMELIST_NAME1: { (dictionary containing all the namelist parameters)
+	        VAR_NAME: { (dictionary containing the details of the parameter)
+	            v: (Value of the parameter)
+	            t: (Type of the parameter as a string)
+	            d: (Default value)
+	            c: (List of possible accepted value for the parameter)
+	            vec:None/(start,end) (Info for array like variables e.g. celldm(1/2/3/4/5/6))
+	            }
+	        ...
+	        }
+	    NAMELIST_NAME2={...}
+	    ...
+	    CARD_NAME1:{ (Dictionary containing the data and syntax of a card)
+	        v: (Value associated with the card)
+	        c: (List of possible accepted value for the card)
+	        d: (Default value for v)
+	        r: True/False (is card REQUIRED?)
+	        u: True/False (True if any values are set in syntax)
+	        syntax:{ (Dictionary defining the syntax that the card should follow)
+	            cond: "..." (Condition on card value)
+	            l:[ [{n: varname, v: value, t: TYPE}, ..., [{...}, ...]], [...], ([{...}, {...}, ..., ], s, e, kw), ...]
+	                Every element of the list represent a line
+	                A Tuple represent a repeating line ( [line], start, end, keyword)
+	                A List within a list marks optional arguments
+	        }
+	        syntax1:{...} (if multiple syntaxes are provided)
+	    }
+	    CARD_NAME2:{...}
+	    ...
+	}
+	"""
 	def find( self, *args, up=""):
 		"""
-		Find a var in all possible namelists and cards.
-		Return its value if found otherwise return None
+		Find a list of variable by name in all possible namelists and cards.
+		Return a tuple of the found values (None if not found)
 		"""
 		def _syntax_find_( el, tof):
 			#Recursive find to descend into syntax elements
@@ -97,6 +144,9 @@ class qe_templ( CARD, NL):
 		return l
 
 	def load_templ( self, fname=""):
+		"""
+		Load a QE template from a specified file (fname) or the internal data
+		"""
 		import os
 		if os.path.isfile( fname):
 			with open( fname) as f:
@@ -110,6 +160,24 @@ class qe_templ( CARD, NL):
 		import ast
 		self._templ_ = ast.literal_eval( file)
 		return
+
+	def validate( self):
+		"""
+		Validate the template.
+		Used to check a read input file.
+		NAMELIST:
+		- checks that all required param are set
+		- checks that the TYPE of all set param is conform with the template
+		- checks that all set param are within the possible values (if a list is given in the template)
+		CARD:
+		- checks that all required CARDs are set
+		- check that CARD values (the param next to the card name) are within list of possible values
+		- check the type of every assigned element
+		- check that all the lines are properly filled (groups of param required/optional)
+		  have to be all assigned is one of them is.
+		"""
+		return super.validate()
+
 
 
 
