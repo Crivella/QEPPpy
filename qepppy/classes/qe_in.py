@@ -1,24 +1,13 @@
 import sys
 
-"""
-Import a class capable of nadleing a namelist dict template
-This class should provide the following methods:
-	-validate(): Check namelist template after reading
-	-convert():  Convert the internal dict in a string QE input file
-	-check_nl( nl="namelist"): Check if nl is valid (present in the imternal namelist)
-	-set_nl:( nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
-	-set_card: ( card="", v="", el=[]) Set a card value in the namelist template
-		if v is set, set the card main value
-		if el is set set a card list value
-			el must be an entire line to parse
-	-get:( nl="namelist", k="param") Retrieve the value of a parameter
-	-find: (name) Find a variable with name=name in the namelist template
-"""
+
 from .qe_templ import qe_templ as templ
 
-
+templ
 def trim_ws( str):
-	#Trim all withspace not included in a string
+	"""
+	Trim all withspace not included in a string
+	"""
 	ws=[ " ", "\t", "\n"]
 	l = str.strip()
 	new = ""
@@ -33,7 +22,13 @@ def trim_ws( str):
 			check_str_2 = not check_str_2
 	return new
 
+	trim_ws
+
 class qe_in( templ):
+	"""
+	Class to handle any QE input (after loading the proper template).
+	Supposed to be used as a parent class for child specific to the qe file.
+	"""
 	def __init__( self, fname="" , templ_file="", **kwargs):
 		#A namelist template '_d' must be declared in the child class!!!!!!
 		if templ_file:
@@ -41,7 +36,7 @@ class qe_in( templ):
 		if not self.templ_file: raise Exception( "Must give a template file.\n")
 		self.load_templ( self.templ_file)
 
-		if fname: self.in_parse( fname=fname)
+		if fname: self.parse_input( fname=fname)
 		#Check if initialization keyword arguments are compliant with the given namelist template
 		for nl, v in kwargs.items():
 			if not isinstance( v, dict):
@@ -54,14 +49,15 @@ class qe_in( templ):
 	def __str__( self):
 		return self.convert()
 
-	def fprint( self, fname=""):
+	def print_input( self, fname="", check=True):
 		"""
 		Print this or a child class __str__() to a file or to the stdout
+		If check, validate the file before printing it
 		"""
 		if fname: f = open( fname, "w+")
 		else: f = sys.stdout
 
-		self.validate()
+		if check: self.validate()
 		f.write( self.__str__())
 
 		if fname: f.close()
@@ -69,9 +65,9 @@ class qe_in( templ):
 		return
 
 
-	def in_parse( self, fname=""):
+	def parse_input( self, fname=""):
 		"""
-		Read a the namelists of an input file
+		Read an input file and load it into the template values.
 		"""
 		if not fname:
 			raise Exception( "Must pass a filename to open")

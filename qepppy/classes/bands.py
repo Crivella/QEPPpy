@@ -1,6 +1,10 @@
 import numpy as np
 from .data_file_parser import data_file_parser as dfp
 
+import logging
+logger = logging.getLogger( __name__)
+logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
+
 data={
 	'n_kpt':{'x':'text', 'f':'output//nk', 'n':None, 't':int},
 	'n_bnd':{'x':'attr', 'f':'output//ks_energies/eigenvalues', 'n':'size', 't':int},
@@ -16,6 +20,15 @@ data={
 	}
 
 class bands( dfp):
+	"""
+	Instance used for QE eigenvalues/vector(k-points) and occupations numbers.
+	Uses the internal "data_file_parser" to read from a "data-file*.xml" input.
+	Can be printed as a string.
+	Each k-point and its info can be called as a dictionary value using its number as the key.
+	Provide the following PostProcessing methods:
+	- band_structure(): Plot/print_to_file the band structure.
+	- smallest_gap(): Print an analysis of the band gap.
+	"""
 	__name__ = "bands"
 	e_units = 27.21138602
 	def __init__( self, d={}, **kwargs):
@@ -39,14 +52,15 @@ class bands( dfp):
 			if( 0 <= key < self.n_kpt):
 				return { 'kpt':self.kpt[key], 'egv':self.egv[key], 'occ':self.occ[key]} 
 			else:
-				raise Exception( "Index '{}' out of range".format( key))
+				raise Exception( "Index '{}' out of range {}-{}".format( key, 0, self.n_kpt - 1))
 		return super().__getitem__( key)
-		val = self.__dict__.get( key)
-		if val: return val
-		else: 
-			raise KeyError( "'{}' object does not support key '{}'".format( self.__name__, key))
 
-	def band_structure( self, fname="plotted.dat", plot=True):
+	def band_structure( self, fname="plotted.dat", plot=True, pfile=True):
+		"""
+		Plot/print_to_file the band structure of.
+		Use plot=True to plot the band structure using matplotlib
+		Use pfile=True to print the band structure data to a file "fname"
+		"""
 		n_kpt = self.n_kpt
 		kpt = [a['kpt'] for a in self.kpt]
 		egv = [a['egv'] for a in self.egv]
@@ -58,7 +72,8 @@ class bands( dfp):
 		res = np.column_stack( ( x, egv))
 		#print( res[:,0], res[:,1:])
 
-		if fname: np.savetxt( fname=fname, X=res, fmt="%13.8f"+"%11.6f"*n_bnd)
+		if pfile:
+			np.savetxt( fname=fname, X=res, fmt="%13.8f"+"%11.6f"*n_bnd)
 
 		if plot:
 			import matplotlib.pyplot as plt
@@ -74,7 +89,17 @@ class bands( dfp):
 			plt.show()
 		return 0
 
-	def smallest_gap( self, radius=0., comp_point=[0.,0.,0.]):
+	def smallest_gap( self, radius=0., comp_point=(0.,0.,0.)):
+		"""
+		Can focus on only a small portion of k-points by defining:
+		- radius: radius of the crop sphere centered around comp_point
+		- comp_point: tuple of coordinates for the center of the crop sphere
+		Print to screen the following information concerning the band gap:
+		- Fermi energy
+		- Direct gap
+		- Min/Max of conduction/valence band (Indirect gap)
+		- Optical gap (condition: valence < Fermi < conduction)
+		"""
 		print( "SMALLEST_GAP: radius={}, comp_point={}".format( radius, comp_point))
 
 		if( radius < 0):
@@ -170,13 +195,20 @@ class bands( dfp):
 		return
 
 	def validate( self):
+		ret = True
 		if( self.n_kpt <= 0):
-			raise Exception( "No kpt read from file '{}'.".format( self.fname))
+			logger.warning( "Failed to read m_kpt from file '{}'.".format( self.fname))
+			ret = False
+			#raise Exception( "No kpt read from file '{}'.".format( self.fname))
 		if( self.n_bnd <= 0):
-			raise Exception( "No band read from file '{}'.".format( self.fname))
+			logger.warning( "Failed to read n_bnd from file '{}'.".format( self.fname))
+			ret = False
+			#raise Exception( "No band read from file '{}'.".format( self.fname))
 		if( not self.n_kpt == len( self.egv) == len( self.occ)):
-			raise Exception( "Corrupted file. Number of kpoints does not match number egv or occ")
-		return True and super().validate()
+			logger.warning( "Corrupted file. Number of kpoints does not match number egv or occ")
+			ret = False
+			#raise Exception( "Corrupted file. Number of kpoints does not match number egv or occ")
+		return ret and super().validate()
 
 
 

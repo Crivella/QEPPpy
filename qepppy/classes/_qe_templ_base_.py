@@ -63,11 +63,17 @@ class templ_base( object):
 
 class namelist( templ_base):
 	def check_nl( self, nl):
-		#Check if namelist exist in template
+		"""
+		Check if NAMELIST name actually exist in template
+		"""
 		if nl in self._templ_['nl']: return True
 		return False
 
 	def convert( self):
+		"""
+		Convert the filled template in a QE input file and return it.
+		Return instance: str
+		"""
 		content = super().convert()
 		nl = self._templ_['nl'].copy()
 		#Check for unused namelist (does not print it)
@@ -99,6 +105,9 @@ class namelist( templ_base):
 		return content
 
 	def set_nl( self, nl, k, v):
+		"""
+		Set the value "v" for param "k" in the NAMELIST "nl"
+		"""
 		n=None
 		#print( nl, k, v)
 		#If array case
@@ -138,24 +147,24 @@ class namelist( templ_base):
 			-all REQUIRED var have been set
 			-all var type are compliant with their type
 		"""
-		err = False
+		ret = True
 		for nl in self._templ_['nl']:
 			for el, v in self._templ_[nl].items():
 				val = v['v']
 				if val == "***":
 					logger.warning( "Required input parameter '{}' in namelist '{}' not set.\n".format( el, nl))
-					err = True
+					ret = False
 				elif val:
 					if v['c']:
 						if not any( val == opt for opt in v['c']):
 							logger.warning( "Parameter '{}/{}' = '{}' is not within range of possible values: \n{}\n".format( nl, el, val, v['c']))
-							err = True
+							ret = False
 					if v['vec']:
 						n = len( val)
 						if not self._get_arr_ext_( v['vec'][0], v['vec'][1], n): 
 							logger.warning( "Parameter: {}({})".format( el, n))
-							err = True
-		return True and super().validate() if not err else False
+							ret = False
+		return ret and super().validate()
 
 
 
@@ -179,11 +188,17 @@ class namelist( templ_base):
 
 class card( templ_base):
 	def check_card( self, card):
-		#Check if card exist in template
+		"""
+		Check if a CARD name actually exist in the template
+		"""
 		if card in self._templ_['card']: return True
 		return False
 
 	def convert( self):
+		"""
+		Convert the filled template in a QE input file and return it.
+		Return instance: str
+		"""
 		content = super().convert()
 
 		def _conv_syntax_( l, lvl=0, arr_lvl=0):
@@ -238,6 +253,11 @@ class card( templ_base):
 		return content
 
 	def set_card( self, card, v="", el=[]):
+		"""
+		Set the values inside a CARD.
+		"v" sets the value supposed to be next the card name.
+		"el" sets the card values line by line.
+		"""
 		ptr = self._templ_[card]
 		synt= self._get_syntax_( ptr)
 		ptr['u'] = True
@@ -258,9 +278,11 @@ class card( templ_base):
 		Validate card after a read call. Checks:
 			-Card value is valid
 			-all lines are compliant with the syntax
-		Return True if valid otherwise raise Exception
+		Return True if valid
 		"""
+		ret = True
 		def _validate_syntax_( l, lvl=0, arr=0):
+			ret1 = True
 			#print( "Validate: ", l, lvl, arr)
 			if not isinstance( l, list): return True
 			#Optional values can be either all set or unset
@@ -278,7 +300,7 @@ class card( templ_base):
 						#print( val, arr)
 						if len( val) != arr or any( a==None or a =='' for a in val):
 							logger.warning( "Param '{}: {}': Number of lines does not match specified value '{}'.".format( card, e['n'], arr))
-							return False
+							ret1 = False
 				if isinstance( e, list): return _validate_syntax_( e, lvl+1, arr)
 				if isinstance( e, tuple):
 					ext = self._get_arr_ext_( e[1], e[2])
@@ -289,7 +311,7 @@ class card( templ_base):
 				if isinstance( e, tuple): return _sfind_( e[0])
 				if isinstance( e, list): return _sfind_( e)
 				"""
-			return True
+			return ret1
 
 		for card in self._templ_['card']:
 			c = self._templ_[card]
@@ -303,19 +325,20 @@ class card( templ_base):
 								break
 						if not v:
 							logger.warning( "No option for card '{}' and no default value either.".format( card))
+							ret = False
 
 				l = self._get_syntax_( c)
 				if not l:
 					logger.warning( "Cannot find a parsed syntax for card: '{} {}'.".format( card, v))
-					return False
+					ret = False
 				if not _validate_syntax_( l):
 					logger.warning( "Syntax in card '{}' is invalid.".format( card))
-					return False
+					ret = False
 			else:
 				if c['r']:
 					logger.warning( "Mandatory card '{}' is not set.".format( card))
-					return False
-		return True and super().validate()
+					ret = False
+		return ret and super().validate()
 
 
 
