@@ -105,13 +105,19 @@ class structure( dfp):
 	def plot( self, 
 		repX=1, repY=1, repZ=1, 
 		cell=False, 
-		bonds=True
+		bonds=True,
+		graph_lvl=0,
 		):
 		"""
 		Plot the crystal cell structure.
 		reprX/Y/Z: repetitions of the cell along X/Y/Z (basis vector not Cartesian!!!)
 		cell=True/False: plot the contour of the cell
 		bonds=True/False: plot the chemical bonds between atoms
+		graph_lvl=0/1/2:
+		 - 0: Basic plot with circle dots as atoms and black lines as bonds
+		 - 1: Colored line as bonds (color of the nearest atom)
+		 - 2: Use 3d spheres for atoms and bonds as in 1
+		 - 3: Use 3d spheres for atoms and cylinders for bonds
 		"""
 		import qepppy.classes.cell_graphic as cg
 		import matplotlib.pyplot as plt
@@ -119,6 +125,10 @@ class structure( dfp):
 
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
+
+		ax.set_xlabel("x (Bohr)")
+		ax.set_ylabel("y (Bohr)")
+		ax.set_zlabel("z (Bohr)")
 
 		typ = [a['name'] for a in self.atoms]
 
@@ -145,13 +155,13 @@ class structure( dfp):
 		atom_list = list( zip( typ, L))
 
 		for t in self.atom_spec:
-			cg.draw_atoms( ax, atom_list, t['name'])
+			cg.draw_atoms( ax, atom_list, t['name'], graph_lvl=graph_lvl)
 
 		if cell:
 			cg.draw_cell( ax, v1, v2, v3)
 
 		if bonds:
-			cg.draw_bonds( ax, atom_list)
+			cg.draw_bonds( ax, atom_list, graph_lvl=graph_lvl)
 
 		#print( atom_list)
 
