@@ -8,9 +8,9 @@ logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
 
 bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (fcc)', '3':'body-centered cubic (bcc)',
 	'-3':'bcc more symm. axis', '4':'hexagonal', '5':'trigonal', '-5':'trigonal <111>', '6':'simple tetragonal (st)',
-	'7':'body-centered tetragonal (bct)', '8':'orthorombic P', '9':'base-centered orthorombic (bco)', 
-	'-9':'as 9 different axis', '10':'face-centered orthorombic', '11':'body-centered orthorombic', '12':'monoclinic P',
-	'-12':'as 12 unique axis', '13':'base-centered monoclinic', '14':'triclinic'}
+	'7':'body-centered tetragonal (bct)', '8':'orthorombic P', '9':'base-centered orthorombic (bco)', '-9':'as 9 different axis',
+	'91':'one-face base-centered orthorombic', '10':'face-centered orthorombic', '11':'body-centered orthorombic',
+	'12':'monoclinic P', '-12':'as 12 unique axis', '13':'base-centered monoclinic', '14':'triclinic'}
 
 data={
 	'ibrav':{'x':'attr', 'f':'output//atomic_structure', 'n':'bravais_index', 't':int},
@@ -80,6 +80,7 @@ class structure( dfp):
 		a1, a2, a3 = inp.find( "v1", "v2", "v3")
 		self.cell = [{'a1':a1, 'a2':a2, 'a3':a3}]
 
+		self.celldm = inp.find( "celldm")
 		self.alat  = inp.find( "celldm(1)")
 		self.ibrav = inp.find( "ibrav")
 		self.atom_p = inp.find( "ATOMIC_POSITIONS")
@@ -140,10 +141,15 @@ class structure( dfp):
 
 		typ = [a['name'] for a in self.atoms]
 
+		if not self.cell[0]['a1']:
+			self._ibrav_to_cell_()
+
 		fact = self.alat if self.cell_p == 'alat' else 1
 		v1 = np.array( self.cell[0]['a1']) * fact
 		v2 = np.array( self.cell[0]['a2']) * fact
 		v3 = np.array( self.cell[0]['a3']) * fact
+
+		print( v1,v2,v3)
 
 		fact = self.alat if self.atom_p == 'alat' else 1
 		if self.atom_p != 'crystal':
@@ -178,7 +184,148 @@ class structure( dfp):
 
 	def _ibrav_to_cell_( self):
 		if self.ibrav == None:
-			logger.error( "Failed to generate cell structure from ibrav: ibrav not set.")
+			logger.error( "Failed to generate cell structure from self.ibrav: self.ibrav not set.")
+			return
+		"""
+			v1 = np.array( [,,]) * lp
+			v2 = np.array( [,,]) * lp
+			v3 = np.array( [,,]) * lp
+		"""
+
+		lp = self.alat
+
+		if   self.ibrav ==  1:
+			v1 = np.array( [1,0,0]) * lp
+			v2 = np.array( [0,1,0]) * lp
+			v3 = np.array( [0,0,1]) * lp
+		elif self.ibrav ==  2:
+			v1 = np.array( [-1,0,1]) * lp/2
+			v2 = np.array( [0,1,1]) * lp/2
+			v3 = np.array( [-1,1,0]) * lp/2
+		elif self.ibrav ==  3:
+			v1 = np.array( [1,1,1]) * lp/2
+			v2 = np.array( [-1,1,1]) * lp/2
+			v3 = np.array( [-1,-1,1]) * lp/2
+		elif self.ibrav == -3:
+			v1 = np.array( [-1,1,1]) * lp/2
+			v2 = np.array( [1,-1,1]) * lp/2
+			v3 = np.array( [1,1,-1]) * lp/2
+		elif self.ibrav ==  4:
+			c = self.celldm[2]
+			v1 = np.array( [1,0,0]) * lp
+			v2 = np.array( [-1,np.sqrt(3),0]) * lp/2
+			v3 = np.array( [0,0,c]) * lp
+		elif self.ibrav ==  5:
+			c = self.celldm[3]
+			tx = (1-c)/2
+			ty = (1-c)/6
+			tz = (1+2*c)/3
+			v1 = np.array( [tx,-ty,tz]) * lp
+			v2 = np.array( [0,2*ty,tz]) * lp
+			v3 = np.array( [-tx,-ty,tz]) * lp
+		elif self.ibrav ==  -5:
+			c = self.celldm[3]
+			ty = (1-c)/6
+			tz = (1+2*c)/3
+			u = tz - 2*np.sqrt(2)*ty
+			v = tz +np.sqrt(2)*ty
+			v1 = np.array( [u,v,v]) * lp/np.sqrt(3)
+			v2 = np.array( [v,u,v]) * lp/np.sqrt(3)
+			v3 = np.array( [v,v,u]) * lp/np.sqrt(3)
+		elif self.ibrav ==  6:
+			c = self.celldm[2]
+			v1 = np.array( [1,0,0]) * lp
+			v2 = np.array( [0,1,0]) * lp
+			v3 = np.array( [0,0,c]) * lp
+		elif self.ibrav ==  7:
+			c = self.celldm[2]
+			v1 = np.array( [1,-1,c]) * lp/2
+			v2 = np.array( [1,1,c]) * lp/2
+			v3 = np.array( [-1,-1,c]) * lp/2
+		elif self.ibrav ==  8:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			v1 = np.array( [1,0,0]) * lp
+			v2 = np.array( [0,b,0]) * lp
+			v3 = np.array( [0,0,c]) * lp
+		elif self.ibrav ==  9:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			v1 = np.array( [1,b,0]) * lp/2
+			v2 = np.array( [-1,b,0]) * lp/2
+			v3 = np.array( [0,0,c]) * lp
+		elif self.ibrav == -9:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			v1 = np.array( [1,-b,0]) * lp/2
+			v2 = np.array( [1,b,0]) * lp/2
+			v3 = np.array( [0,0,c]) * lp
+		elif self.ibrav == 91:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			v1 = np.array( [1,0,0]) * lp
+			v2 = np.array( [0,b,-c]) * lp/2
+			v3 = np.array( [0,b,c]) * lp/2
+		elif self.ibrav ==  10:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			v1 = np.array( [1,0,c]) * lp/2
+			v2 = np.array( [1,b,0]) * lp/2
+			v3 = np.array( [0,b,c]) * lp/2
+		elif self.ibrav ==  11:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			v1 = np.array( [1,b,c]) * lp/2
+			v2 = np.array( [-1,b,b]) * lp/2
+			v3 = np.array( [-1,-b,c]) * lp/2
+		elif self.ibrav ==  12:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			cab = self.celldm[3]
+			sab = np.sqrt(1 - cab**2)
+			v1 = np.array( [1,0,0]) * lp
+			v2 = np.array( [b*cab,b*sab,0]) * lp
+			v3 = np.array( [0,0,c]) * lp
+		elif self.ibrav == -12:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			cac = self.celldm[4]
+			sac = np.sqrt(1 - cac**2)
+			v1 = np.array( [1,0,0]) * lp
+			v2 = np.array( [0,b,0]) * lp
+			v3 = np.array( [c*cac,0,c*sac]) * lp
+		elif self.ibrav ==  13:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			cg = self.celldm[3]
+			sg = np.sqrt(1 - cg**2)
+			v1 = np.array( [1,0,-c]) * lp/2
+			v2 = np.array( [b*cg,b*sg,0]) * lp/2
+			v3 = np.array( [1,0,c]) * lp
+		elif self.ibrav ==  -13:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			cb = self.celldm[4]
+			sb = np.sqrt(1 - cab**2)
+			v1 = np.array( [1,-b,0]) * lp/2
+			v2 = np.array( [1,b,0]) * lp/2
+			v3 = np.array( [c*cb,0,c*sb]) * lp
+		elif self.ibrav ==  14:
+			b = self.celldm[1]
+			c = self.celldm[2]
+			cbc = self.celldm[3]
+			cac = self.celldm[4]
+			cab = self.celldm[5]
+			cg = cab
+			sg = np.sqrt(1 - cg**2)
+			v1 = np.array( [1,0,0]) * lp
+			v2 = np.array( [b*cg,b*sg,0]) * lp
+			v3 = np.array( [c*cac,
+				c*(cbc-cac*cg)/sg,
+				c*np.sqrt(1+2*cbc*cac*cg-cbc**2-cac**2-cg**2)/sg]) * lp
+
+		self.cell_p = 'bohr'
+		self.cell=[{'a1':v1, 'a2':v2, 'a3':v3}]
 
 
 
