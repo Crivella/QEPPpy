@@ -128,7 +128,7 @@ setup(
     url=URL,
     packages=find_packages(exclude=('*.tests','*.qe_doc_parser')),
     package_dir={'qepppy': 'qepppy'},
-    package_data={'qepppy': ['data/*.templ']},
+    package_data={'qepppy': ['data/*.templ', 'data/*.json']},
     include_package_data=True,
     #data_files=[('templates', ['data/*templ'])],
     # If your package is a single module, use this instead of 'packages':
