@@ -149,7 +149,7 @@ class structure( dfp):
 		v2 = np.array( self.cell[0]['a2']) * fact
 		v3 = np.array( self.cell[0]['a3']) * fact
 
-		print( v1,v2,v3)
+		#print( v1,v2,v3)
 
 		fact = self.alat if self.atom_p == 'alat' else 1
 		if self.atom_p != 'crystal':
@@ -179,6 +179,7 @@ class structure( dfp):
 
 		#print( atom_list)
 
+		ax.legend()
 		plt.show()
 
 

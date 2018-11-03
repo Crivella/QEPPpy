@@ -55,16 +55,25 @@ def draw_atoms( ax, atom_list, name, graph_lvl=0):
 	Y = LP[:,1]
 	Z = LP[:,2]
 	radius = periodic_table[name]['radius']
+	color = periodic_table[name]['color']
 	if graph_lvl == 0 or graph_lvl == 1:
 		ax.scatter( 
 			X, Y, Z, 
 			s=80*radius,
 			marker="o",
 			depthshade=False,
-			c=periodic_table[name]['color']
+			c=color,
+			label=name
 			)
 	elif graph_lvl == 2 or graph_lvl == 3:
-		color = periodic_table[name]['color']
+		ax.scatter( 
+			X, Y, Z, 
+			s=10,
+			marker="o",
+			depthshade=False,
+			c=color,
+			label=name
+			)
 		for x,y,z in zip( X,Y,Z):
 			draw_sphere( ax, radius=radius*0.3, center=[x,y,z], color=color)
 	else:
