@@ -22,117 +22,8 @@ data={
 	'symm':{'x':'nodelist', 'f':'output//symmetry', 'n':None, 't':list}
 	}
 
-colormap={
-	'H':"",
-	'He':"",
-	'Li':"",
-	'Be':"",
-	'B':"",
-	'C':"",
-	'N':"",
-	'O':"",
-	'F':"",
-	'Ne':"",
-	'Na':"",
-	'Mg':"",
-	'Al':"",
-	'Si':"blue",
-	'P':"",
-	'S':"",
-	'Cl':"",
-	'Ar':"",
-	'K':"",
-	'Ca':"",
-	'Sc':"",
-	'Ti':"",
-	'V':"",
-	'Cr':"",
-	'Mn':"",
-	'Fe':"",
-	'Co':"",
-	'Ni':"",
-	'Cu':"",
-	'Zn':"",
-	'Ga':"yellow",
-	'Ge':"",
-	'As':"",
-	'Se':"",
-	'Br':"",
-	'Kr':"",
-	'Rb':"",
-	'Sr':"",
-	'Y':"",
-	'Zr':"",
-	'Nb':"",
-	'Mo':"",
-	'Tc':"",
-	'Ru':"",
-	'Rh':"",
-	'Pd':"",
-	'Ag':"",
-	'Cd':"",
-	'In':"",
-	'Sn':"",
-	'Sb':"",
-	'Te':"",
-	'I':"",
-	'Xe':"",
-	'Cs':"",
-	'Ba':"",
-	'La':"",
-	'Ce':"",
-	'Pr':"",
-	'Nd':"",
-	'Pm':"",
-	'Sm':"",
-	'Eu':"",
-	'Gd':"",
-	'Tb':"",
-	'Dy':"",
-	'Ho':"",
-	'Er':"",
-	'Tm':"",
-	'Yb':"",
-	'Lu':"",
-	'Hf':"",
-	'Ta':"",
-	'W':"",
-	'Re':"",
-	'Os':"",
-	'Ir':"",
-	'Pt':"",
-	'Au':"",
-	'Hg':"",
-	'Tl':"",
-	'Pb':"",
-	'Bi':"",
-	'Po':"",
-	'At':"",
-	'Rn':"",
-	'Fr':"",
-	'Ra':"",
-	'Ac':"",
-	'Th':"",
-	'Pa':"",
-	'U':"",
-	'Np':"",
-	'Pu':"",
-	'Am':"",
-	'Cm':"",
-	'Bk':"",
-	'Cf':"",
-	'Es':"",
-	'Fm':"",
-	'Md':"",
-	'No':"",
-	'Lr':"",
-	'Rf':"",
-	'Db':"",
-	'Sg':"",
-	'Bh':"",
-	'Hs':"",
-	'Mt':"",
-	}
+
+
 
 class structure( dfp):
 	__name__ = "structure";
@@ -145,12 +36,13 @@ class structure( dfp):
 		return
 
 	def __str__( self, info=0):
-		msg = super().__str__()						
+		msg = super().__str__()
+		fact = self.alat if self.cell_p == 'alat' else 1				
 		if not self.ibrav or info > 0:
 			msg += "CELL_PARAMETERS\n"
 			for l in self.cell[0].values():
 				for e in l:
-					msg += "{:9.4f}".format( e * self.alat)
+					msg += "{:9.4f}".format( e * fact)
 				msg += "\n"
 			msg += "\n"
 
@@ -159,11 +51,12 @@ class structure( dfp):
 			msg += "{:6}{:12.4f}  {}".format( s['name'], s['mass'], s['pseudo_file'])
 		msg += "\n\n"
 
+		fact = self.alat if self.atom_p == 'alat' else 1
 		msg += "ATOMIC_POSITIONS\n"
 		for a in self.atoms:
 			msg += "{:4}  ".format( a['name'])
 			for c in a['coord']:
-				msg += "{:10.5f}".format( c)
+				msg += "{:10.5f}".format( c * fact)
 			msg += "\n"
 		msg += "\n"
 
@@ -209,16 +102,24 @@ class structure( dfp):
 				return False
 		return True and super().validate()
 
-	def plot( self, repX=1, repY=1, repZ=1, cell=False):
+	def plot( self, 
+		repX=1, repY=1, repZ=1, 
+		cell=False, 
+		bonds=True
+		):
+		"""
+		Plot the crystal cell structure.
+		reprX/Y/Z: repetitions of the cell along X/Y/Z (basis vector not Cartesian!!!)
+		cell=True/False: plot the contour of the cell
+		bonds=True/False: plot the chemical bonds between atoms
+		"""
+		import qepppy.classes.cell_graphic as cg
 		import matplotlib.pyplot as plt
 		from mpl_toolkits.mplot3d import Axes3D
 
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
 
-		#U = np.array([a for a in self.cell[0].values()])
-		#print( U)
-		#L0 = np.array([U.dot( a['coord']) for a in self.atoms])
 		typ = [a['name'] for a in self.atoms]
 
 		fact = self.alat if self.cell_p == 'alat' else 1
@@ -233,64 +134,28 @@ class structure( dfp):
 			U = np.array([v1,v2,v3])
 			L = np.array([U.dot( a['coord']) for a in self.atoms])
 
-		L0 = L.copy()
-		T = v1
 		typ = typ * repX
-		for n in range( 1, repX):
-			L = np.vstack( ( L, L0 + T*n))
-
-		L0 = L.copy()
-		T = v2
 		typ = typ * repY
-		for n in range ( 1, repY):
-			L = np.vstack( ( L, L0 + T*n))
-
-		L0 = L.copy()
-		T = v3
 		typ = typ * repZ
-		for n in range( 1, repZ):
-			L = np.vstack( ( L, L0 + T*n))
 
+		L = cg.cell_repetitions( L, v1, repX)
+		L = cg.cell_repetitions( L, v2, repY)
+		L = cg.cell_repetitions( L, v3, repZ)
+
+		atom_list = list( zip( typ, L))
 
 		for t in self.atom_spec:
-			n = t['name']
-			LP = np.array( [a[1] for a in filter( lambda x: x[0] == n, zip( typ, L))])
-			X = LP[:,0]
-			Y = LP[:,1]
-			Z = LP[:,2]
-			ax.scatter( 
-				X, Y, Z, 
-				s=50,
-				marker="o",
-				depthshade=False,
-				c=colormap[n]
-				)
+			cg.draw_atoms( ax, atom_list, t['name'])
 
 		if cell:
-			V = [v1,v2,v3]
-			for n1 in range( 3):
-				orig = np.array([0,0,0])
-				v0 = V[n1]
-				for n2 in range( 4):
-					#print( orig, v0)
-					v = np.vstack( (orig, orig + v0))
-					if n2 == n1:
-						orig = V[(n2+1)%3] + V[(n2+2)%3]
-					else:
-						orig = V[n2%3]
-					ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
-				ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
-				
+			cg.draw_cell( ax, v1, v2, v3)
+
+		if bonds:
+			cg.draw_bonds( ax, atom_list)
+
+		#print( atom_list)
+
 		plt.show()
-
-
-
-
-
-
-
-
-
 
 
 
