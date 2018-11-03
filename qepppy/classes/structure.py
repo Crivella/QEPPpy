@@ -158,13 +158,9 @@ class structure( dfp):
 			U = np.array([v1,v2,v3])
 			L = np.array([U.dot( a['coord']) for a in self.atoms])
 
-		typ = typ * repX
-		typ = typ * repY
-		typ = typ * repZ
-
-		L = cg.cell_repetitions( L, v1, repX)
-		L = cg.cell_repetitions( L, v2, repY)
-		L = cg.cell_repetitions( L, v3, repZ)
+		for rep, v in zip( [repX,repY,repZ],[v1,v2,v3]):
+			typ = typ * rep
+			L = cg.cell_repetitions( L, v, rep)
 
 		atom_list = list( zip( typ, L))
 

@@ -43,12 +43,19 @@ def draw_cylinder( ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
 	return
 
 def cell_repetitions( base, vect, num):
+	"""
+	Replicate a list of atoms along a vector for num times:
+	base: list of atom coords []
+	"""
 	L0 = base.copy()
 	for n in range( 1, num):
 		base = np.vstack( ( base, L0 + vect*n))
 	return base
 
 def draw_atoms( ax, atom_list, name, graph_lvl=0):
+	"""
+	atom_list has to be a zip of (["name1","name2",...], [[x1,y1,z1],[x2,y2,z2],...])
+	"""
 	LP = np.array( [a[1] for a in filter( lambda x: x[0] == name, atom_list)])
 	if len( LP) == 0: return
 	X = LP[:,0]
@@ -80,10 +87,10 @@ def draw_atoms( ax, atom_list, name, graph_lvl=0):
 		logger.error( "arg 'graph_lvl' must be <= 2")
 	return
 
-def draw_cell( ax, v1, v2, v3):
+def draw_cell( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1], center=[0,0,0]):
 	V = [v1,v2,v3]
 	for n1 in range( 3):
-		orig = np.array([0,0,0])
+		orig = np.array(center)
 		v0 = V[n1]
 		for n2 in range( 4):
 			#print( orig, v0)
@@ -96,9 +103,10 @@ def draw_cell( ax, v1, v2, v3):
 		ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 	return
 
-
-
 def draw_bonds( ax, atom_list, graph_lvl=0):
+	"""
+	atom_list has to be a zip of (["name1","name2",...], [[x1,y1,z1],[x2,y2,z2],...])
+	"""
 	for n1, a1 in enumerate( atom_list):
 		name1 = a1[0]
 		v1 = a1[1]
