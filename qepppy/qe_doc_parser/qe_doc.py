@@ -46,8 +46,8 @@ class qe_doc_parser():
 			for e in list(os.walk("."))[0][2]:
 				if ".def" in e:
 					print( e)
-					self.parse( e, "{}.templ".format( e[:-4]))
-					input()
+					self.parse( e, "{}.json".format( e[:-4]))
+					#input()
 		return
 
 	def parse( self, fname="", out="templ"):
@@ -75,10 +75,11 @@ class qe_doc_parser():
 					self._parse_card_( name=k1, card=v1)
 			
 		#"""
-		from pprint import pprint as pp	
+		from pprint import pprint as pp
+		#import json
 		with open( out, "w") as f:
 			pp( self._templ_, stream=f, indent=2)
-			#f.write( json.dumps( nl, indent=2))
+			#f.write( json.dumps( self._templ_, indent=2))
 		#"""
 		return
 

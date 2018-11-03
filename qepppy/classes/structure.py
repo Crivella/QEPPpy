@@ -88,19 +88,27 @@ class structure( dfp):
 		return
 
 	def validate( self):
-		l = [ self.ibrav, self.atom_spec, self.atoms]
-		if any( a == None for a in l): return False
-		#if self.atom_spec_n != len( self.atom_spec): return False
+		ret = True
+		if self.ibrav == None:
+			logger.warning( "ibrav is not set.")
+			ret = False
+		if self.atom_spec == None:
+			logger.warning( "List of atom types is not set.")
+			ret = False
+		if self.atoms == None:
+			logger.warning( "List of atomic positions is not set.")
+			ret = False
 
 		for a in self.atoms:
 			if not any( a['name'] == s['name'] for s in self.atom_spec):
 				logger.warning( "Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
-				return False
+				ret = False
 
 		if self.ibrav == 0:
-			if not isinstance( self.a, np.ndarray):
-				return False
-		return True and super().validate()
+			if isinstance( self.cell, None):
+				logger.warning( "Cell structure is not set with 'ibrav = 0'.")
+				ret = False
+		return ret and super().validate()
 
 	def plot( self, 
 		repX=1, repY=1, repZ=1, 
@@ -166,6 +174,11 @@ class structure( dfp):
 		#print( atom_list)
 
 		plt.show()
+
+
+	def _ibrav_to_cell_( self):
+		if self.ibrav == None:
+			logger.error( "Failed to generate cell structure from ibrav: ibrav not set.")
 
 
 

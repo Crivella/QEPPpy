@@ -162,6 +162,10 @@ class qe_templ( CARD, NL):
 			if fname in resource_listdir('qepppy.data', ''):
 				file = resource_string( 'qepppy.data', fname).decode('utf-8')
 
+		#import json
+		#self._templ_ = json.loads( file)
+		#return
+
 		import ast
 		self._templ_ = ast.literal_eval( file)
 		return
