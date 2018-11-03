@@ -106,7 +106,7 @@ class structure( dfp):
 		repX=1, repY=1, repZ=1, 
 		cell=False, 
 		bonds=True,
-		graph_lvl=0,
+		graph_lvl=1,
 		):
 		"""
 		Plot the crystal cell structure.

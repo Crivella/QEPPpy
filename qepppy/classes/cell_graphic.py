@@ -161,16 +161,16 @@ def draw_atoms( ax, atom_list, name, graph_lvl=0):
 	X = LP[:,0]
 	Y = LP[:,1]
 	Z = LP[:,2]
+	radius = periodic_table[name]['radius']
 	if graph_lvl == 0 or graph_lvl == 1:
 		ax.scatter( 
 			X, Y, Z, 
-			s=50,
+			s=80*radius,
 			marker="o",
 			depthshade=False,
 			c=periodic_table[name]['color']
 			)
 	elif graph_lvl == 2 or graph_lvl == 3:
-		radius = periodic_table[name]['radius']
 		color = periodic_table[name]['color']
 		for x,y,z in zip( X,Y,Z):
 			draw_sphere( ax, radius=radius*0.3, center=[x,y,z], color=color)
@@ -211,17 +211,20 @@ def draw_bonds( ax, atom_list, graph_lvl=0):
 			if delta > max_l: continue
 			if graph_lvl == 0:
 				v = np.vstack( (v1, v2))
-				ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
+				ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=1.5)
 			elif graph_lvl == 1 or graph_lvl == 2:
 				mid = (v1 + v2) / 2
 				v = np.vstack( (v1, mid))
-				ax.plot( v[:,0], v[:,1], v[:,2], color=periodic_table[name1]['color'], linewidth=0.5)
+				ax.plot( v[:,0], v[:,1], v[:,2], color=periodic_table[name1]['color'], linewidth=3.5)
 				v = np.vstack( (mid, v2))
-				ax.plot( v[:,0], v[:,1], v[:,2], color=periodic_table[name2]['color'], linewidth=0.5)
+				ax.plot( v[:,0], v[:,1], v[:,2], color=periodic_table[name2]['color'], linewidth=3.5)
 			elif graph_lvl == 3:
 				mid = (v1+v2)/2
-				draw_cylinder( ax, radius=0.15, axis=(v2-v1)/2, start=v1,  color=periodic_table[name1]['color'])
-				draw_cylinder( ax, radius=0.15, axis=(v2-v1)/2, start=mid, color=periodic_table[name2]['color'])
+				if name1 != name2:
+					draw_cylinder( ax, radius=0.15, axis=(v2-v1)/2, start=v1,  color=periodic_table[name1]['color'])
+					draw_cylinder( ax, radius=0.15, axis=(v2-v1)/2, start=mid, color=periodic_table[name2]['color'])
+				else:
+					draw_cylinder( ax, radius=0.15, axis=v2-v1, start=v1,  color=periodic_table[name1]['color'])
 			else:
 				logger.error( "arg 'graph_lvl' must be <= 2")
 
