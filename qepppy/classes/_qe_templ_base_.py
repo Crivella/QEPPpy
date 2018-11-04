@@ -11,7 +11,10 @@ class templ_base( object):
 		return ""
 
 	def validate( self):
-		return True
+		try:
+			return True and super().validate()
+		except:
+			return True
 
 	def _check_type_( self, v, type):
 		type_check = { "CHARACTER":str, "INTEGER":int, "LOGICAL":bool, "REAL":float, "STRING":str}
@@ -193,6 +196,12 @@ class card( templ_base):
 		"""
 		if card in self._templ_['card']: return True
 		return False
+
+	def check_used( self, card):
+		if self.check_card(  card):
+			return self._templ_[card]['u']
+		else:
+			return False
 
 	def convert( self):
 		"""
