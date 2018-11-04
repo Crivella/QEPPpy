@@ -43,12 +43,19 @@ def draw_cylinder( ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
 	return
 
 def cell_repetitions( base, vect, num):
+	"""
+	Replicate a list of atoms along a vector for num times:
+	base: list of atom coords []
+	"""
 	L0 = base.copy()
 	for n in range( 1, num):
 		base = np.vstack( ( base, L0 + vect*n))
 	return base
 
 def draw_atoms( ax, atom_list, name, graph_lvl=0):
+	"""
+	atom_list has to be a zip of (["name1","name2",...], [[x1,y1,z1],[x2,y2,z2],...])
+	"""
 	LP = np.array( [a[1] for a in filter( lambda x: x[0] == name, atom_list)])
 	if len( LP) == 0: return
 	X = LP[:,0]
@@ -80,10 +87,10 @@ def draw_atoms( ax, atom_list, name, graph_lvl=0):
 		logger.error( "arg 'graph_lvl' must be <= 2")
 	return
 
-def draw_cell( ax, v1, v2, v3):
+def draw_cell( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1], center=[0,0,0]):
 	V = [v1,v2,v3]
 	for n1 in range( 3):
-		orig = np.array([0,0,0])
+		orig = np.array(center)
 		v0 = V[n1]
 		for n2 in range( 4):
 			#print( orig, v0)
@@ -96,9 +103,53 @@ def draw_cell( ax, v1, v2, v3):
 		ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 	return
 
+def draw_Wigner_Seitz( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1]):
+	try:
+		from scipy.spatial import Voronoi
+	except:
+		logger.error( "Scipy module must be installed to print Wigner-Seitz cell.")
+		return
+	V = np.array([v1,v2,v3])
+	#print( V[0])
+	L = np.array([[0,0,0]])
+	#print( L)
+	for n1 in range( -1, 2):
+		for n2 in range( -1, 2):
+			for n3 in range( -1, 2):
+				L = np.vstack( (L, V[0]*n1 + V[1]*n2 + V[2]*n3))
 
+	vor = Voronoi( L)
+
+
+	P = np.asarray( vor.vertices)
+	R = np.asarray( vor.ridge_vertices)
+
+	rad = max( np.linalg.norm( V, axis=1)) * np.sqrt(2)/2
+	for n, p in enumerate( P):
+		if np.linalg.norm( p) <= rad: continue
+		P[n] = np.zeros( 3)
+		for i1, e in enumerate( R):
+			for i2, r in enumerate( e):
+				if r == n:
+					R[i1][i2] = -1
+
+
+	X = P[:,0]
+	Y = P[:,1]
+	Z = P[:,2]
+	ax.scatter( X,Y,Z, color='green')
+
+	for vert in R:
+		vert.append( vert[0])
+		v = np.asarray( vert)
+		if np.all( v >= 0):
+			ax.plot( P[v, 0], P[v, 1], P[v, 2], color='k')
+	return
 
 def draw_bonds( ax, atom_list, graph_lvl=0):
+	"""
+	atom_list has to be a zip of (["name1","name2",...], [[x1,y1,z1],[x2,y2,z2],...])
+	"""
 	for n1, a1 in enumerate( atom_list):
 		name1 = a1[0]
 		v1 = a1[1]
