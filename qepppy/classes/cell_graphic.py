@@ -103,6 +103,49 @@ def draw_cell( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1], center=[0,0,0]):
 		ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 	return
 
+def draw_Wigner_Seitz( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1]):
+	try:
+		from scipy.spatial import Voronoi
+	except:
+		logger.error( "Scipy module must be installed to print Wigner-Seitz cell.")
+		return
+	V = np.array([v1,v2,v3])
+	#print( V[0])
+	L = np.array([[0,0,0]])
+	#print( L)
+	for n1 in range( -1, 2):
+		for n2 in range( -1, 2):
+			for n3 in range( -1, 2):
+				L = np.vstack( (L, V[0]*n1 + V[1]*n2 + V[2]*n3))
+
+	vor = Voronoi( L)
+
+
+	P = np.asarray( vor.vertices)
+	R = np.asarray( vor.ridge_vertices)
+
+	rad = max( np.linalg.norm( V, axis=1)) * np.sqrt(2)/2
+	for n, p in enumerate( P):
+		if np.linalg.norm( p) <= rad: continue
+		P[n] = np.zeros( 3)
+		for i1, e in enumerate( R):
+			for i2, r in enumerate( e):
+				if r == n:
+					R[i1][i2] = -1
+
+
+	X = P[:,0]
+	Y = P[:,1]
+	Z = P[:,2]
+	ax.scatter( X,Y,Z, color='green')
+
+	for vert in R:
+		vert.append( vert[0])
+		v = np.asarray( vert)
+		if np.all( v >= 0):
+			ax.plot( P[v, 0], P[v, 1], P[v, 2], color='k')
+	return
+
 def draw_bonds( ax, atom_list, graph_lvl=0):
 	"""
 	atom_list has to be a zip of (["name1","name2",...], [[x1,y1,z1],[x2,y2,z2],...])

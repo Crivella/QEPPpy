@@ -115,6 +115,7 @@ class structure( dfp):
 		repX=1, repY=1, repZ=1, 
 		cell=False, 
 		bonds=True,
+		recip=False,
 		graph_lvl=1,
 		):
 		"""
@@ -135,19 +136,39 @@ class structure( dfp):
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
 
-		ax.set_xlabel("x (Bohr)")
-		ax.set_ylabel("y (Bohr)")
-		ax.set_zlabel("z (Bohr)")
-
 		typ = [a['name'] for a in self.atoms]
 
 		if not self.cell[0]['a1']:
 			self._ibrav_to_cell_()
 
-		fact = self.alat if self.cell_p == 'alat' else 1
-		v1 = np.array( self.cell[0]['a1']) * fact
-		v2 = np.array( self.cell[0]['a2']) * fact
-		v3 = np.array( self.cell[0]['a3']) * fact
+		if recip:
+			try:
+				test = isinstance( self.recip, list) and self.recip[0]['b1']
+			except:
+				test = False
+			if not test:
+				self._cell_to_recip_()
+			CELL = self.recip[0]
+			fact = 1
+			ax.set_xlabel("x (Bohr^-1)")
+			ax.set_ylabel("y (Bohr^-1)")
+			ax.set_zlabel("z (Bohr^-1)")
+		else:
+			CELL = self.cell[0]
+			fact = self.alat if self.cell_p == 'alat' else 1
+			ax.set_xlabel("x (Bohr)")
+			ax.set_ylabel("y (Bohr)")
+			ax.set_zlabel("z (Bohr)")
+
+		#print( CELL)
+		v1 = np.array( list(CELL.values())[0]) * fact
+		v2 = np.array( list(CELL.values())[1]) * fact
+		v3 = np.array( list(CELL.values())[2]) * fact
+
+		if recip:
+			cg.draw_Wigner_Seitz( ax, v1, v2, v3)
+			plt.show()
+			return
 
 		#print( v1,v2,v3)
 
@@ -177,6 +198,22 @@ class structure( dfp):
 
 		ax.legend()
 		plt.show()
+
+
+	def _cell_to_recip_( self):
+		fact = self.alat if self.cell_p == 'alat' else 1
+		CELL = self.cell[0]
+		v1 = np.array( CELL['a1']) * fact
+		v2 = np.array( CELL['a2']) * fact
+		v3 = np.array( CELL['a3']) * fact
+
+		vol = v1.dot( np.cross(v2, v3))
+		c = 1 / vol
+		b1 = c * np.cross( v2, v3)
+		b2 = c * np.cross( v3, v1)
+		b3 = c * np.cross( v1, v2)
+		self.recip= [{'b1':b1, 'b2':b2, 'b3':b3}]
+		return
 
 
 	def _ibrav_to_cell_( self):
@@ -303,7 +340,7 @@ class structure( dfp):
 			b = self.celldm[1]
 			c = self.celldm[2]
 			cb = self.celldm[4]
-			sb = np.sqrt(1 - cab**2)
+			sb = np.sqrt(1 - cb**2)
 			v1 = np.array( [1,-b,0]) * lp/2
 			v2 = np.array( [1,b,0]) * lp/2
 			v3 = np.array( [c*cb,0,c*sb]) * lp
