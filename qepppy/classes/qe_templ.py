@@ -1,43 +1,4 @@
-from ._qe_templ_base_ import namelist as NL, card as CARD
-
-
-"""
-Template format:
-{
-    nl:   ["...", ... (List of namelists name)]
-    card: ["...", ... (List of cards name)]
-    NAMELIST_NAME1: { (dictionary containing all the namelist parameters)
-        VAR_NAME: { (dictionary containing the details of the parameter)
-            v: (Value of the parameter)
-            t: (Type of the parameter as a string)
-            d: (Default value)
-            c: (List of possible acceppted value for the parameter)
-            vec:None/(start,end) (Info for array like variables e.g. celldm(1/2/3/4/5/6))
-            }
-        ...
-        }
-    NAMELIST_NAME2={...}
-    ...
-
-    CARD_NAME1:{ (Dictionary containing the data and syntax of a card)
-        v: (Value associated with the card)
-        c: (List of possible acceppted value for the card)
-        d: (Default value for v)
-        r: True/False (is card REQUIRED?)
-        u: True/False (True if any values are set in syntax)
-        syntax:{ (Dictionary defining the syntax that the card should follow)
-            cond: "..." (Condition on card value)
-            l:[ [{n: varname, v: value, t: TYPE}, ..., [{...}, ...]], [...], ([{...}, {...}, ..., ], s, e, kw), ...]
-                Every element of the list represent a line
-                A Tuple represent a repeating line ( [line], start, end, keyword)
-                A List within a list marks optional arguments
-        }
-        syntax1:{...} (if multiple syntaxes are provided)
-    }
-    CARD_NAME2:{...}
-    ...
-}
-"""
+from qepppy.classes._qe_templ_base_ import namelist as NL, card as CARD
 
 
 class qe_templ( CARD, NL):
@@ -49,6 +10,8 @@ class qe_templ( CARD, NL):
 	    convert():  Convert the internal dict in a string QE input file
 	    check_nl( nl="namelist"): Check if nl is valid (present in the internal namelist)
 	    set_nl:( nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
+	    check_card( card="cardname"): Check if card is valid (present in the internal CARDs)
+	    check_used( card="cardname"): Check if the card is under use in the input file
 	    set_card: ( card="", v="", el=[]) Set a card value in the namelist template line by line
 	    find: (name) Find a variable (or list ) with name=name in the namelist template
 

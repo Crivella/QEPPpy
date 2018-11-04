@@ -6,7 +6,7 @@ class data_file_parser( object):
 	Parser for QE data'file'schema.xml (QE>=6.2)
 
 	- d: rule dictionary defining how the parser will operate.
-	- fname: Name of the "data-file*.xml" to parse (Parsing will run if the fname is set).
+	- schema: Name of the "data-file*.xml" to parse (Parsing will run if the schema is set).
 	- **kwargs: Overwrite parsed variables with user's one given as a var_name=value keyword arg.
 	            The var_name must already exist after the parsing (cannot set unrecognized variables).
 	This parser accept a rule dict passed as a keyword argument 'd' to the __init__ method.
@@ -36,23 +36,18 @@ class data_file_parser( object):
 	                  The attribute are updated at every step, so the value of the last one will be stored.
 	"""
 	__name__ = "data_file_parser"
-	def __init__( self, fname="", d={}, **kwargs):
-		#print( d)
-		self.data = d
+	def __init__( self, schema="", d={}, **kwargs):
+		self._data_ = d
 		for i in d:
 			self.__dict__[i] = None
-		if fname:
-			self.fname = fname
-			self.parse_xml( fname)
+		if schema:
+			self.schema = schema
+			self.parse_xml( schema)
 		if kwargs:
 			for k, v in kwargs.items():
-				if k in self.__dict__:
-					self.__dict__[k] = v
-				else:
-					raise Exception( "{}: Unrecognized keyword argument '{}'.\n".format( self.__name__, k))
-		else:
-			pass
-			#raise Exception( "{}: Failed to initialize object.\n".format( self.__name__))
+				if not k in self.__dict__:
+					continue
+				self.__dict__[k] = v
 		return
 
 	def __getitem__( self, key):
@@ -61,9 +56,9 @@ class data_file_parser( object):
 	def __str__( self):
 		return ""
 
-	def parse_xml( self, fname=""):
+	def parse_xml( self, schema=""):
 		import xml.etree.ElementTree as ET
-		root = ET.parse( fname).getroot()
+		root = ET.parse( schema).getroot()
 
 		def _format_( var):
 			if isinstance( var, np.ndarray): return var
@@ -115,7 +110,7 @@ class data_file_parser( object):
 			'nodelist':_xml_node_list_,
 		}
 
-		for k, v in self.data.items():
+		for k, v in self._data_.items():
 			res = None
 			t = v['t']
 			n = v['n']
@@ -130,6 +125,9 @@ class data_file_parser( object):
 		return
 
 	def validate( self):
-		return True
+		try:
+			return True and super().validate()
+		except:
+			return True
 
 

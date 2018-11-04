@@ -1,7 +1,9 @@
 import sys
+from qepppy.classes.qe_templ import qe_templ as templ
 
-
-from .qe_templ import qe_templ as templ
+import logging
+logger = logging.getLogger( __name__)
+logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
 
 templ
 def trim_ws( str):
@@ -28,52 +30,66 @@ class qe_in( templ):
 	"""
 	Class to handle any QE input (after loading the proper template).
 	Supposed to be used as a parent class for child specific to the qe file.
+	kwargs:
+	 - parse = Name of the file to parse
+	 - templ_name = Name of the template file to use
 	"""
-	def __init__( self, fname="" , templ_file="", **kwargs):
+	def __init__( self, **kwargs):
 		#A namelist template '_d' must be declared in the child class!!!!!!
-		if templ_file:
-			self.templ_file = templ_file
-		if not self.templ_file: raise Exception( "Must give a template file.\n")
+		self.templ_file = kwargs.get( 'templ_file', self.templ_file)
+		if not self.templ_file:
+			raise Exception( "Must give a template file.\n")
 		self.load_templ( self.templ_file)
 
-		if fname: self.parse_input( fname=fname)
+		parse = kwargs.get( 'parse')
+		if parse:
+			self.parse_input( parse=parse)
+		else:
+			pass
+			#logger.warning( "Creating instance of 'qe_in' without parsing any input file.")
+
 		#Check if initialization keyword arguments are compliant with the given namelist template
 		for nl, v in kwargs.items():
 			if not isinstance( v, dict):
-				raise Exception( "Invalid kwargs.\n{}".format( kwargs))
+				continue
+				#raise Exception( "Invalid kwargs.\n{}".format( kwargs))
 			for k, v1 in v.items():
 				self.set_nl( nl, k, v1)
 
+		super().__init__( **kwargs)
 		return
 
 	def __str__( self):
 		return self.convert()
 
-	def print_input( self, fname="", check=True):
+	def print_input( self, parse="", check=True):
 		"""
 		Print this or a child class __str__() to a file or to the stdout
 		If check, validate the file before printing it
 		"""
-		if fname: f = open( fname, "w+")
-		else: f = sys.stdout
+		if parse:
+			f = open( parse, "w+")
+		else:
+			f = sys.stdout
 
-		if check: self.validate()
+		if check:
+			self.validate()
 		f.write( self.__str__())
 
-		if fname: f.close()
+		if parse: f.close()
 
 		return
 
 
-	def parse_input( self, fname=""):
+	def parse_input( self, parse=""):
 		"""
 		Read an input file and load it into the template values.
 		"""
-		if not fname:
+		if not parse:
 			raise Exception( "Must pass a filename to open")
 
 		#Read all the file content into 'content'
-		with open(fname) as f:
+		with open(parse) as f:
 			content = f.readlines()
 		
 		nl = None

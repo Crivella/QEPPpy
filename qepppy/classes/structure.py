@@ -1,5 +1,5 @@
 import numpy as np
-from .data_file_parser import data_file_parser as dfp
+from qepppy.classes.data_file_parser import data_file_parser as dfp
 
 import logging
 logger = logging.getLogger( __name__)
@@ -65,10 +65,15 @@ class structure( dfp):
 
 		return msg
 
-	def pwin_read( self, fname=""):
-		from .pwin import pw_in
-		inp = pw_in( fname)
-		inp.validate()
+	def pwin_read( self, parse="", inp=None):
+		if inp == None:
+			if parse:
+				from .pwin import pw_in
+				inp = pw_in( parse=parse)
+				inp.validate()
+			else:
+				logger.error( "Must give a file name or a pw_in instance as args")
+				return
 
 		name, x, y, z = inp.find( "X", "x", "y", "z", up="ATOMIC_POSITIONS")
 		coord = [(a,b,c) for a,b,c in zip( x, y, z)]
@@ -120,14 +125,19 @@ class structure( dfp):
 		):
 		"""
 		Plot the crystal cell structure.
-		reprX/Y/Z: repetitions of the cell along X/Y/Z (basis vector not Cartesian!!!)
-		cell=True/False: plot the contour of the cell
-		bonds=True/False: plot the chemical bonds between atoms
-		graph_lvl=0/1/2:
-		 - 0: Basic plot with circle dots as atoms and black lines as bonds
-		 - 1: Colored line as bonds (color of the nearest atom)
-		 - 2: Use 3d spheres for atoms and bonds as in 1
-		 - 3: Use 3d spheres for atoms and cylinders for bonds
+		Args:
+		 - reprX/Y/Z=1/1/1[or any positive integer]:
+		        repetitions of the cell along X/Y/Z (basis vector not Cartesian!!!).
+		        NOTE: They are 3 separate arguments repX, repY, repZ
+		 - cell=False[or True]: plot the contour of the cell.
+		 - bonds=True[or False]: plot the chemical bonds between atoms.
+		 - recip=False[or True]: plot the Brilloiun Zone instead of the real cell.
+		        If True all other flags are ignored.
+		 - graph_lvl=1[or 0/2/3]:
+		   - 0: Basic plot with circle dots as atoms and black lines as bonds.
+		   - 1: Colored line as bonds (color of the nearest atom).
+		   - 2: Use 3d spheres for atoms and bonds as in 1.
+		   - 3: Use 3d spheres for atoms and cylinders for bonds.
 		"""
 		import qepppy.classes.cell_graphic as cg
 		import matplotlib.pyplot as plt
@@ -138,12 +148,16 @@ class structure( dfp):
 
 		typ = [a['name'] for a in self.atoms]
 
-		if not self.cell[0]['a1']:
+		#print( self.cell)
+		if self.cell == None:
 			self._ibrav_to_cell_()
+		else:
+			if len( self.cell[0]['a1']) != 3:
+				self._ibrav_to_cell_()
 
 		if recip:
 			try:
-				test = isinstance( self.recip, list) and self.recip[0]['b1']
+				test = isinstance( self.recip, list) and len( self.recip[0]['b1'])
 			except:
 				test = False
 			if not test:
@@ -160,7 +174,6 @@ class structure( dfp):
 			ax.set_ylabel("y (Bohr)")
 			ax.set_zlabel("z (Bohr)")
 
-		#print( CELL)
 		v1 = np.array( list(CELL.values())[0]) * fact
 		v2 = np.array( list(CELL.values())[1]) * fact
 		v3 = np.array( list(CELL.values())[2]) * fact
@@ -169,8 +182,6 @@ class structure( dfp):
 			cg.draw_Wigner_Seitz( ax, v1, v2, v3)
 			plt.show()
 			return
-
-		#print( v1,v2,v3)
 
 		fact = self.alat if self.atom_p == 'alat' else 1
 		if self.atom_p != 'crystal':
@@ -185,16 +196,12 @@ class structure( dfp):
 
 		atom_list = list( zip( typ, L))
 
-		for t in self.atom_spec:
-			cg.draw_atoms( ax, atom_list, t['name'], graph_lvl=graph_lvl)
-
 		if cell:
 			cg.draw_cell( ax, v1, v2, v3)
-
 		if bonds:
 			cg.draw_bonds( ax, atom_list, graph_lvl=graph_lvl)
-
-		#print( atom_list)
+		for t in self.atom_spec:
+			cg.draw_atoms( ax, atom_list, t['name'], graph_lvl=graph_lvl)
 
 		ax.legend()
 		plt.show()
