@@ -26,7 +26,7 @@ def trim_ws( str):
 
 	trim_ws
 
-@logger()
+@logger( )
 class qe_in( templ):
 	"""
 	Class to handle any QE input (after loading the proper template).
