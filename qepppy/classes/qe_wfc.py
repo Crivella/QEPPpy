@@ -1,11 +1,8 @@
 import numpy as np
 from .qe_binary import qe_binary_reader as qbr
+from .logger import *
 
-
-import logging
-logger = logging.getLogger( __name__)
-logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
-
+@logger( msg_lvl='error')
 class qe_wfc( qbr):
 	wfc_format =[
 		[
@@ -60,7 +57,8 @@ class qe_wfc( qbr):
 		try:
 			weight = self.weight
 		except Exception as e:
-			logger.warning( "Weight data for kpt #{} missing... settting it to 1".format( self.kpt_num))
+			#logger.warning( "Weight data for kpt #{} missing... settting it to 1".format( self.kpt_num))
+			raise warning( "Weight data for kpt #{} missing... setting it to 1".format( self.kpt_num))
 			weight = 1
 
 		gvect_cart = np.array( [np.dot(recipr, G) for G in self.gvect])
