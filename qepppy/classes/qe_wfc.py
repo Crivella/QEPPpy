@@ -4,7 +4,7 @@ from .logger import *
 
 @logger( msg_lvl='error')
 class qe_wfc( qbr):
-	wfc_format =[
+	binary_format =[
 		[
 			{'t':4, 's':(1,), 'n':'kpt_num'},
 			{'t':8, 's':(3,), 'n':'kpt'},

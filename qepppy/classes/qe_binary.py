@@ -41,7 +41,7 @@ class qe_binary_reader():
 		
 	def read_binary( self, parse="", endian=endianess):
 		with open( parse, "rb") as file:
-			for vect in self.wfc_format:
+			for vect in self.binary_format:
 				rep = 1
 				if isinstance( vect, tuple):
 					rep = self._conv_val_( vect[1])

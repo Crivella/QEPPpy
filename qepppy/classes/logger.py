@@ -38,10 +38,13 @@ def logger_wrap( func, msg_lvl=global_msg, thr_lvl=global_thr, msg_name=__name__
 			'ERROR':log.error,
 			'CRITICAL':log.critical
 		}
+		if logging.getLevelName( msg_lvl) <= logging.getLevelName( 'DEBUG'):
+			log.critical( "Calling function '{}' with args:{}, kwargs:{}".format(
+				func.__name__, args, kwargs))
 		try:
-			print( "Calling function {}({},{})".format( func.__name__, args, kwargs))
+			#print( "Calling function {}({},{})".format( func.__name__, args, kwargs))
 			res = func( *args, **kwargs)
-			print( "Returning {}".format( res))
+			#print( "Returning {}".format( res))
 		except Exception as e:
 			try:
 				msg = e.level.upper()
@@ -65,6 +68,7 @@ def logger( msg_lvl=global_msg, thr_lvl=global_thr):
 					self.oInstance = elem( *args, **kwargs)
 
 				def __getattribute__( self, s):
+					print( "Getting attribute", s)
 					try:
 						x = super( NewCls, self).__getattribute__(s)
 					except AttributeError:

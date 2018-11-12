@@ -1,11 +1,11 @@
 import sys
 from qepppy.classes.qe_templ import qe_templ as templ
+from .logger import *
 
-import logging
-logger = logging.getLogger( __name__)
-logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
+#import logging
+#logger = logging.getLogger( __name__)
+#logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
 
-templ
 def trim_ws( str):
 	"""
 	Trim all withspace not included in a string
@@ -26,6 +26,7 @@ def trim_ws( str):
 
 	trim_ws
 
+@logger()
 class qe_in( templ):
 	"""
 	Class to handle any QE input (after loading the proper template).
@@ -34,14 +35,18 @@ class qe_in( templ):
 	 - parse = Name of the file to parse
 	 - templ_name = Name of the template file to use
 	"""
-	def __init__( self, **kwargs):
-		#A namelist template '_d' must be declared in the child class!!!!!!
-		self.templ_file = kwargs.get( 'templ_file', self.templ_file)
+	def __init__( self, templ_file="", parse="", **kwargs):
+		try:
+			self.templ_file
+		except AttributeError as e:
+			self.templ_file = None
+		if templ_file:
+			self.templ_file = templ_file
 		if not self.templ_file:
-			raise Exception( "Must give a template file.\n")
+			raise error( "Must give a template file.\n")
 		self.load_templ( self.templ_file)
 
-		parse = kwargs.get( 'parse')
+		#parse = kwargs.get( 'parse')
 		if parse:
 			self.parse_input( parse=parse)
 		else:
