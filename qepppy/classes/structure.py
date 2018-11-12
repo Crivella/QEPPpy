@@ -1,10 +1,6 @@
 import numpy as np
 from qepppy.classes.data_file_parser import data_file_parser as dfp
-
-import logging
-logger = logging.getLogger( __name__)
-#logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
-
+from .logger import *
 
 bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (fcc)', '3':'body-centered cubic (bcc)',
 	'-3':'bcc more symm. axis', '4':'hexagonal', '5':'trigonal', '-5':'trigonal <111>', '6':'simple tetragonal (st)',
@@ -24,7 +20,7 @@ data={
 
 
 
-
+@logger()
 class structure( dfp):
 	__name__ = "structure";
 	def __init__( self, d={}, **kwargs):
@@ -72,8 +68,7 @@ class structure( dfp):
 				inp = pw_in( parse=parse)
 				inp.validate()
 			else:
-				logger.error( "Must give a file name or a pw_in instance as args")
-				return
+				raise error( "Must give a file name or a pw_in instance as args")
 
 		name, x, y, z = inp.find( "X", "x", "y", "z", up="ATOMIC_POSITIONS")
 		coord = [(a,b,c) for a,b,c in zip( x, y, z)]
@@ -96,23 +91,23 @@ class structure( dfp):
 	def validate( self):
 		ret = True
 		if self.ibrav == None:
-			logger.warning( "ibrav is not set.")
+			warning.print( "ibrav is not set.")
 			ret = False
 		if self.atom_spec == None:
-			logger.warning( "List of atom types is not set.")
+			warning.print( "List of atom types is not set.")
 			ret = False
 		if self.atoms == None:
-			logger.warning( "List of atomic positions is not set.")
+			warning.print( "List of atomic positions is not set.")
 			ret = False
 
 		for a in self.atoms:
 			if not any( a['name'] == s['name'] for s in self.atom_spec):
-				logger.warning( "Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
+				warning.print( "Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
 				ret = False
 
 		if self.ibrav == 0:
-			if isinstance( self.cell, None):
-				logger.warning( "Cell structure is not set with 'ibrav = 0'.")
+			if self.cell is None:
+				warning.print( "Cell structure is not set with 'ibrav = 0'.")
 				ret = False
 		return ret and super().validate()
 
@@ -225,8 +220,7 @@ class structure( dfp):
 
 	def _ibrav_to_cell_( self):
 		if self.ibrav == None:
-			logger.error( "Failed to generate cell structure from self.ibrav: self.ibrav not set.")
-			return
+			raise error( "Failed to generate cell structure from self.ibrav: self.ibrav not set.")
 		"""
 			v1 = np.array( [,,]) * lp
 			v2 = np.array( [,,]) * lp

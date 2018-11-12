@@ -40,7 +40,7 @@ class debug( Exception):
 		logging.debug( msg)
 
 
-global_msg = 'INFO'
+global_msg = 'DEBUG'
 global_thr = 'ERROR'
 
 

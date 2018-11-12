@@ -2,7 +2,7 @@ import numpy as np
 from .qe_binary import qe_binary_reader as qbr
 from .logger import *
 
-@logger( msg_lvl='error')
+@logger()
 class qe_wfc( qbr):
 	binary_format =[
 		[

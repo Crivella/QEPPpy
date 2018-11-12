@@ -1,6 +1,7 @@
 import numpy as np
+from .logger import *
 
-
+@logger()
 class data_file_parser( object):
 	"""
 	Parser for QE data'file'schema.xml (QE>=6.2)
