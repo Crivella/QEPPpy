@@ -1,6 +1,8 @@
 from qepppy.classes._qe_templ_base_ import namelist as NL, card as CARD
+from .logger import *
 
 
+@logger()
 class qe_templ( CARD, NL):
 	"""
 	Instance for handling the QE namelist dict template in the data folder.

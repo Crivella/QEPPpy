@@ -3,7 +3,7 @@ from .data_file_parser import data_file_parser as dfp
 
 import logging
 logger = logging.getLogger( __name__)
-logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
+#logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
 
 data={
 	'n_kpt':{'x':'text', 'f':'output//nk', 'n':None, 't':int},

@@ -2,7 +2,7 @@ import numpy as np
 
 import logging
 logger = logging.getLogger( __name__)
-logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
+#logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
 
 import json
 from pkg_resources import resource_string

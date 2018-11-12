@@ -1,6 +1,8 @@
 from .structure import structure as structure
 from .qe_in import qe_in
+from .logger import *
 
+@logger()
 class pw_in( qe_in, structure):
 	"""
 	Instance used to handle QE pw.x input files

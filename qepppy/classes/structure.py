@@ -3,7 +3,7 @@ from qepppy.classes.data_file_parser import data_file_parser as dfp
 
 import logging
 logger = logging.getLogger( __name__)
-logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
+#logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
 
 
 bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (fcc)', '3':'body-centered cubic (bcc)',
