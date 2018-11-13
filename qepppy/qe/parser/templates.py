@@ -1,7 +1,8 @@
-from qepppy.classes._qe_templ_base_ import namelist as NL, card as CARD
+from ._template_base import namelist as NL, card as CARD
+from ...logger import *
 
-
-class qe_templ( CARD, NL):
+@logger()
+class template_parser( CARD, NL):
 	"""
 	Instance for handling the QE namelist dict template in the data folder.
 
@@ -122,8 +123,8 @@ class qe_templ( CARD, NL):
 		else:
 			from pkg_resources import resource_string, resource_listdir
 			#print( resource_listdir('qepppy.data', ''))
-			if fname in resource_listdir('qepppy.data', ''):
-				file = resource_string( 'qepppy.data', fname).decode('utf-8')
+			if fname in resource_listdir('qepppy.qe.parser.data', ''):
+				file = resource_string( 'qepppy.qe.parser.data', fname).decode('utf-8')
 
 		#import json
 		#self._templ_ = json.loads( file)

@@ -1,6 +1,8 @@
 from .bands     import bands     as bands
 from .structure import structure as structure
+from ..logger import *
 
+@logger()
 class pw_out( bands, structure):
 	"""
 	Instance used to handle QE outputs (by parsing the "data-file*.xml" file")
