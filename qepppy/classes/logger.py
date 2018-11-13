@@ -22,12 +22,7 @@ global_log_enabled = get_cfg_var( 'global_log_enabled', content, True)
 global_log_level   = get_cfg_var( 'global_log_level'  , content, 'INFO')
 global_log_thr     = get_cfg_var( 'global_log_thr'    , content, 'ERROR')
 
-#print( global_log_enabled)
-#print( global_log_level)
-#print( global_log_thr)
 
-#logging.basicConfig( format='%(levelname)s:\n%(name)s --- %(message)s.')
-#log = logging.getLogger( __name__)
 logging.basicConfig( format='%(levelname)s --- %(name)s --- %(message)s.', level=global_log_level)
 
 class critical( Exception):
@@ -62,26 +57,18 @@ class debug( Exception):
 
 def get_original_class_name( method):
 	if inspect.ismethod( method):
-		#print( "test {}  \n".format( method))
-		#print( inspect.getmro( method.__self__.__class__))
 		for cls in inspect.getmro( method.__self__.__class__):
 			if cls.__name__ == "NewCls":
 				continue
-			#print( cls, cls.__dict__.get( method.__name__))
 			if cls.__dict__.get( method.__name__):
-				#print( cls.__name__)
 				return cls.__name__
 	return "__root__"
 
 
 def function_wrap( func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
-	#print( "Decorating function {}".format( func.__name__))
 	@functools.wraps( func)
 	def wrapped( *args, **kwargs):
-		#print( "I am the wrapped function of {}".format( func.__name__))
-		#print( "-----------", msg_name)
 		msg_name = func.__name__
-		#print( "Inspecting function {}".format( func.__name__))
 		try:
 			msg_name = get_original_class_name( func) + ":" + msg_name
 		except:
@@ -102,19 +89,8 @@ def function_wrap( func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
 			log.debug( "Calling function '{}' with args:{}, kwargs:{}".format(
 				func.__name__, args, kwargs))
 		try:
-			#print( "Calling function {}({},{})".format( func.__name__, args, kwargs))
 			res = func( *args, **kwargs)
-			#print( "Returning {}".format( res))
 		except Exception as e:
-			"""
-			print( "Trace before calling handling ---------------")
-			import sys
-			exc_type, exc_value, exc_traceback = sys.exc_info()
-			traceback.print_tb( e.__traceback__)
-			print( "")
-			traceback.print_tb( exc_traceback)
-			"""
-			#handling( e, thr_lvl, levels)
 			try:
 				msg = e.level.upper()
 			except:
@@ -146,44 +122,30 @@ def logger( msg_lvl=global_log_level, thr_lvl=global_log_thr, log_enabled=global
 	def _log_( elem):
 		if not log_enabled:
 			return elem
-		#print( "Decorating element {}".format( elem))
 		if inspect.isclass( elem):
 			class NewCls( elem):
-				#"""
 				@function_wrap
 				def __init__( self, *args, **kwargs):
-					#self.__name__ = elem.__name__
-					#print( "MRO --- ", self.__class__.__mro__)
 					try:
 						super().__init__( *args, **kwargs)
 					except Exception as e:
-						#handling( e, thr_lvl)
 						raise e
 					return
-				#"""
 
 				def __getattribute__( self, s):
-					#print( "Getting attribute --- ", s)
 					x = object.__getattribute__( self, s)
 
 					if inspect.ismethod( x):
-						#name = "{}:{}".format( elem.__name__, x.__name__)
 						return function_wrap( x, 
 							msg_lvl=msg_lvl, 
 							thr_lvl=thr_lvl, 
-							#msg_name=name
 							)
 					else:
 						return x
 			return NewCls
 		if inspect.isfunction( elem):
-			#name = "{}".format( elem.__name__)
-			#if inspect.ismethod( elem):
-			#	print( "Inspecting a method of {}".format( elem.__self__.__name__))
-			#	name = elem.__self__.__name__ + name
 			return function_wrap( elem,
 				msg_lvl=msg_lvl,
 				thr_lvl=thr_lvl,
-			#	msg_name=name
 				)
 	return _log_
