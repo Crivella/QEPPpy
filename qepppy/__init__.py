@@ -1,2 +1,2 @@
-import qepppy.classes
+import qepppy.qe
 import qepppy.tools

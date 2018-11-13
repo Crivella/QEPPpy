@@ -1,6 +1,6 @@
 import sys
-from qepppy.classes.qe_templ import qe_templ as templ
-from .logger import *
+from .templates import template_parser as templ
+from ...logger import *
 
 #import logging
 #logger = logging.getLogger( __name__)
@@ -27,7 +27,7 @@ def trim_ws( str):
 	trim_ws
 
 @logger( )
-class qe_in( templ):
+class input_files( templ):
 	"""
 	Class to handle any QE input (after loading the proper template).
 	Supposed to be used as a parent class for child specific to the qe file.

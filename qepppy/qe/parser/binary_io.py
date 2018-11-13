@@ -1,7 +1,7 @@
 import sys
 import struct
 import numpy as np
-from .logger import *
+from ...logger import *
 
 
 endianess = sys.byteorder
@@ -36,7 +36,7 @@ wrap = {
 	}
 
 @logger()
-class qe_binary_reader():
+class binary_io():
 	def __init__( self):
 		self.binary = False
 		return

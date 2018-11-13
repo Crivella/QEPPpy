@@ -1,9 +1,9 @@
 import numpy as np
-from .qe_binary import qe_binary_reader as qbr
-from .logger import *
+from .parser.binary_io import binary_io as bin_io
+from ..logger import *
 
 @logger()
-class qe_wfc( qbr):
+class wavefnc( bin_io):
 	binary_format =[
 		[
 			{'t':4, 's':(1,), 'n':'kpt_num'},
@@ -58,7 +58,7 @@ class qe_wfc( qbr):
 			weight = self.weight
 		except Exception as e:
 			#logger.warning( "Weight data for kpt #{} missing... settting it to 1".format( self.kpt_num))
-			raise warning( "Weight data for kpt #{} missing... setting it to 1".format( self.kpt_num))
+			warning.print( "Weight data for kpt #{} missing... setting it to 1".format( self.kpt_num))
 			weight = 1
 
 		gvect_cart = np.array( [np.dot(recipr, G) for G in self.gvect])

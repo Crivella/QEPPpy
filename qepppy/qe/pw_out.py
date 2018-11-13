@@ -1,6 +1,6 @@
 from .bands     import bands     as bands
 from .structure import structure as structure
-from .logger import *
+from ..logger import *
 
 @logger()
 class pw_out( bands, structure):

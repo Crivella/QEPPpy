@@ -1,6 +1,6 @@
 import numpy as np
-from .data_file_parser import data_file_parser as dfp
-from .logger import *
+from .parser.data_file_parser import data_file_parser as dfp
+from ..logger import *
 
 
 data={
@@ -195,7 +195,7 @@ class bands( dfp):
 
 	def validate( self):
 		ret = True
-		if self.n_kpt <= 0 or True:
+		if self.n_kpt <= 0:
 			warning.print( "Failed to read nkpt from file '{}'.".format( self.schema))
 			ret = False
 			#raise Exception( "No kpt read from file '{}'.".format( self.fname))
