@@ -85,7 +85,7 @@ def draw_atoms( ax, atom_list, name, graph_lvl=0):
 		for x,y,z in zip( X,Y,Z):
 			draw_sphere( ax, radius=radius*0.3, center=[x,y,z], color=color)
 	else:
-		raise error( "arg 'graph_lvl' must be <= 2")
+		raise error( "arg 'graph_lvl' must be <= 3")
 	return
 
 @logger()
@@ -183,6 +183,6 @@ def draw_bonds( ax, atom_list, graph_lvl=0):
 				else:
 					draw_cylinder( ax, radius=0.15, axis=v2-v1, start=v1,  color=periodic_table[name1]['color'])
 			else:
-				raise error( "arg 'graph_lvl' must be <= 2")
+				raise error( "arg 'graph_lvl' must be <= 3")
 
 	return

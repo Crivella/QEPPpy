@@ -1,4 +1,3 @@
-import sys
 import inspect
 import functools
 import logging
@@ -23,37 +22,61 @@ global_log_level   = get_cfg_var( 'global_log_level'  , content, 'INFO')
 global_log_thr     = get_cfg_var( 'global_log_thr'    , content, 'ERROR')
 
 
-logging.basicConfig( format='%(levelname)s --- %(name)s --- %(message)s.', level=global_log_level)
+logging.basicConfig( 
+	format='-'*80 + '\n%(levelname)s ---> %(name)s\n%(message)s\n' + '-'*80, 
+	level=global_log_level)
+
+global_logger    = logging.getLogger( "global")
+global_logger.propagate = False
+ch = logging.StreamHandler()
+global_formatter = logging.Formatter(
+	'-'*80 + '\n%(levelname)s ---> %(message)s\n' + '-'*80)
+ch.setFormatter( global_formatter)
+global_logger.addHandler( ch)
+
+def stack_analyzer( lvl=2):
+	stack = inspect.stack()[lvl]
+	module = stack[1].split( "/")[-1]
+	lineno = stack[2]
+	func = stack[3]
+
+	return "{}:{}:{}".format( module, func, lineno)
+
 
 class critical( Exception):
 	level = 'critical'
 	@staticmethod
 	def print( msg=""):
-		logging.critical( msg)
+		stack_msg = stack_analyzer()
+		global_logger.critical( "{}\n{}".format( stack_msg, msg))
 
 class error( Exception):
 	level = 'error'
 	@staticmethod
 	def print( msg=""):
-		logging.error( msg)
+		stack_msg = stack_analyzer()
+		global_logger.error( "{}\n{}".format( stack_msg, msg))
 
 class warning( Exception):
 	level = 'warning'
 	@staticmethod
 	def print( msg=""):
-		logging.warning( msg)
+		stack_msg = stack_analyzer()
+		global_logger.warning( "{}\n{}".format( stack_msg, msg))
 
 class info( Exception):
 	level = 'info'
 	@staticmethod
 	def print( msg=""):
-		logging.info( msg)
+		stack_msg = stack_analyzer()
+		global_logger.info( "{}\n{}".format( stack_msg, msg))
 
 class debug( Exception):
 	level = 'debug'
 	@staticmethod
 	def print( msg=""):
-		logging.debug( msg)
+		stack_msg = stack_analyzer()
+		global_logger.debug( "{}\n{}".format( stack_msg, msg))
 
 def get_original_class_name( method):
 	if inspect.ismethod( method):
@@ -61,8 +84,8 @@ def get_original_class_name( method):
 			if cls.__name__ == "NewCls":
 				continue
 			if cls.__dict__.get( method.__name__):
-				return cls.__name__
-	return "__root__"
+				return cls.__module__ + ':' + cls.__name__
+	return method.__module__
 
 
 def function_wrap( func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
@@ -116,8 +139,8 @@ def function_wrap( func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
 
 def logger( msg_lvl=global_log_level, thr_lvl=global_log_thr, log_enabled=global_log_enabled):
 	"""
-	Decorator that can be used to log functions or all class methods called thorugh __getatrribute__
-	(applied directly to the class)
+	Decorator generator that can be used to log functions or all class methods called through 
+	__getatrribute__ (applied directly to the class)
 	"""
 	def _log_( elem):
 		if not log_enabled:
