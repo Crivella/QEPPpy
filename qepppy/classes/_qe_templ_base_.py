@@ -1,11 +1,12 @@
-debug = False #Enable convert of an empty template (Print all empty values. Put the max value for array var to 7 if not defined)
+debug_templ = False #Enable convert of an empty template (Print all empty values. Put the max value for array var to 7 if not defined)
+from .logger import *
 
 
-import logging
-logger = logging.getLogger( __name__)
-logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
+#import logging
+#logger_msg = logging.getLogger( __name__)
+#logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
 
-
+@logger()
 class templ_base( object):
 	def convert( self):
 		return ""
@@ -16,7 +17,8 @@ class templ_base( object):
 		except:
 			return True
 
-	def _check_type_( self, v, type):
+	@staticmethod
+	def _check_type_( v, type):
 		type_check = { "CHARACTER":str, "INTEGER":int, "LOGICAL":bool, "REAL":float, "STRING":str}
 		ty = type_check.get( str( type).upper())
 		if ty == float or ty == int: 
@@ -25,10 +27,11 @@ class templ_base( object):
 		try: val = ty( v)
 		except:
 			val = '***'
-			logger.warning( "Input: {}\nExpec: {}".format( v, ty))
+			warning.print( "Input: {}\nExpec: {}".format( v, ty))
 		return val
 
-	def _format_( self, v, f=0, a="'"):
+	@staticmethod
+	def _format_( v, f=0, a="'"):
 		c = ""
 		if isinstance( v, str):
 			if f: a = "{2}{0:>{1}}{2}".format( v, f, a)
@@ -49,21 +52,21 @@ class templ_base( object):
 		except: st = self.find( sa)
 		try: et= int( ea)
 		except: et = self.find( ea)
-		if not isinstance( et, int) and debug: et = 7
+		if not isinstance( et, int) and debug_templ: et = 7
 		if any( not isinstance( a, int) for a in [st,et]):
-			logger.warning( "Failed to find boundary '{}-{}'.".format( sa, ea))
+			warning.print( "Failed to find boundary '{}-{}'.".format( sa, ea))
 			return
 			#raise Exception( "Failed to find boundary '{}-{}'.\n".format( sa, ea))
 		if n >= 0:
 			if not st <= n <= et:
-				logger.warning( "'{}' out of array range '{}-{}'".format( n, st, et))
+				warning.print( "'{}' out of array range '{}-{}'".format( n, st, et))
 				return
 				#raise Exception( "'{}' out of array range '{}-{}'".format( n, st, et))
 		return ( st, et)
 
 
 
-
+@logger()
 class namelist( templ_base):
 	def check_nl( self, nl):
 		"""
@@ -81,21 +84,21 @@ class namelist( templ_base):
 		nl = self._templ_['nl'].copy()
 		#Check for unused namelist (does not print it)
 		for namelist in self._templ_['nl']:
-			if not any( v['v'] for v in self._templ_[namelist].values()) and not debug:
+			if not any( v['v'] for v in self._templ_[namelist].values()) and not debug_templ:
 				nl.pop( nl.index(namelist))
 		#Write all the used namlists/parameters
 		longest = self._maxl_()
 		for namelist in nl:
 			content += "&{}\n".format(namelist)
 			for el, v in self._templ_[namelist].items():
-				if v['v'] != None and v['v'] != '' or debug:
+				if v['v'] != None and v['v'] != '' or debug_templ:
 					if v['vec']:
-						if debug:
+						if debug_templ:
 							try: end = self._get_arr_ext_( v['vec'][0], v['vec'][1])[1]
 							except: end = 7
 							if not v['v']: v['v'] = ['']*end
 						for n, val in enumerate( v['v']):
-							if not val and not debug: continue
+							if not val and not debug_templ: continue
 							app = el + "({})".format( n+1)
 							content += "{0:>{1}} = ".format( app, longest,)
 							content += self._format_( val)
@@ -121,7 +124,7 @@ class namelist( templ_base):
 		#Check if k is present in preset namelist
 		#print ( self._templ_[nl])
 		if not k in self._templ_[nl]: 
-			logger.warning( "Ignored unrecognized parameter '{}'".format( k))
+			warning.print( "Ignored unrecognized parameter '{}'".format( k))
 			return
 			#raise NameError( "Ignored unrecognized parameter '{}'\n".format( k))
 		ptr = self._templ_[nl][k]
@@ -130,12 +133,12 @@ class namelist( templ_base):
 		#Check value agains possible values
 		if ptr['c']:
 			if not any( v == opt for opt in ptr['c']):
-				logger.warning( "Parameter '{}/{}' = '{}' is not within range of possible values: \n{}".format( nl, k, v, ptr['c']))
+				warning.print( "Parameter '{}/{}' = '{}' is not within range of possible values: \n{}".format( nl, k, v, ptr['c']))
 				#return
 		#If array case
 		if n:
 			if not isinstance( ptr['v'], list):
-				logger.warning( "'{}' from namelist '{}' is not an array variable.".format( k, nl))
+				warning.print( "'{}' from namelist '{}' is not an array variable.".format( k, nl))
 				return
 				#raise Exception( "'{}' from namelist '{}' is not an array variable.\n".format( k, nl))
 			while len(ptr['v']) < n: ptr['v'].append( '')
@@ -155,17 +158,17 @@ class namelist( templ_base):
 			for el, v in self._templ_[nl].items():
 				val = v['v']
 				if val == "***":
-					logger.warning( "Required input parameter '{}' in namelist '{}' not set.\n".format( el, nl))
+					warning.print( "Required input parameter '{}' in namelist '{}' not set.\n".format( el, nl))
 					ret = False
 				elif val:
 					if v['c']:
 						if not any( val == opt for opt in v['c']):
-							logger.warning( "Parameter '{}/{}' = '{}' is not within range of possible values: \n{}\n".format( nl, el, val, v['c']))
+							warning.print( "Parameter '{}/{}' = '{}' is not within range of possible values: \n{}\n".format( nl, el, val, v['c']))
 							ret = False
 					if v['vec']:
 						n = len( val)
 						if not self._get_arr_ext_( v['vec'][0], v['vec'][1], n): 
-							logger.warning( "Parameter: {}({})".format( el, n))
+							warning.print( "Parameter: {}({})".format( el, n))
 							ret = False
 		return ret and super().validate()
 
@@ -178,7 +181,7 @@ class namelist( templ_base):
 		longest = 0
 		for n in self._templ_['nl']:
 			for el, v in self._templ_[n].items():
-				if v['v'] != None and v['v'] != '' or debug:
+				if v['v'] != None and v['v'] != '' or debug_templ:
 					app = len( el)
 					if v['vec']: app += 4
 					if longest < app: longest = app
@@ -188,7 +191,7 @@ class namelist( templ_base):
 
 
 
-
+@logger()
 class card( templ_base):
 	def check_card( self, card):
 		"""
@@ -247,7 +250,7 @@ class card( templ_base):
 		cards = self._templ_['card'].copy()
 		#Check for unused cards (does not print it)
 		for card in self._templ_['card']:
-			if not self._templ_[card]['u'] and not debug:
+			if not self._templ_[card]['u'] and not debug_templ:
 				cards.pop( cards.index(card))
 
 		for card in cards:
@@ -273,7 +276,7 @@ class card( templ_base):
 
 		if v:
 			if not v in ptr['c'] and ptr['c']:
-				logger.warning( "Invalid value '{}' for card '{}' ({}).\n".format( v, card, ptr['c']))
+				warning.print( "Invalid value '{}' for card '{}' ({}).\n".format( v, card, ptr['c']))
 				return
 			ptr['v'] = v
 			return
@@ -308,7 +311,7 @@ class card( templ_base):
 					if arr:
 						#print( val, arr)
 						if len( val) != arr or any( a==None or a =='' for a in val):
-							logger.warning( "Param '{}: {}': Number of lines does not match specified value '{}'.".format( card, e['n'], arr))
+							warning.print( "Param '{}: {}': Number of lines does not match specified value '{}'.".format( card, e['n'], arr))
 							ret1 = False
 				if isinstance( e, list): return _validate_syntax_( e, lvl+1, arr)
 				if isinstance( e, tuple):
@@ -333,26 +336,26 @@ class card( templ_base):
 								v = opt
 								break
 						if not v:
-							logger.warning( "No option for card '{}' and no default value either.".format( card))
+							warning.print( "No option for card '{}' and no default value either.".format( card))
 							ret = False
 
 				l = self._get_syntax_( c)
 				if not l:
-					logger.warning( "Cannot find a parsed syntax for card: '{} {}'.".format( card, v))
+					warning.print( "Cannot find a parsed syntax for card: '{} {}'.".format( card, v))
 					ret = False
 				if not _validate_syntax_( l):
-					logger.warning( "Syntax in card '{}' is invalid.".format( card))
+					warning.print( "Syntax in card '{}' is invalid.".format( card))
 					ret = False
 			else:
 				if c['r']:
-					logger.warning( "Mandatory card '{}' is not set.".format( card))
+					warning.print( "Mandatory card '{}' is not set.".format( card))
 					ret = False
 		return ret and super().validate()
 
 
 
-
-	def _get_syntax_( self, card):
+	@staticmethod
+	def _get_syntax_( card):
 		v = card['v']
 		for k1, v1 in card.items():
 			if not isinstance( v1, dict): continue
@@ -388,7 +391,7 @@ class card( templ_base):
 					if isinstance( el, dict):
 						try: v = app.pop()
 						except: #v = None
-							logger.warning( emsg.format( card, line, sprint))
+							warning.print( emsg.format( card, line, sprint))
 							return False
 					#Cicle through optional agruments
 					if isinstance( el, list):
@@ -397,7 +400,7 @@ class card( templ_base):
 						for el1 in el:
 							try: v = app.pop()
 							except:
-								logger.warning( emsg.format( card, line, sprint))
+								warning.print( emsg.format( card, line, sprint))
 								return False
 							val = self._check_type_( v, el['t'])
 							if isinstance( el1['v'], list): el1['v'].append( val)
@@ -407,10 +410,10 @@ class card( templ_base):
 						if isinstance( el['v'], list): el['v'].append( val)
 						else: el['v'] = val
 					else:
-						logger.warning( "Unrecognized syntax, expected dict or list.")
+						warning.print( "Unrecognized syntax, expected dict or list.")
 						return False
 				if app:
-					logger.warning( emsg.format( card, line, sprint))
+					warning.print( emsg.format( card, line, sprint))
 					return False
 				return True
 			if isinstance( e, list): 

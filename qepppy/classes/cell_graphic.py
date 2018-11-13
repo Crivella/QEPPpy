@@ -1,14 +1,12 @@
 import numpy as np
-
-import logging
-logger = logging.getLogger( __name__)
-logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
+from .logger import *
 
 import json
 from pkg_resources import resource_string
 periodic_table = json.loads( resource_string( 'qepppy.data', 'periodic_table.json').decode('utf-8'))
 
 
+@logger()
 def draw_sphere( ax, radius=1, center=[0,0,0], color="b"):
 	x0, y0, z0 = center
 	u = np.linspace(0, 2 * np.pi, 10)
@@ -20,6 +18,7 @@ def draw_sphere( ax, radius=1, center=[0,0,0], color="b"):
 	ax.plot_surface( x, y, z, color=color)
 	return
 
+@logger()
 def draw_cylinder( ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
 	x0, y0, z0 = start
 
@@ -42,6 +41,7 @@ def draw_cylinder( ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
 	ax.plot_surface( x, y, z, color=color)
 	return
 
+@logger()
 def cell_repetitions( base, vect, num):
 	"""
 	Replicate a list of atoms along a vector for num times:
@@ -52,6 +52,7 @@ def cell_repetitions( base, vect, num):
 		base = np.vstack( ( base, L0 + vect*n))
 	return base
 
+@logger()
 def draw_atoms( ax, atom_list, name, graph_lvl=0):
 	"""
 	atom_list has to be a zip of (["name1","name2",...], [[x1,y1,z1],[x2,y2,z2],...])
@@ -84,9 +85,10 @@ def draw_atoms( ax, atom_list, name, graph_lvl=0):
 		for x,y,z in zip( X,Y,Z):
 			draw_sphere( ax, radius=radius*0.3, center=[x,y,z], color=color)
 	else:
-		logger.error( "arg 'graph_lvl' must be <= 2")
+		raise error( "arg 'graph_lvl' must be <= 2")
 	return
 
+@logger()
 def draw_cell( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1], center=[0,0,0]):
 	V = [v1,v2,v3]
 	for n1 in range( 3):
@@ -103,11 +105,12 @@ def draw_cell( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1], center=[0,0,0]):
 		ax.plot( v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 	return
 
+@logger()
 def draw_Wigner_Seitz( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1]):
 	try:
 		from scipy.spatial import Voronoi
 	except:
-		logger.error( "Scipy module must be installed to print Wigner-Seitz cell.")
+		raise error( "Scipy module must be installed to print Wigner-Seitz cell.")
 		return
 	V = np.array([v1,v2,v3])
 	#print( V[0])
@@ -146,6 +149,7 @@ def draw_Wigner_Seitz( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1]):
 			ax.plot( P[v, 0], P[v, 1], P[v, 2], color='k')
 	return
 
+@logger()
 def draw_bonds( ax, atom_list, graph_lvl=0):
 	"""
 	atom_list has to be a zip of (["name1","name2",...], [[x1,y1,z1],[x2,y2,z2],...])
@@ -179,6 +183,6 @@ def draw_bonds( ax, atom_list, graph_lvl=0):
 				else:
 					draw_cylinder( ax, radius=0.15, axis=v2-v1, start=v1,  color=periodic_table[name1]['color'])
 			else:
-				logger.error( "arg 'graph_lvl' must be <= 2")
+				raise error( "arg 'graph_lvl' must be <= 2")
 
 	return

@@ -1,9 +1,7 @@
 import numpy as np
 from .data_file_parser import data_file_parser as dfp
+from .logger import *
 
-import logging
-logger = logging.getLogger( __name__)
-logging.basicConfig( format='%(levelname)s: %(name)s\n%(message)s\n')
 
 data={
 	'n_kpt':{'x':'text', 'f':'output//nk', 'n':None, 't':int},
@@ -19,6 +17,7 @@ data={
 	'occ':{'x':'nodelist', 'f':'output//ks_energies/occupations', 'n':'occ', 't':list},
 	}
 
+@logger()
 class bands( dfp):
 	"""
 	Instance used for QE eigenvalues/vector(k-points) and occupations numbers.
@@ -196,16 +195,16 @@ class bands( dfp):
 
 	def validate( self):
 		ret = True
-		if( self.n_kpt <= 0):
-			logger.warning( "Failed to read m_kpt from file '{}'.".format( self.fname))
+		if self.n_kpt <= 0 or True:
+			warning.print( "Failed to read nkpt from file '{}'.".format( self.schema))
 			ret = False
 			#raise Exception( "No kpt read from file '{}'.".format( self.fname))
-		if( self.n_bnd <= 0):
-			logger.warning( "Failed to read n_bnd from file '{}'.".format( self.fname))
+		if self.n_bnd <= 0:
+			warning.print( "Failed to read nbnd from file '{}'.".format( self.schema))
 			ret = False
 			#raise Exception( "No band read from file '{}'.".format( self.fname))
-		if( not self.n_kpt == len( self.egv) == len( self.occ)):
-			logger.warning( "Corrupted file. Number of kpoints does not match number egv or occ")
+		if not self.n_kpt == len( self.egv) == len( self.occ):
+			warning.print( "Corrupted file. Number of kpoints does not match number egv or occ")
 			ret = False
 			#raise Exception( "Corrupted file. Number of kpoints does not match number egv or occ")
 		return ret and super().validate()
