@@ -45,12 +45,15 @@ def broad( fname="", type="gauss", broad = 0.1, oname=""):
 		y = data[:,1:]
 		conv = func( x, broad)
 		lgh = int( len( conv)/2)
-		#print( lg)
+		#print( len(x))
+		#print( 'lgh: ', lgh)
 		new_m = None
 		for yi in y.transpose():
 			new = np.convolve( yi, conv, mode='full')
-			#print( len(new))
-			new = new[ lgh:-lgh]
+			d = len( x) - len( new) + lgh*2
+			#print( len(new), d)
+			#print( 'lgh: ', lgh)
+			new = new[ lgh:-lgh+d]
 			#print( len(new))
 			if isinstance( new_m, np.ndarray):
 				new_m = np.vstack( (new_m, new))
@@ -69,9 +72,6 @@ def broad( fname="", type="gauss", broad = 0.1, oname=""):
 if __name__ == "__main__":
 	import sys
 	argc = len( sys.argv)
-	if argc < 2:
-		raise Exception( "Must pass arguments:\nFilename(s).\n")
-
 	if( not 2<=argc<=5):
 		print("Incorrect use. Pleas pass arguments:"
 			"\n\t'fname'\t (comma separated),"
@@ -80,12 +80,12 @@ if __name__ == "__main__":
 			"\n\t'oname\t(optional) (comma separated)'")
 		exit()
 	if( argc==2):
-		broad( sys.argv[1])
+		broad( str( sys.argv[1]))
 	if( argc==3):
-		broad( sys.argv[1], sys.argv[2])
+		broad( str (sys.argv[1]), str( sys.argv[2]))
 	if( argc==4):
-		broad( sys.argv[1], sys.argv[2], sys.argv[3])
+		broad( str (sys.argv[1]), str( sys.argv[2]), float( sys.argv[3]))
 	if( argc==5):
-		broad( sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]))
+		broad( str (sys.argv[1]), str( sys.argv[2]), float( sys.argv[3]), str( sys.argv[4]))
 
 		
