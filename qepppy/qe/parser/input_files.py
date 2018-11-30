@@ -1,6 +1,6 @@
 import sys
 from .templates import template_parser as templ
-from ...logger import *
+from ...logger import logger, error
 
 #import logging
 #logger = logging.getLogger( __name__)

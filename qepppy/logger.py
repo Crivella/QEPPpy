@@ -14,7 +14,7 @@ def get_cfg_var( name, c, fallback=None):
 try:
 	with open( "log.json", "r") as f:
 		content = json.load( f)
-except Exception as e:
+except Exception:
 	content = None
 
 global_log_enabled = get_cfg_var( 'global_log_enabled', content, True)
@@ -101,13 +101,6 @@ def function_wrap( func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
 		#handler = logging.StreamHandler( )
 		#handler.setLevel( 1)
 		#log.addHandler( handler)
-		levels ={
-			'DEBUG':   log.debug,
-			'INFO':    log.info,
-			'WARNING': log.warning,
-			'ERROR':   log.error,
-			'CRITICAL':log.critical
-		}
 		if logging.getLevelName( msg_lvl) <= logging.getLevelName( 'DEBUG'):
 			log.debug( "Calling function '{}' with args:{}, kwargs:{}".format(
 				func.__name__, args, kwargs))
@@ -132,7 +125,7 @@ def function_wrap( func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
 						traceback.print_tb( tb)
 					log.critical( e)
 				else:
-					levels[msg]( str(e))
+					log.__getatrribute__( msg.lower())( str(e))
 		else:
 			return res
 	return wrapped

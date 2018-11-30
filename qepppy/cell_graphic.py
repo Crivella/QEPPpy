@@ -1,5 +1,5 @@
 import numpy as np
-from .logger import *
+from .logger import logger, error
 
 import json
 from pkg_resources import resource_string

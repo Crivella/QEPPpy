@@ -1,6 +1,6 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
-from ..logger import *
+from ..logger import logger, warning
 
 
 data={

@@ -1,5 +1,5 @@
 from ._template_base import namelist as NL, card as CARD
-from ...logger import *
+from ...logger import logger
 
 @logger()
 class template_parser( CARD, NL):
