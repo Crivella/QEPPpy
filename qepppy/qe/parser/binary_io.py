@@ -1,7 +1,7 @@
 import sys
 import struct
 import numpy as np
-from ...logger import *
+from ...logger import logger
 
 
 endianess = sys.byteorder

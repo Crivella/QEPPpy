@@ -1,6 +1,6 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
-from ..logger import *
+from ..logger import logger, warning, error
 
 bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (fcc)', '3':'body-centered cubic (bcc)',
 	'-3':'bcc more symm. axis', '4':'hexagonal', '5':'trigonal', '-5':'trigonal <111>', '6':'simple tetragonal (st)',
@@ -134,7 +134,7 @@ class structure( dfp):
 		   - 2: Use 3d spheres for atoms and bonds as in 1.
 		   - 3: Use 3d spheres for atoms and cylinders for bonds.
 		"""
-		from ..cell_graphic import cell_graphic as cg
+		from .. import cell_graphic as cg
 		import matplotlib.pyplot as plt
 		from mpl_toolkits.mplot3d import Axes3D
 

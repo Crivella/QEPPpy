@@ -1,6 +1,6 @@
 import numpy as np
 from .parser.binary_io import binary_io as bin_io
-from ..logger import *
+from ..logger import logger, warning
 
 @logger()
 class wavefnc( bin_io):

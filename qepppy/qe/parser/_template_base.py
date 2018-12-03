@@ -1,5 +1,5 @@
 debug_templ = False #Enable convert of an empty template (Print all empty values. Put the max value for array var to 7 if not defined)
-from ...logger import *
+from ...logger import logger, warning
 
 
 #import logging

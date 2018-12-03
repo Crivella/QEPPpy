@@ -1,5 +1,5 @@
 import numpy as np
-from ...logger import *
+from ...logger import logger
 
 @logger( )
 class data_file_parser( object):
