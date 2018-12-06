@@ -14,14 +14,26 @@ def _format_( var):
 			else: v = var
 	return v
 
+matches = {
+	int:   r'[\s]*(?P<flag>[\d\-]+)',
+	float: r'[\s]*(?P<flag>[\d\.\-EedD]+)',
+	str:   r'[\s]*(?P<flag>.*)',
+	bool:  r'[\s]*(?P<flag>.)',
+}
 
 def _get_value_( f, string, delim='=', dtype=str):
-	app = f.find( string)
-	val = f[app:].split( '\n')[0].split( delim)[1]
+	import re
+
+	print( "Looking for:",  string + matches[dtype])
+	a = None
 	try:
-		val = dtype( list( filter( None, val.split( " ") ))[0])
+		a = re.search(  string + matches[dtype], f).group('flag')
 	except:
-		raise Exception( "Failed to convert '{}' to dtype '{}'".format( val, dtype))
+		pass
+	try:
+		val = dtype( a)
+	except:
+		raise Exception( "Failed to convert '{}' to dtype '{}'".format( a, dtype))
 	return val
 
 def _xml_attr_( node, f="", n=""):
@@ -119,6 +131,21 @@ class data_file_parser( object):
 		with open( self.outfile, "r") as f:
 			content = f.read()
 
+		for k, v in self._data_.items():
+			t = v['t']
+			search = v.get( 'bu', None)
+			if search is None:
+				continue
+			print(k,v)
+			print( search)
+
+			val = None
+			try:
+				val = _get_value_( content, search, dtype=t)
+			except Exception as e:
+				print( "ERROR: ", e)
+			print( val)
+			self.__dict__[k] = val
 		return
 
 	def parse_xml( self):

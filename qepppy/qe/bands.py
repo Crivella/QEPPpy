@@ -4,17 +4,25 @@ from ..logger import logger, warning
 
 
 data={
-	'n_kpt':{'x':'text', 'f':'output//nk', 'n':None, 't':int, 'bu':'number of k points'},
-	'n_bnd':{'x':'attr', 'f':'output//ks_energies/eigenvalues', 'n':'size', 't':int, 'bu':'number of Kohn-Sham states'},
-	'n_el':{'x':'text', 'f':'output//nelec', 'n':None, 't':float, 'bu':'number of electrons'},
-	'fermi':{'x':'text', 'f':'output//fermi_energy', 'n':None, 't':float, 'bu':'Fermi energy'},
+	'n_kpt':{'x':'text', 'f':'output//nk', 'n':None, 't':int, 
+		'bu':r'number of k points[\s]*='},
+	'n_bnd':{'x':'attr', 'f':'output//ks_energies/eigenvalues', 'n':'size', 't':int, 
+		'bu':r'number of Kohn-Sham states[\s]*='},
+	'n_el':{'x':'text', 'f':'output//nelec', 'n':None, 't':float, 
+		'bu':r'number of electrons[\s]*='},
+	'fermi':{'x':'text', 'f':'output//fermi_energy', 'n':None, 't':float, 
+		'bu':r'the Fermi energy is'},
 	'fermi_s':{'x':'nodelist', 'f':'output//two_fermi_energies', 'n':'fermi', 't':list},
 	'homo':{'x':'text', 'f':'output//highestOccupiedLevel', 'n':None, 't':float},
 	'lsda':{'x':'text', 'f':'output//lsda', 'n':None, 't':bool},
-	'noncolin':{'x':'text', 'f':'output//noncolin', 'n':None, 't':bool, 'bu':'spin'},
-	'kpt':{'x':'nodelist', 'f':'output//ks_energies/k_point', 'n':'kpt', 't':list, 'bu':'  kpt = '},
-	'egv':{'x':'nodelist', 'f':'output//ks_energies/eigenvalues', 'n':'egv', 't':list, 'bu':'bands (ev):'},
-	'occ':{'x':'nodelist', 'f':'output//ks_energies/occupations', 'n':'occ', 't':list, 'bu':'occupation numbers'},
+	'noncolin':{'x':'text', 'f':'output//noncolin', 'n':None, 't':bool, 
+		'bu':r'spin'},
+	'kpt':{'x':'nodelist', 'f':'output//ks_energies/k_point', 'n':'kpt', 't':list, 
+		'bu':r'[\s]{4,}kpt ='},
+	'egv':{'x':'nodelist', 'f':'output//ks_energies/eigenvalues', 'n':'egv', 't':list, 
+		'bu':r'bands (ev):'},
+	'occ':{'x':'nodelist', 'f':'output//ks_energies/occupations', 'n':'occ', 't':list, 
+		'bu':r'occupation numbers'},
 	}
 
 @logger()
