@@ -1,6 +1,61 @@
 import numpy as np
 from ...logger import logger
 
+
+def _format_( var):
+	if isinstance( var, np.ndarray): return var
+	if var == None: return None
+	try: v = int( var)
+	except:
+		try: v = float( var)
+		except:
+			if var == "true": v = True
+			elif var == "false": v = False
+			else: v = var
+	return v
+
+
+def _get_value_( f, string, delim='=', dtype=str):
+	app = f.find( string)
+	val = f[app:].split( '\n')[0].split( delim)[1]
+	try:
+		val = dtype( list( filter( None, val.split( " ") ))[0])
+	except:
+		raise Exception( "Failed to convert '{}' to dtype '{}'".format( val, dtype))
+	return val
+
+def _xml_attr_( node, f="", n=""):
+	if f: node = node.find( f)
+	return _format_( node.get( n))
+
+def _xml_text_( node, f="", n=""):
+	if f: node = node.find( f)
+	return _format_( node.text)
+
+def _xml_node_list_( node, f="", n=""):
+	if f: node=node.findall( f)
+	ret = []
+	for c in node:
+		d=c.attrib
+		#add = c.text.strip().split( "\n")
+		add = c.text.strip().replace( "\n", " ")
+		if add:
+			add = list( filter( None, add.split( " ")))
+			#add = list( map( lambda x: list( filter( None, x.split( " "))), add))
+			if len( add) == 1: add = add[0]
+			#if len( add) == 1: add = add[0]
+			if isinstance( add, list):
+				add = np.array( add, dtype=float)
+			if n: tag = n
+			else: tag = c.tag
+			d[tag] = _format_( add)
+		else:
+			for e in  _xml_node_list_( c.getchildren()):
+				d.update( e)
+		ret.append( d)
+
+	return ret
+
 @logger( )
 class data_file_parser( object):
 	"""
@@ -37,13 +92,16 @@ class data_file_parser( object):
 	                  The attribute are updated at every step, so the value of the last one will be stored.
 	"""
 	__name__ = "data_file_parser"
-	def __init__( self, schema="", d={}, **kwargs):
+	def __init__( self, schema="", outfile="", d={}, **kwargs):
 		self._data_ = d
 		for i in d:
 			self.__dict__[i] = None
 		if schema:
 			self.schema = schema
 			self.parse_xml( schema)
+		elif outfile:
+			self.outfile = outfile
+			self.parse_outfile( )
 		if kwargs:
 			for k, v in kwargs.items():
 				if not k in self.__dict__:
@@ -57,53 +115,17 @@ class data_file_parser( object):
 	def __str__( self):
 		return ""
 
-	def parse_xml( self, schema=""):
+	def parse_outfile( self):
+		with open( self.outfile, "r") as f:
+			content = f.read()
+
+		return
+
+	def parse_xml( self):
 		import xml.etree.ElementTree as ET
-		root = ET.parse( schema).getroot()
+		root = ET.parse( self.schema).getroot()
 
-		def _format_( var):
-			if isinstance( var, np.ndarray): return var
-			if var == None: return None
-			try: v = int( var)
-			except:
-				try: v = float( var)
-				except:
-					if var == "true": v = True
-					elif var == "false": v = False
-					else: v = var
-			return v
-
-		def _xml_attr_( node, f="", n=""):
-			if f: node = node.find( f)
-			return _format_( node.get( n))
-
-		def _xml_text_( node, f="", n=""):
-			if f: node = node.find( f)
-			return _format_( node.text)
-
-		def _xml_node_list_( node, f="", n=""):
-			if f: node=node.findall( f)
-			ret = []
-			for c in node:
-				d=c.attrib
-				#add = c.text.strip().split( "\n")
-				add = c.text.strip().replace( "\n", " ")
-				if add:
-					add = list( filter( None, add.split( " ")))
-					#add = list( map( lambda x: list( filter( None, x.split( " "))), add))
-					if len( add) == 1: add = add[0]
-					#if len( add) == 1: add = add[0]
-					if isinstance( add, list):
-						add = np.array( add, dtype=float)
-					if n: tag = n
-					else: tag = c.tag
-					d[tag] = _format_( add)
-				else:
-					for e in  _xml_node_list_( c.getchildren()):
-						d.update( e)
-				ret.append( d)
-
-			return ret
+		
 
 		xml_acq_rule={
 			'attr':_xml_attr_,
