@@ -18,11 +18,11 @@ data={
 	'noncolin':{'x':'text', 'f':'output//noncolin', 'n':None, 't':bool, 
 		'bu':r'spin'},
 	'kpt':{'x':'nodelist', 'f':'output//ks_energies/k_point', 'n':'kpt', 't':list, 
-		'bu':r'[\s]{4,}kpt ='},
+		'bu':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)'},
 	'egv':{'x':'nodelist', 'f':'output//ks_energies/eigenvalues', 'n':'egv', 't':list, 
-		'bu':r'bands (ev):'},
+		'bu':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 'm':1/27.21138602},
 	'occ':{'x':'nodelist', 'f':'output//ks_energies/occupations', 'n':'occ', 't':list, 
-		'bu':r'occupation numbers'},
+		'bu':r'occupation numbers(?P<occ>[\s\d\.]+)'},
 	}
 
 @logger()
@@ -95,6 +95,39 @@ class bands( dfp):
 			plt.legend()
 			plt.show()
 		return 0
+
+	def density_of_states( self, emin=-20, emax=20, deltaE=0.001, fname="dos.dat", plot=True, pfile=True):
+		x = np.linspace( emin, emax, (emax-emin)/deltaE+1)
+		y = np.zeros( x.size)
+		#print( x.size)
+		#print( x)
+		#print( y)
+
+		for n,egv in enumerate( self.egv):
+			for e in egv['egv']:
+				index = int((e*self.e_units - emin) / deltaE)
+				#print( e, emin, index)
+				if 0 <= index < x.size:
+					#print( y[index], self.kpt[n]['weight'], self.kpt[n])
+					y[index] += self.kpt[n]['weight']
+					pass
+		print( y)
+
+		if pfile:
+			np.savetxt( fname=fname, X=np.transpose(np.vstack((x,y))), fmt="%13.8f"+"%11.6f")
+
+		if plot:
+			import matplotlib.pyplot as plt
+			from matplotlib.ticker import AutoMinorLocator as AML
+			fig, ax = plt.subplots()
+			ax.plot( x, y)
+			ax.set_xlabel( "Energy (eV)")
+			ax.set_ylabel( "DOS (arb. units)")
+			ax.xaxis.set_minor_locator( AML(5))
+			ax.yaxis.set_minor_locator( AML(5))
+			plt.show()
+
+		pass
 
 	def smallest_gap( self, radius=0., comp_point=(0.,0.,0.)):
 		"""
@@ -211,7 +244,12 @@ class bands( dfp):
 			warning.print( "Failed to read nbnd from file '{}'.".format( self.schema))
 			ret = False
 			#raise Exception( "No band read from file '{}'.".format( self.fname))
-		if not self.n_kpt == len( self.egv) == len( self.occ):
+		legv = len( self.egv)
+		if self.occ:
+			locc = len( self.occ)
+		else:
+			locc = legv
+		if not self.n_kpt == legv == locc:
 			warning.print( "Corrupted file. Number of kpoints does not match number egv or occ")
 			ret = False
 			#raise Exception( "Corrupted file. Number of kpoints does not match number egv or occ")

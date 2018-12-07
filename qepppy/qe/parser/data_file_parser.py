@@ -1,5 +1,5 @@
 import numpy as np
-from ...logger import logger
+from ...logger import logger, warning
 
 
 def _format_( var):
@@ -21,19 +21,36 @@ matches = {
 	bool:  r'[\s]*(?P<flag>.)',
 }
 
-def _get_value_( f, string, delim='=', dtype=str):
+def _get_value_( f, search_data, dtype=str):
 	import re
 
-	print( "Looking for:",  string + matches[dtype])
+	string = search_data['bu']
+	m = search_data.get('m', 1)
+
 	a = None
 	try:
-		a = re.search(  string + matches[dtype], f).group('flag')
-	except:
+		if dtype == list:
+			a = re.finditer( string, f)
+			a = [ x.groupdict() for x in a]
+			for n,e in enumerate( a):
+				for k,v in e.items():
+					b = np.fromstring(v, sep=' ')
+					if len( b) == 0:
+						b = str( v).strip()
+					elif len(b) == 1:
+						b = b[0]
+					a[n][k] = b*m
+		else:
+			a = re.search(  string + matches[dtype], f).group('flag')
+	except Exception as e:
+		#print( e)
 		pass
+
+	val = None
 	try:
 		val = dtype( a)
 	except:
-		raise Exception( "Failed to convert '{}' to dtype '{}'".format( a, dtype))
+		warning.print( "Failed to convert '{}'(from '{}') to dtype '{}'".format( a, string, dtype))
 	return val
 
 def _xml_attr_( node, f="", n=""):
@@ -49,6 +66,7 @@ def _xml_node_list_( node, f="", n=""):
 	ret = []
 	for c in node:
 		d=c.attrib
+		d = {k:_format_(v) for k,v in d.items()}
 		#add = c.text.strip().split( "\n")
 		add = c.text.strip().replace( "\n", " ")
 		if add:
@@ -110,7 +128,7 @@ class data_file_parser( object):
 			self.__dict__[i] = None
 		if schema:
 			self.schema = schema
-			self.parse_xml( schema)
+			self.parse_xml()
 		elif outfile:
 			self.outfile = outfile
 			self.parse_outfile( )
@@ -136,15 +154,15 @@ class data_file_parser( object):
 			search = v.get( 'bu', None)
 			if search is None:
 				continue
-			print(k,v)
-			print( search)
+			#print(k,v)
+			#print( search)
 
 			val = None
 			try:
-				val = _get_value_( content, search, dtype=t)
+				val = _get_value_( content, v, dtype=t)
 			except Exception as e:
 				print( "ERROR: ", e)
-			print( val)
+			#print( val)
 			self.__dict__[k] = val
 		return
 
