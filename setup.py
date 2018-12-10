@@ -36,7 +36,8 @@ EXTRAS = {
 SCRIPTS = [
     "qepppy/tools/pdos_char.py",
     "qepppy/tools/broad.py",
-    "qepppy/tools/sum_pdos.py"
+    "qepppy/tools/sum_pdos.py",
+    "qepppy/tools/kk.py",
 ]
 
 # The rest you shouldn't have to touch too much :)
