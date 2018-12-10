@@ -96,38 +96,38 @@ class bands( dfp):
 			plt.show()
 		return 0
 
-	def density_of_states( self, emin=-20, emax=20, deltaE=0.001, fname="dos.dat", plot=True, pfile=True):
+	def density_of_states( self, emin=-20, emax=20, deltaE=0.001, deg=0.00, fname="dos.dat", plot=True, pfile=True):
 		x = np.linspace( emin, emax, (emax-emin)/deltaE+1)
 		y = np.zeros( x.size)
-		#print( x.size)
-		#print( x)
-		#print( y)
 
 		for n,egv in enumerate( self.egv):
 			for e in egv['egv']:
 				index = int((e*self.e_units - emin) / deltaE)
-				#print( e, emin, index)
 				if 0 <= index < x.size:
-					#print( y[index], self.kpt[n]['weight'], self.kpt[n])
 					y[index] += self.kpt[n]['weight']
-					pass
-		print( y)
+
+		y /= deltaE
+
+		data = np.vstack((x,y))
+		if deg > 0:
+			from ..tools.broad import broad
+			data = broad( data, t='gauss', deg=deg, axis=1)
 
 		if pfile:
-			np.savetxt( fname=fname, X=np.transpose(np.vstack((x,y))), fmt="%13.8f"+"%11.6f")
+			np.savetxt( fname=fname, X=np.transpose(data), fmt="%13.8f"+"%11.6f")
 
 		if plot:
 			import matplotlib.pyplot as plt
 			from matplotlib.ticker import AutoMinorLocator as AML
 			fig, ax = plt.subplots()
-			ax.plot( x, y)
+			ax.plot( data[0], data[1])
 			ax.set_xlabel( "Energy (eV)")
 			ax.set_ylabel( "DOS (arb. units)")
 			ax.xaxis.set_minor_locator( AML(5))
 			ax.yaxis.set_minor_locator( AML(5))
 			plt.show()
 
-		pass
+		return data[1]
 
 	def smallest_gap( self, radius=0., comp_point=(0.,0.,0.)):
 		"""
