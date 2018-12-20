@@ -39,14 +39,20 @@ def broad( data, t="gauss", deg=0.1, axis=0):
 	x = res[:,0] = data[:,0]
 	y = data[:,1:]
 
-	conv = sw[t]( x, deg)
-	lgh = int( len( conv)/2)
-	for n,yi in enumerate( y.transpose()):
-		new = np.convolve( yi, conv, mode='full')
-		d = len( x) - len( new) + lgh*2
-		new = new[ lgh:-lgh+d]
+	dx = x[1] - x[0]
+	add_x1 = np.arange( x[0]-15*deg, x[0]-dx, dx)
+	add_x2 = np.arange( x[-1]+dx, x[-1]+15*deg, dx)
+	x = np.hstack( (add_x1, x, add_x2))
+	
+	add_y1 = np.ones((add_x1.shape[0], y.shape[1])) * y[0]
+	add_y2 = np.ones((add_x2.shape[0], y.shape[1])) * y[-1]
+	y = np.vstack( (add_y1, y, add_y2))
 
-		res[:,n+1] = np.array( new)
+
+	conv = sw[t]( x, deg)
+	for n,yi in enumerate( y.transpose()):
+		new = np.convolve( yi, conv, mode='same')
+		res[:,n+1] = new[np.where( (res[0,0] <= x) & (x <= res[-1,0]))]
 
 	if axis:
 		res = np.transpose( res)
@@ -83,7 +89,7 @@ if __name__ == "__main__":
 		if oname:
 			n_name = oname[n]
 		else:
-			n_name = "{}_{}".format( name, broad)
+			n_name = "{}_{}".format( name, deg)
 		print( "Saving broadened data to '{}'".format( n_name))
 		np.savetxt( n_name, b)
 

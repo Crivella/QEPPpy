@@ -70,7 +70,7 @@ class bands( dfp):
 		"""
 		n_kpt = self.n_kpt
 		kpt = [a['kpt'] for a in self.kpt]
-		egv = [a['egv'] for a in self.egv]
+		egv = np.array( [a['egv'] for a in self.egv]) * 27.21138602
 		n_bnd = self.n_bnd
 		x = [0]*n_kpt
 		for i in range( 1, n_kpt):
