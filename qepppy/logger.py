@@ -158,6 +158,7 @@ def logger( msg_lvl=global_log_level, thr_lvl=global_log_thr, log_enabled=global
 							)
 					else:
 						return x
+			NewCls.__doc__ = elem.__doc__
 			return NewCls
 		if inspect.isfunction( elem):
 			return function_wrap( elem,
