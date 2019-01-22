@@ -1,18 +1,10 @@
 import re
 import numpy as np
-import struct
 
 
 HARTREE = 27.2113
 
-def dump( f, b=4):
-	"""
-	Read/Discard the 4 byte header coming from a fortran write statement.
-	Contains the number of byte written by WRITE
-	"""
-	return f.read( b)
-
-def bin_read( f, dtype, num):
+def fortran_bin_read( f, dtype, num):
 	"""
 	Read the result of a fortran WRITE statement.
 	 -f: file object opened in 'rb' mode to read from
@@ -23,13 +15,13 @@ def bin_read( f, dtype, num):
 	final 4byte in the tail of the fortran WRITE statement containing a
 	duplicate of the WRITE size.
 	""" 
-	app1 = struct.unpack( "<i", dump( f))[0]
+	app1 = np.fromfile( f, np.dtype('<i4'),1)[0]
 	to_read = dtype.itemsize*num
 	if to_read != app1:
 		print( "WARNING: reading only {} bytes out of {} from WRITE statement".format(to_read, app1))
 	res = np.fromfile( f, dtype, num)
 	if to_read == app1:
-		app2 = struct.unpack( "<i", dump( f))[0]
+		app2 = np.fromfile( f, np.dtype('<i4'),1)[0]
 		if app2 != app1:
 			print( "WARNING: mismatch between WRITE header and tail")
 
@@ -51,18 +43,18 @@ def read_rhotw( fname='out.rhotw'):
 	 FAQ   = Multiplicative factor used to calculate the Polarizability (chi)
 	"""
 	with open( 'out.rhotw', 'rb') as f:
-		nt, nqpol = bin_read( f, np.dtype('<i4'), 2)
+		nt, nqpol = fortran_bin_read( f, np.dtype('<i4'), 2)
 		print( "nt = ", nt, "   nqpol =", nqpol)
 
 		rhotw=np.empty( (nqpol, nt), dtype=complex)
 		for i in range(6):
-			rhotw[i,:] = bin_read( f, np.dtype('<c8'), nt)
+			rhotw[i,:] = fortran_bin_read( f, np.dtype('<c8'), nt)
 		rhotw = np.array( rhotw)
 
-		vcol = bin_read( f, np.dtype('<f4'), nqpol)
+		vcol = fortran_bin_read( f, np.dtype('<f4'), nqpol)
 		print( "Vc(ipol) = ", vcol)
 
-		FAQ, = bin_read( f, np.dtype('<f4'), 1)
+		FAQ, = fortran_bin_read( f, np.dtype('<f4'), 1)
 		print( "FAQ = ", FAQ)
 	print( '\n\n')
 
