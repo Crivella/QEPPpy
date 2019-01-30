@@ -140,99 +140,92 @@ class bands( dfp):
 		- Min/Max of conduction/valence band (Indirect gap)
 		- Optical gap (condition: valence < Fermi < conduction)
 		"""
-		print( "SMALLEST_GAP: radius={}, comp_point={}".format( radius, comp_point))
+		print( "\nSMALLEST_GAP: radius={}, comp_point={}\n".format( radius, comp_point))
 
 		if( radius < 0):
-			print( "Invalid negative 'radius'")
-			return 1
-		if( len(comp_point) != 3):
-			print( "'comp_point' should be an [x,y,z] vector {}".format( comp_point))
-			return 1
-		for x in comp_point:
-			try:
-				x+=1
-			except TypeError:
-				print( "Invalid type %s for 'comp_point'" % type(x))
-				return 1
+			raise ValueError( "Radius can't be negative")
+		cp = np.array(comp_point, dtype='float')
+		if( cp.shape != (3,)):
+			raise ValueError("'comp_point' should be an [x,y,z] vector {}".format( cp))
 
 		kpt   = np.array( [a['kpt'] for a in self.kpt])
-		egv = [ a['egv'] for a in self.egv]
-		n_kpt = self.n_kpt
+		egv   = np.array([ a['egv'] for a in self.egv])*self.e_units
 		n_el  = self.n_el
 		ef    = self.fermi
-		if ef == None: ef = float('Nan')
+		kpt   = kpt[:self.n_kpt,:]
 
+		if ef == None: 
+			ef = np.nan
 		print( "E_fermi(from file):\t{:f} eV".format( ef))
-		if ( self.lsda):
+
+		if self.lsda:
 			n_el /= 2
-		if ( self.noncolin):
+		if self.noncolin:
 			vb = (n_el - 1)
-			print( "spin-orbit correction detected");
+			print("spin-orbit correction detected")
 		else:
 			vb = (n_el/2 - 1)
 			print( "No spin-orbit correction")
 		vb = int(vb)
 		cb = vb + 1
-		print( "vb = %d, cb = %d" % (vb+1, cb+1));
+		print("vb = {}, cb = {}".format(vb+1, cb+1))
 
-		base = np.array( egv)
-		cp = np.array( comp_point)
-		if( radius > 0):
-			mod = map( lambda x: radius - np.linalg.norm(cp-x), self.kpt)
-		else:
-			mod = map( lambda x: 1, self.kpt)
-		lcb  = base[:,cb]
-		lvb  = base[:,vb]
-		lcb1 = base[:,cb+1]
-		#lg1  = lcb - lvb
+		mod  = np.linalg.norm(cp-kpt,axis=1) - radius
+		in_range = np.where(mod >= 0)[0]
 
-		lll  = list( filter( lambda x: x[1]>= 0, zip( range( n_kpt), mod, kpt, lvb, lcb, lcb1)))
-		found = len( lll)
-		if( found <= 0):
+		num = np.arange(self.n_kpt)
+		num = num[in_range]
+		kpt = kpt[in_range,:]
+		egv = egv[in_range,:]
+		found = kpt.shape[0]
+		if found <= 0:
 			raise Exception( "No k-point found for the given criteria")
 		print( "\nFound {} points with the given criteria.".format( found))
 
-		res = mg1 = max( lll, key = lambda a: a[3])
-		print( "\nMax_vb_energy: vb= {:f} eV".format( res[3]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
+		mg1 = np.argmax(egv[:,vb])
+		top_valence = egv[mg1,vb]
+		print( "\nMax_vb_energy: vb= {:f} eV".format( top_valence))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( kpt[mg1], num[mg1]+1))
 
-		res = mg2 = min( lll, key = lambda a: a[4])
-		print( "\nMin_cb_energy: cb= {:f} eV".format( res[4]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
+		mg2 = np.argmin(egv[:,cb])
+		bot_conduction = egv[mg2,cb]
+		print( "\nMin_cb_energy: cb = {:f} eV".format( bot_conduction))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( kpt[mg2], num[mg2]+1))
 
-		if( mg1[0] == mg2[0]):
-			print( "DIRECT GAP {:.4f} eV".format( mg2[4] - mg1[3]))
+		gap = bot_conduction - top_valence
+		if mg1 == mg2:
+			print( "DIRECT GAP {:.4f} eV".format( gap))
 		else:
-			if( mg2[4] < mg1[3]):
+			if( gap < 0):
 				print( "METALLIC")
 			else:
-				print( "INDIRECT GAP {:.5f} eV".format(mg2[4] - mg1[3]))
+				print( "INDIRECT GAP {:.5f} eV".format(gap))
 
-		if( ef == ef):
-			res = min( (i for i in lll if i[3] < ef < i[4]), key = lambda a: a[4] - a[3])
-			#mog = l[ lg1.index( m)]
-			print( "\nMin_opt_gap: {:f} eV".format( res[4] - res[3]))
-			print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1})".format(res[2], res[0]+1))
-			print("\t%lf -> %lf   Ef: %lf eV" % (res[3], res[4], ef))		
+		
+		if not np.isnan(ef):
+			w = np.where((egv[:,vb] < ef) & (egv[:,cb] > ef))
+			res = np.argmin(egv[w,cb] - egv[w,vb])
+			opt_gap = egv[res,cb] - egv[res,vb]
+			print( "\nMin_opt_gap: {:f} eV".format( opt_gap))
+			print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1})".format(kpt[res], num[res]+1))
+			print("\t{} -> {}   Ef: {} eV".format(egv[res,vb], egv[res,cb], ef))		
 		else:
 			print( "\nCannot calculate min_opt_gap with invalid fermi energy")
 
-		res = min( lll, key = lambda a: a[4] - a[3])
-		print( "\nMin_gap_energy (vb->cb): {:f} eV".format( res[4] - res[3]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
-		print("\t%lf -> %lf   Ef: %lf eV" % (res[3], res[4], ef))
+		res = np.argmin(egv[:,cb] - egv[:,vb])
+		print( "\nMin_gap_energy (vb->cb): {:f} eV".format( egv[res,cb] - egv[res,vb]))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( kpt[res], num[res]+1))
+		print("\t{} -> {}   Ef: {} eV".format(egv[res,vb], egv[res,cb], ef))
 
-		res = min( lll, key = lambda a: a[5] - a[3])
-		print( "\nMin_gap_energy (vb->cb+1): {:f} eV".format( res[5] - res[3]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
-		print("\t%lf -> %lf   Ef: %lf eV" % (res[3], res[5], ef))	
+		res = np.argmin(egv[:,cb+1] - egv[:,vb])
+		print( "\nMin_gap_energy (vb->cb+1): {:f} eV".format( egv[res,cb+1] - egv[res,vb]))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( kpt[res], num[res]+1))
+		print("\t{} -> {}   Ef: {} eV".format(egv[res,vb], egv[res,cb+1], ef))
 
-		res = min( lll, key = lambda a: a[5] - a[4])
-		print( "\nMin_gap_energy (cb->cb+1): {:f} eV".format( res[5] - res[4]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
-		print("\t%lf -> %lf   Ef: %lf eV" % (res[4], res[5], ef))	
-
-		return
+		res = np.argmin(egv[:,cb+1] - egv[:,cb])
+		print( "\nMin_gap_energy (cb->cb+1): {:f} eV".format( egv[res,cb+1] - egv[res,cb]))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( kpt[res], num[res]+1))
+		print("\t{} -> {}   Ef: {} eV".format(egv[res,cb], egv[res,cb+1], ef))
 
 	def validate( self):
 		ret = True
