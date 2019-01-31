@@ -1,6 +1,7 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..logger import logger, warning
+from .._decorators import save_opt, plot_opt
 
 
 data={
@@ -62,41 +63,36 @@ class bands( dfp):
 				raise Exception( "Index '{}' out of range {}-{}".format( key, 0, self.n_kpt - 1))
 		return super().__getitem__( key)
 
-	def band_structure( self, fname="plotted.dat", plot=True, pfile=True):
+	@plot_opt
+	@save_opt
+	def band_structure( 
+		self, *args, 
+		fname="plotted.dat", fmt="", 
+		ylab="Energy (eV)",
+		**kwargs
+		):
 		"""
 		Plot/print_to_file the band structure of.
 		Use plot=True to plot the band structure using matplotlib
 		Use pfile=True to print the band structure data to a file "fname"
 		"""
-		n_kpt = self.n_kpt
-		kpt = [a['kpt'] for a in self.kpt]
-		egv = np.array( [a['egv'] for a in self.egv]) * 27.21138602
-		n_bnd = self.n_bnd
-		x = [0]*n_kpt
-		for i in range( 1, n_kpt):
-			x[i] = x[i-1] + np.linalg.norm( kpt[i] - kpt[i-1])
-		x = np.array( x)
+		kpt = np.array([a['kpt'] for a in self.kpt])
+		kpt = kpt[:self.n_kpt,:]
+		egv = np.array( [a['egv'] for a in self.egv]) * self.e_units
+
+		x = np.linalg.norm(kpt, axis=1)
 		res = np.column_stack( ( x, egv))
-		#print( res[:,0], res[:,1:])
 
-		if pfile:
-			np.savetxt( fname=fname, X=res, fmt="%13.8f"+"%11.6f"*n_bnd)
+		return res
 
-		if plot:
-			import matplotlib.pyplot as plt
-			from matplotlib.ticker import AutoMinorLocator as AML
-			fig, ax = plt.subplots()
-			plt.plot( res[:,0], res[:,1:])
-			plt.ylabel( "Energy( eV)")
-			plt.xlabel( "")
-			ml1 = AML(5)
-			ax.yaxis.set_minor_locator(ml1)
-			ax.yaxis.set_tick_params(which='both', right = True)
-			plt.legend()
-			plt.show()
-		return 0
-
-	def density_of_states( self, emin=-20, emax=20, deltaE=0.001, deg=0.00, fname="dos.dat", plot=True, pfile=True):
+	@plot_opt
+	@save_opt
+	def density_of_states( 
+		self, *args, 
+		emin=-20, emax=20, deltaE=0.001, deg=0.00, 
+		fname="dos.dat",
+		**kwargs
+		):
 		x = np.linspace( emin, emax, (emax-emin)/deltaE+1)
 		y = np.zeros( x.size)
 
@@ -113,21 +109,7 @@ class bands( dfp):
 			from ..tools.broad import broad
 			data = broad( data, t='gauss', deg=deg, axis=1)
 
-		if pfile:
-			np.savetxt( fname=fname, X=np.transpose(data), fmt="%13.8f"+"%11.6f")
-
-		if plot:
-			import matplotlib.pyplot as plt
-			from matplotlib.ticker import AutoMinorLocator as AML
-			fig, ax = plt.subplots()
-			ax.plot( data[0], data[1])
-			ax.set_xlabel( "Energy (eV)")
-			ax.set_ylabel( "DOS (arb. units)")
-			ax.xaxis.set_minor_locator( AML(5))
-			ax.yaxis.set_minor_locator( AML(5))
-			plt.show()
-
-		return data[1]
+		return data.T
 
 	def smallest_gap( self, radius=0., comp_point=(0.,0.,0.)):
 		"""
