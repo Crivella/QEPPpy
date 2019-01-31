@@ -64,10 +64,11 @@ class bands( dfp):
 		return super().__getitem__( key)
 
 	@plot_opt
-	@save_opt
+	@save_opt(_fname="plotted.dat")
 	def band_structure( 
 		self, *args, 
-		fname="plotted.dat", fmt="", 
+		# fname="plotted.dat", 
+		fmt="", 
 		ylab="Energy (eV)",
 		**kwargs
 		):
@@ -86,13 +87,16 @@ class bands( dfp):
 		return res
 
 	@plot_opt
-	@save_opt
+	@save_opt(_fname="dos.dat")
 	def density_of_states( 
 		self, *args, 
 		emin=-20, emax=20, deltaE=0.001, deg=0.00, 
-		fname="dos.dat",
+		# fname="dos.dat",
 		**kwargs
 		):
+		"""
+		Holy ship
+		"""
 		x = np.linspace( emin, emax, (emax-emin)/deltaE+1)
 		y = np.zeros( x.size)
 
