@@ -6,25 +6,25 @@ import json
 
 __all__ = ['logger', 'debug', 'info','warning', 'error', 'critical', 'function_wrap']
 
-def get_cfg_var(name, c, fallback=None):
-	if isinstance(c, dict):
-		return c.get(name, fallback)
-	return fallback
-
 try:
 	with open("log.json", "r") as f:
 		content = json.load(f)
 except Exception:
-	content = None
+	content = {}
 
-global_log_enabled = get_cfg_var('global_log_enabled', content, True)
-global_log_level   = get_cfg_var('global_log_level'  , content, 'INFO')
-global_log_thr     = get_cfg_var('global_log_thr'    , content, 'ERROR')
-
+global_log_enabled = content.get('global_log_enabled', True)
+global_log_level   = content.get('global_log_level',   'INFO')
+global_log_thr     = content.get('global_log_thr',     'ERROR')
 
 logging.basicConfig(
-	format='-'*80 + '\n%(levelname)s ---> %(name)s\n%(message)s\n' + '-'*80, 
-	level=global_log_level)
+	format=(
+		'-'*80 +
+		'\n%(levelname)s ---> %(name)s  line:%(lineno)s' + 
+		'\n\tMSG: "%(message)s"' + 
+		'\n' + '-'*80
+		), 
+	level=global_log_level
+	)
 
 global_logger    = logging.getLogger("global")
 global_logger.propagate = False
@@ -44,35 +44,35 @@ def stack_analyzer(lvl=2):
 
 
 class critical(Exception):
-	level = 'critical'
+	level = 'CRITICAL'
 	@staticmethod
 	def print(msg=""):
 		stack_msg = stack_analyzer()
 		global_logger.critical("{}\n{}".format(stack_msg, msg))
 
 class error(Exception):
-	level = 'error'
+	level = 'ERROR'
 	@staticmethod
 	def print(msg=""):
 		stack_msg = stack_analyzer()
 		global_logger.error("{}\n{}".format(stack_msg, msg))
 
 class warning(Exception):
-	level = 'warning'
+	level = 'WARNING'
 	@staticmethod
 	def print(msg=""):
 		stack_msg = stack_analyzer()
 		global_logger.warning("{}\n{}".format(stack_msg, msg))
 
 class info(Exception):
-	level = 'info'
+	level = 'INFO'
 	@staticmethod
 	def print(msg=""):
 		stack_msg = stack_analyzer()
 		global_logger.info("{}\n{}".format(stack_msg, msg))
 
 class debug(Exception):
-	level = 'debug'
+	level = 'DEBUG'
 	@staticmethod
 	def print(msg=""):
 		stack_msg = stack_analyzer()
@@ -89,6 +89,8 @@ def get_original_class_name(method):
 
 
 def function_wrap(func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
+	msg_lvl = msg_lvl.upper()
+	thr_lvl = thr_lvl.upper()
 	@functools.wraps(func)
 	def wrapped(*args, **kwargs):
 		msg_name = func.__name__
@@ -108,19 +110,22 @@ def function_wrap(func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
 			res = func(*args, **kwargs)
 		except Exception as e:
 			try:
-				msg = e.level.upper()
+				msg = e.level
 			except:
-				if msg_lvl.upper()=='DEBUG':
+				if msg_lvl == 'DEBUG':
 					tb = e.__traceback__
 					tb = tb.tb_next
 					e.__traceback__ = tb
 					traceback.print_tb(tb)
 				log.critical(e)
 			else:
-				if logging.getLevelName(msg) >= logging.getLevelName(thr_lvl.upper()):
-					if msg_lvl.upper()=='DEBUG':
+				if logging.getLevelName(msg) >= logging.getLevelName(thr_lvl):
+					if msg_lvl == 'DEBUG':
 						tb = e.__traceback__
 						tb = tb.tb_next
+						# Remove decorator signal form trace
+						while 'decorator' in tb.tb_frame.f_code.co_filename:
+							tb = tb.tb_next
 						e.__traceback__ = tb
 						traceback.print_tb(tb)
 					log.critical(e)
@@ -128,6 +133,7 @@ def function_wrap(func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
 					log.__getatrribute__(msg.lower())(str(e))
 		else:
 			return res
+	wrapped.__name__=func.__name__
 	return wrapped
 
 def logger(msg_lvl=global_log_level, thr_lvl=global_log_thr, log_enabled=global_log_enabled):

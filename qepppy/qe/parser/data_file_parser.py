@@ -86,7 +86,7 @@ def _xml_node_list_( node, f="", n=""):
 
 	return ret
 
-@logger( )
+@logger()
 class data_file_parser( object):
 	"""
 	Parser for QE data'file'schema.xml (QE>=6.2)
