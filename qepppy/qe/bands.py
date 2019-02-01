@@ -18,11 +18,11 @@ data={
 	'lsda':{'x':'text', 'f':'output//lsda', 'n':None, 't':bool},
 	'noncolin':{'x':'text', 'f':'output//noncolin', 'n':None, 't':bool, 
 		'bu':r'spin'},
-	'kpt':{'x':'nodelist', 'f':'output//ks_energies/k_point', 'n':'kpt', 't':list, 
+	'_kpt':{'x':'nodelist', 'f':'output//ks_energies/k_point', 'n':'kpt', 't':list, 
 		'bu':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)'},
-	'egv':{'x':'nodelist', 'f':'output//ks_energies/eigenvalues', 'n':'egv', 't':list, 
+	'_egv':{'x':'nodelist', 'f':'output//ks_energies/eigenvalues', 'n':'egv', 't':list, 
 		'bu':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 'm':1/27.21138602},
-	'occ':{'x':'nodelist', 'f':'output//ks_energies/occupations', 'n':'occ', 't':list, 
+	'_occ':{'x':'nodelist', 'f':'output//ks_energies/occupations', 'n':'occ', 't':list, 
 		'bu':r'occupation numbers(?P<occ>[\s\d\.]+)'},
 	}
 
@@ -63,6 +63,45 @@ class bands( dfp):
 				raise Exception( "Index '{}' out of range {}-{}".format( key, 0, self.n_kpt - 1))
 		return super().__getitem__( key)
 
+	@property
+	def kpt_cart(self):
+		if not 'kpt_cart' in self.__dict__:
+			kpt = np.array([a['kpt'] for a in self.__dict__['_kpt']])
+			kpt = kpt[:self.n_kpt,:]
+			self.__dict__['kpt_cart'] = kpt
+		return self.__dict__['kpt_cart']
+
+	@property
+	def kpt_cryst(self):
+		if not 'kpt_cryst' in self.__dict__:
+			n = self.n_kpt
+			kpt = np.array([a['kpt'] for a in self.__dict__['_kpt']])
+			if kpt.shape[0] > n:
+				self.__dict__['kpt_cryst'] = kpt[n:2*n,:]
+			else:
+				raise NotImplemented()
+		return self.__dict__['kpt_cryst']
+
+	@property
+	def weight(self):
+		if not 'weight' in self.__dict__:
+			self.__dict__['weight'] = np.array([a['weight'] for a in self._kpt])
+		return self.__dict__['weight']
+
+	@property
+	def egv(self):
+		if not 'egv' in self.__dict__:
+			self.__dict__['egv'] = np.array([a['egv'] for a in self._egv]) * self.e_units
+		return self.__dict__['egv']
+
+	@property
+	def occ(self):
+		if not 'occ' in self.__dict__:
+			self.__dict__['occ'] = np.array([a['occ'] for a in self._occ])
+		return self.__dict__['occ']
+	
+	
+
 	@plot_opt
 	@save_opt(_fname="plotted.dat")
 	def band_structure( 
@@ -77,9 +116,9 @@ class bands( dfp):
 		Use plot=True to plot the band structure using matplotlib
 		Use pfile=True to print the band structure data to a file "fname"
 		"""
-		kpt = np.array([a['kpt'] for a in self.kpt])
-		kpt = kpt[:self.n_kpt,:]
-		egv = np.array( [a['egv'] for a in self.egv]) * self.e_units
+		kpt = self.kpt_cart
+		# kpt = kpt[:self.n_kpt,:]
+		egv = self.egv
 
 		x = np.linalg.norm(kpt, axis=1)
 		res = np.column_stack( ( x, egv))
@@ -95,16 +134,18 @@ class bands( dfp):
 		**kwargs
 		):
 		"""
-		Holy ship
+		ompute the DOS
+		Params:
+		  - emin: Starting 
 		"""
 		x = np.linspace( emin, emax, (emax-emin)/deltaE+1)
 		y = np.zeros( x.size)
 
 		for n,egv in enumerate( self.egv):
-			for e in egv['egv']:
-				index = int((e*self.e_units - emin) / deltaE)
+			for e in egv:
+				index = int((e - emin) / deltaE)
 				if 0 <= index < x.size:
-					y[index] += self.kpt[n]['weight']
+					y[index] += self.weight[n]
 
 		y /= deltaE
 
@@ -117,14 +158,15 @@ class bands( dfp):
 
 	def smallest_gap( self, radius=0., comp_point=(0.,0.,0.)):
 		"""
-		Can focus on only a small portion of k-points by defining:
-		- radius: radius of the crop sphere centered around comp_point
-		- comp_point: tuple of coordinates for the center of the crop sphere
 		Print to screen the following information concerning the band gap:
-		- Fermi energy
-		- Direct gap
-		- Min/Max of conduction/valence band (Indirect gap)
-		- Optical gap (condition: valence < Fermi < conduction)
+		  - Fermi energy
+		  - Direct gap
+		  - Min/Max of conduction/valence band (Indirect gap)
+		  - Optical gap (condition: valence < Fermi < conduction)
+		Can focus on only a small portion of k-points by defining:
+		Params:
+		  - radius: radius of the crop sphere centered around comp_point
+		  - comp_point: tuple of coordinates for the center of the crop sphere
 		"""
 		print( "\nSMALLEST_GAP: radius={}, comp_point={}\n".format( radius, comp_point))
 
@@ -134,11 +176,13 @@ class bands( dfp):
 		if( cp.shape != (3,)):
 			raise ValueError("'comp_point' should be an [x,y,z] vector {}".format( cp))
 
-		kpt   = np.array( [a['kpt'] for a in self.kpt])
-		egv   = np.array([ a['egv'] for a in self.egv])*self.e_units
+		# kpt   = np.array( [a['kpt'] for a in self.kpt])
+		kpt   = self.kpt_cart
+		# egv   = np.array([ a['egv'] for a in self.egv])*self.e_units
+		egv   = self.egv
 		n_el  = self.n_el
 		ef    = self.fermi
-		kpt   = kpt[:self.n_kpt,:]
+		# kpt   = kpt[:self.n_kpt,:]
 
 		if ef == None: 
 			ef = np.nan
