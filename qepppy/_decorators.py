@@ -41,7 +41,9 @@ def save_opt(
 def plot_opt(
 	func, *args, 
 	plot=True, 
-	xlab="", ylab="", 
+	xlab="", ylab="",
+	colors=['k','r','b','g','c','m'],
+	labels=[''],
 	**kwargs
 	):
 	"""
@@ -65,13 +67,19 @@ def plot_opt(
 		import matplotlib.pyplot as plt
 		from matplotlib.ticker import AutoMinorLocator as AML
 		fig, ax = plt.subplots()
-		plt.plot( res[:,0], res[:,1:])
-		plt.xlabel( xlab)
-		plt.ylabel( ylab)
+		y_cols = res.shape[1]-1
+		for i in range(y_cols):
+			ax.plot( 
+				res[:,0], res[:,i+1], 
+				color=colors[i%len(colors)], 
+				label=labels[i%len(labels)]
+				)
+		ax.set_xlabel(xlab)
+		ax.set_ylabel(ylab)
 		ml1 = AML(5)
 		ax.yaxis.set_minor_locator(ml1)
 		ax.yaxis.set_tick_params(which='both', right = True)
-		plt.legend()
+		fig.legend()
 		plt.show()
 
 	return res
