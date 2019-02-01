@@ -97,14 +97,37 @@ data={
 		'res_type':list,
 		'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
 		},
-	'symm':{
+	'_symm':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//symmetry', 
 		'extra_name':None, 
-		'res_type':list
+		'res_type':list,
+		'outfile_regex':
+			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
+			r'cryst.\s*s\([\s\d]{2}\) = ' +
+			r'(?P<rotation>(\(.*\)\s*){3})'
 		}
 	}
 
+"""
+      isym =  1     identity                                     
+
+ cryst.   s( 1) = (     1          0          0      )
+                  (     0          1          0      )
+                  (     0          0          1      )
+
+{'class': 'E',
+ 'dims': '3 3',
+ 'equivalent_atoms': array([1., 2.]),
+ 'fractional_translation': array([0., 0., 0.]),
+ 'info': 'crystal_symmetry',
+ 'name': 'identity',
+ 'nat': 2,
+ 'order': 'F',
+ 'rank': 2,
+ 'rotation': array([1., 0., 0., 0., 1., 0., 0., 0., 1.]),
+ 'size': 2}
+"""
 def _recip_space_(v1, v2, v3):
 	vol = v1.dot(np.cross(v2, v3))
 	c   = 1. / vol
@@ -200,6 +223,7 @@ class structure(dfp):
 	@property
 	@store_property
 	def cell(self):
+		res = None
 		try:
 			res =  np.array(list(self._cell[0].values()))
 			if res.size != 9:
@@ -219,6 +243,23 @@ class structure(dfp):
 			res = self._cell_to_recip_()
 		return res
 	
+	@property
+	@store_property
+	def symm_matrix(self):
+		t = type(self._symm[0]['rotation'])
+		if t == np.ndarray:
+			res = np.array([a['rotation'].reshape(3,3) for a in self._symm])
+		elif t == str:
+			g = lambda x: x.replace('(',' ').replace(')',' ').replace('\n',' ')
+			res = np.array([np.fromstring(g(a['rotation']), sep=' ').reshape(3,3) for a in self._symm])
+		else:
+			raise NotImplementedError()
+		return res
+
+	@property
+	@store_property
+	def symm_name(self):
+		return list([a['name'] for a in self._symm])
 
 	def pwin_read(self, parse="", inp=None):
 		if inp == None:
