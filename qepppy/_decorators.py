@@ -12,11 +12,10 @@ def save_opt(
 	**kwargs
 	):
 	"""
-	Added functionality: save return value to file using np.savetxt
+	Decorator factory to add functionality to save return value to file using np.savetxt
 	params:
-	  - pFile: (True/False) Enable/disable save functionality (default = True)
-	  - fname: output file name (must be present)
-	  - fmt: format string to pass to np.savetxt
+	  - _fname: Default save_file name to be used if not specified
+	  - _fmt: Default format string to be used if not specified
 	"""
 	# try:
 	# 	func.doc_save_opt
@@ -100,7 +99,7 @@ def plot_opt(
 		ax.plot( 
 			X, Y, 
 			color=colors[i%cl], 
-			label=labels[i%len(labels)],
+			label=labels[i] if i<len(labels) else '',
 			dashes=dash,
 			)
 	ax.set_xlabel(xlab)
