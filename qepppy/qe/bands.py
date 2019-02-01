@@ -102,13 +102,10 @@ class bands( dfp):
 	
 	
 
-	@plot_opt
-	@save_opt(_fname="plotted.dat")
+	@plot_opt(_ylab="Energy (eV)")
+	@save_opt(_fname="plotted.dat",_fmt="")
 	def band_structure( 
-		self, *args, 
-		# fname="plotted.dat", 
-		fmt="", 
-		ylab="Energy (eV)",
+		self, *args,
 		**kwargs
 		):
 		"""
