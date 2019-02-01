@@ -111,3 +111,18 @@ def plot_opt(
 	plt.show()
 
 	return res
+
+@decorator
+def store_property(func, *args, **kwargs):
+	"""
+	The first time the property value is accessed, generate it and store the result in the 
+	object __dict__ for future calls.
+	"""
+	name = func.__name__
+	cls=args[0]
+	try:
+		res = cls.__dict__[name]
+	except:
+		res = func(*args, **kwargs)
+		cls.__dict__[name] = res
+	return res

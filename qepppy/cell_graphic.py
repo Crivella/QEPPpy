@@ -36,7 +36,7 @@ def draw_cylinder( ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
 	y = radius * np.outer(-np.cos(u)*c_phi + np.sin(u)*s_phi*c_teta, np.ones(np.size(v)) ) + axis[1] * v + y0
 	z = radius * np.outer(-np.sin(u)*s_teta, np.ones(np.size(v)))                          + axis[2] * v + z0
 
-	#print( "ct={},\nst={},\ncp={},\nsp={}".format( c_teta, s_teta, c_phi, s_phi))
+	# print( "ct={},\nst={},\ncp={},\nsp={}".format( c_teta, s_teta, c_phi, s_phi))
 
 	ax.plot_surface( x, y, z, color=color)
 	return
@@ -95,7 +95,7 @@ def draw_cell( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1], center=[0,0,0]):
 		orig = np.array(center)
 		v0 = V[n1]
 		for n2 in range( 4):
-			#print( orig, v0)
+			# print( orig, v0)
 			v = np.vstack( (orig, orig + v0))
 			if n2 == n1:
 				orig = V[(n2+1)%3] + V[(n2+2)%3]
@@ -113,9 +113,9 @@ def draw_Wigner_Seitz( ax, v1=[1,0,0], v2=[0,1,0], v3=[0,0,1]):
 		raise error( "Scipy module must be installed to print Wigner-Seitz cell.")
 		return
 	V = np.array([v1,v2,v3])
-	#print( V[0])
+	# print( V[0])
 	L = np.array([[0,0,0]])
-	#print( L)
+	# print( L)
 	for n1 in range( -1, 2):
 		for n2 in range( -1, 2):
 			for n3 in range( -1, 2):
@@ -164,7 +164,7 @@ def draw_bonds( ax, atom_list, graph_lvl=0):
 			r2 = periodic_table[name2]['radius']
 			delta = np.linalg.norm( v1 - v2)
 			max_l = r1+r2
-			#print( name1, a1, name2, a2, delta, max_l)
+			# print( name1, a1, name2, a2, delta, max_l)
 			if delta > max_l: continue
 			if graph_lvl == 0:
 				v = np.vstack( (v1, v2))

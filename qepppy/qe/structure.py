@@ -1,53 +1,101 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..logger import logger, warning, error
+from .._decorators import store_property
 
-bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (fcc)', '3':'body-centered cubic (bcc)',
-	'-3':'bcc more symm. axis', '4':'hexagonal', '5':'trigonal', '-5':'trigonal <111>', '6':'simple tetragonal (st)',
-	'7':'body-centered tetragonal (bct)', '8':'orthorombic P', '9':'base-centered orthorombic (bco)', '-9':'as 9 different axis',
-	'91':'one-face base-centered orthorombic', '10':'face-centered orthorombic', '11':'body-centered orthorombic',
-	'12':'monoclinic P', '-12':'as 12 unique axis', '13':'base-centered monoclinic', '14':'triclinic'}
+bravais_index={	
+	'0':'free',
+	'1':'simple cubic (sc)',
+	'2':'face-centered cubic (fcc)',
+	'3':'body-centered cubic (bcc)',
+	'-3':'bcc more symm. axis',
+	'4':'hexagonal',
+	'5':'trigonal',
+	'-5':'trigonal <111>',
+	'6':'simple tetragonal (st)',
+	'7':'body-centered tetragonal (bct)',
+	'8':'orthorombic P',
+	'9':'base-centered orthorombic (bco)',
+	'-9':'as 9 different axis',
+	'91':'one-face base-centered orthorombic',
+	'10':'face-centered orthorombic',
+	'11':'body-centered orthorombic',
+	'12':'monoclinic P',
+	'-12':'as 12 unique axis',
+	'13':'base-centered monoclinic',
+	'14':'triclinic'
+	}
 
 data={
+	'n_atoms':{
+		'xml_ptype':'attr', 
+		'xml_search_string':'output//atomic_structure', 
+		'extra_name':'nat', 
+		'res_type':int,
+		'outfile_regex':r'number of atoms/cell\s*=\s*'
+		},
+	'n_types':{
+		'xml_ptype':'attr', 
+		'xml_search_string':'output//atomic_species', 
+		'extra_name':'ntyp', 
+		'res_type':int,
+		'outfile_regex':r'number of atomic types\s*=\s*'
+		},
 	'ibrav':{
 		'xml_ptype':'attr', 
 		'xml_search_string':'output//atomic_structure', 
 		'extra_name':'bravais_index', 
 		'res_type':int,
-		'outfile_regex':r'bravais-lattice index[\s]*='
+		'outfile_regex':r'bravais-lattice index\s*='
 		},
 	'alat':{
 		'xml_ptype':'attr', 
 		'xml_search_string':'output//atomic_structure', 
 		'extra_name':'alat', 
 		'res_type':float,
-		'outfile_regex':r'lattice parameter \(alat\)[\s]*='
+		'outfile_regex':r'lattice parameter \(alat\)\s*='
 		},
-	'cell':{
+	'cell_p':{
+		'res_type':str,
+		'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
+		},
+	'_cell':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//cell', 
 		'extra_name':None, 
-		'res_type':list
+		'res_type':list,
+		'outfile_regex':
+			r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' + 
+			r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' + 
+			r'\s*a\(3\) = \((?P<a3>[\s\d.\-]*)\)\s*\n'
 		},
-	'recip':{
+	'_recip':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//reciprocal_lattice', 
 		'extra_name':None, 
-		'res_type':list
+		'res_type':list,
+		'outfile_regex':
+			r'\s*b\(1\) = \((?P<b1>[\s\d.\-]*)\)\s*\n' + 
+			r'\s*b\(2\) = \((?P<b2>[\s\d.\-]*)\)\s*\n' + 
+			r'\s*b\(3\) = \((?P<b3>[\s\d.\-]*)\)\s*\n'
 		},
-	'atoms':{
+	'atom_p':{
+		'res_type':str,
+		'outfile_regex':r'positions \((?P<flag>.*) units\)'
+		},
+	'_atoms':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//atom', 
 		'extra_name':'coord', 
 		'res_type':list,
-		'outfile_regex':r'\d +(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
+		'outfile_regex':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
 		},
-	'atom_spec':{
+	'_atom_spec':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'input//species', 
 		'extra_name':None, 
 		'res_type':list,
-		'outfile_regex':r' {4,}(?P<name>\w+) +[\d\.]+ +(?P<mass>[\d\.]+) + (?P<pseudo_file>\w+\([ \d\.]+\))'
+		'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
 		},
 	'symm':{
 		'xml_ptype':'nodelist', 
@@ -57,41 +105,47 @@ data={
 		}
 	}
 
-
+def _recip_space_(v1, v2, v3):
+	vol = v1.dot(np.cross(v2, v3))
+	c   = 1. / vol
+	b1  = c * np.cross(v2, v3)
+	b2  = c * np.cross(v3, v1)
+	b3  = c * np.cross(v1, v2)
+	return np.array([b1,b2,b3])
 
 @logger()
-class structure( dfp):
+class structure(dfp):
 	__name__ = "structure";
-	def __init__( self, d={}, **kwargs):
+	def __init__(self, d={}, **kwargs):
 		self.atom_p = 'bohr'
 		self.cell_p = 'bohr'
 
-		d.update( data)
-		super().__init__( d=d, **kwargs)
+		d.update(data)
+		super().__init__(d=d, **kwargs)
 		return
 
-	def __str__( self, info=0):
+	def __str__(self, info=0):
 		msg = super().__str__()
 		fact = self.alat if self.cell_p == 'alat' else 1				
 		if not self.ibrav or info > 0:
 			msg += "CELL_PARAMETERS\n"
-			for l in self.cell[0].values():
+			for l in self.cell:
 				for e in l:
-					msg += "{:9.4f}".format( e * fact)
+					msg += "{:9.4f}".format(e * fact)
 				msg += "\n"
 			msg += "\n"
 
 		msg += "ATOMIC_SPECIES\n"
-		for s in self.atom_spec:
-			msg += "{:6}{:12.4f}  {}".format( s['name'], s['mass'], s['pseudo_file'])
+		for s in self._atom_spec:
+			msg += "{:6}{:12.4f}  {}".format(s['name'], s['mass'], s['pseudo_file'])
 		msg += "\n\n"
 
 		fact = self.alat if self.atom_p == 'alat' else 1
 		msg += "ATOMIC_POSITIONS\n"
 		for a in self.atoms:
-			msg += "{:4}  ".format( a['name'])
+			msg += "{:4}  ".format(a['name'])
 			for c in a['coord']:
-				msg += "{:10.5f}".format( c * fact)
+				msg += "{:10.5f}".format(c * fact)
 			msg += "\n"
 		msg += "\n"
 
@@ -100,57 +154,124 @@ class structure( dfp):
 
 		return msg
 
-	def pwin_read( self, parse="", inp=None):
+	@property
+	@store_property
+	def atoms_coord_cart(self):
+		fact = self.alat if self.atom_p == 'alat' else 1
+		res = np.array([a['coord'] for a in self._atoms]) * fact
+		n = self.n_atoms
+		if n and len(res) == n*2:
+			res = res[0:n,:]
+		if self.atom_p == 'crystal':
+			res = np.dot(self.cell.T, res.T).T
+		return res
+
+	@property
+	@store_property
+	def atoms_coord_cryst(self):
+		fact = self.alat if self.atom_p == 'alat' else 1
+		res = np.array([a['coord'] for a in self._atoms]) * fact
+		n = self.n_atoms
+		if len(res) == n*2:
+				res = res[n:n*2,:]
+		else:
+			if self.atom_p != 'crystal':
+				raise NotImplementedError()
+		return res
+
+	@property
+	@store_property
+	def atoms_typ(self):
+		res = list([a['name'] for a in self._atom_spec])
+		if len(res) > self.n_types:
+			raise ValueError("Found {} types vs ntyp = {}".format(res, self.n_types))
+		return res
+
+	@property
+	@store_property
+	def atoms_mass(self):
+		return np.array([a['mass'] for a in self._atom_spec])
+
+	@property
+	@store_property
+	def all_atoms_typ(self):
+		return set(self.atoms_typ)
+
+	@property
+	@store_property
+	def cell(self):
+		try:
+			res =  np.array(list(self._cell[0].values()))
+			if res.size != 9:
+				raise
+			fact = self.alat if self.cell_p == 'alat' else 1
+			res *= fact
+		except Exception as e:
+			res = self._ibrav_to_cell_()
+		return res
+
+	@property
+	@store_property
+	def recip(self):
+		try:
+			res =  np.array(list(self._recip[0].values()))
+		except Exception as e:
+			res = self._cell_to_recip_()
+		return res
+	
+
+	def pwin_read(self, parse="", inp=None):
 		if inp == None:
 			if parse:
 				from .pwin import pw_in
-				inp = pw_in( parse=parse)
+				inp = pw_in(parse=parse)
 				inp.validate()
 			else:
-				raise error( "Must give a file name or a pw_in instance as args")
+				raise error("Must give a file name or a pw_in instance as args")
 
-		name, x, y, z = inp.find( "X", "x", "y", "z", up="ATOMIC_POSITIONS")
-		coord = [(a,b,c) for a,b,c in zip( x, y, z)]
-		self.atoms = [{'name':n, 'coord':c} for n,c in zip( name, coord)]
+		name, x, y, z = inp.find("X", "x", "y", "z", up="ATOMIC_POSITIONS")
+		coord = [(a,b,c) for a,b,c in zip(x, y, z)]
+		self._atoms = [{'name':n, 'coord':c} for n,c in zip(name, coord)]
 
-		name, mass, pfile = inp.find( "X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
-		self.atom_spec = [{'name':n, 'mass':m, 'pseudo_file':p} for n,m,p in zip( name, mass, pfile)]
+		name, mass, pfile = inp.find("X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
+		self._atom_spec = [{'name':n, 'mass':m, 'pseudo_file':p} for n,m,p in zip(name, mass, pfile)]
 
-		a1, a2, a3 = inp.find( "v1", "v2", "v3")
-		self.cell = [{'a1':a1, 'a2':a2, 'a3':a3}]
+		a1, a2, a3 = inp.find("v1", "v2", "v3")
+		self._cell = [{'a1':a1, 'a2':a2, 'a3':a3}]
 
-		self.celldm = inp.find( "celldm")
-		self.alat  = inp.find( "celldm(1)")
-		self.ibrav = inp.find( "ibrav")
-		self.atom_p = inp.find( "ATOMIC_POSITIONS")
-		self.cell_p = inp.find( "CELL_PARAMETERS")
-		#print( self.atom_p, self.cell_p)
-		return
+		self.celldm  = inp.find("celldm")
+		self.alat    = inp.find("celldm(1)")
+		self.ibrav   = inp.find("ibrav")
+		self.atom_p  = inp.find("ATOMIC_POSITIONS")
+		self.cell_p  = inp.find("CELL_PARAMETERS")
+		self.n_atoms = inp.find("nat")
+		self.n_types = inp.find("ntyp")
 
-	def validate( self):
+	def validate(self):
 		ret = True
 		if self.ibrav == None:
-			warning.print( "ibrav is not set.")
+			warning.print("ibrav is not set.")
 			ret = False
-		if self.atom_spec == None:
-			warning.print( "List of atom types is not set.")
+		if self._atom_spec == None:
+			warning.print("List of atom types is not set.")
 			ret = False
-		if self.atoms == None:
-			warning.print( "List of atomic positions is not set.")
+		if self._atoms == None:
+			warning.print("List of atomic positions is not set.")
 			ret = False
 
-		for a in self.atoms:
-			if not any( a['name'] == s['name'] for s in self.atom_spec):
-				warning.print( "Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
+		for typ in self.atoms_typ:
+			if not typ in self.all_atoms_typ:
+				warning.print("Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
 				ret = False
 
 		if self.ibrav == 0:
 			if self.cell is None:
-				warning.print( "Cell structure is not set with 'ibrav = 0'.")
+				warning.print("Cell structure is not set with 'ibrav = 0'.")
 				ret = False
 		return ret and super().validate()
 
-	def plot( self, 
+	def plot(
+		self, 
 		repX=1, repY=1, repZ=1, 
 		cell=False, 
 		bonds=True,
@@ -180,210 +301,167 @@ class structure( dfp):
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
 
-		typ = [a['name'] for a in self.atoms]
-
-		#print( self.cell)
-		if self.cell == None:
-			self._ibrav_to_cell_()
-		else:
-			if len( self.cell[0]['a1']) != 3:
-				self._ibrav_to_cell_()
+		typ = self.atoms_typ
 
 		if recip:
-			try:
-				test = isinstance( self.recip, list) and len( self.recip[0]['b1'])
-			except:
-				test = False
-			if not test:
-				self._cell_to_recip_()
-			CELL = self.recip[0]
-			fact = 1
-			ax.set_xlabel("x (Bohr^-1)")
-			ax.set_ylabel("y (Bohr^-1)")
-			ax.set_zlabel("z (Bohr^-1)")
+			ax.set_xlabel(r"$x (Bohr^{-1})$")
+			ax.set_ylabel(r"$y (Bohr^{-1})$")
+			ax.set_zlabel(r"$z (Bohr^{-1})$")
+			cg.draw_Wigner_Seitz(ax, *self.recip)
+			plt.show()
+			return
 		else:
-			CELL = self.cell[0]
-			fact = self.alat if self.cell_p == 'alat' else 1
 			ax.set_xlabel("x (Bohr)")
 			ax.set_ylabel("y (Bohr)")
 			ax.set_zlabel("z (Bohr)")
 
-		v1 = np.array( list(CELL.values())[0]) * fact
-		v2 = np.array( list(CELL.values())[1]) * fact
-		v3 = np.array( list(CELL.values())[2]) * fact
 
-		if recip:
-			cg.draw_Wigner_Seitz( ax, v1, v2, v3)
-			plt.show()
-			return
-
-		fact = self.alat if self.atom_p == 'alat' else 1
-		if self.atom_p != 'crystal':
-			L = np.array( [np.array(a['coord'])*fact for a in self.atoms])
-		else:
-			U = np.array([v1,v2,v3])
-			L = np.array([U.dot( a['coord']) for a in self.atoms])
-
-		for rep, v in zip( [repX,repY,repZ],[v1,v2,v3]):
+		L = self.atoms_coord_cart
+		for rep, v in zip([repX,repY,repZ],self.cell):
 			typ = typ * rep
-			L = cg.cell_repetitions( L, v, rep)
-
-		atom_list = list( zip( typ, L))
+			L = cg.cell_repetitions(L, v, rep)
+		atom_list = list(zip(typ, L))
 
 		if cell:
-			cg.draw_cell( ax, v1, v2, v3)
+			cg.draw_cell(ax, *self.cell)
 		if bonds:
-			cg.draw_bonds( ax, atom_list, graph_lvl=graph_lvl)
-		for t in self.atom_spec:
-			cg.draw_atoms( ax, atom_list, t['name'], graph_lvl=graph_lvl)
+			cg.draw_bonds(ax, atom_list, graph_lvl=graph_lvl)
+		for t in self._atom_spec:
+			cg.draw_atoms(ax, atom_list, t['name'], graph_lvl=graph_lvl)
 
 		ax.legend()
 		plt.show()
 
+	def _cell_to_recip_(self):
+		return _recip_space_(*self.cell)
 
-	def _cell_to_recip_( self):
-		fact = self.alat if self.cell_p == 'alat' else 1
-		CELL = self.cell[0]
-		v1 = np.array( CELL['a1']) * fact
-		v2 = np.array( CELL['a2']) * fact
-		v3 = np.array( CELL['a3']) * fact
-
-		vol = v1.dot( np.cross(v2, v3))
-		c = 1 / vol
-		b1 = c * np.cross( v2, v3)
-		b2 = c * np.cross( v3, v1)
-		b3 = c * np.cross( v1, v2)
-		self.recip= [{'b1':b1, 'b2':b2, 'b3':b3}]
-		return
-
-
-	def _ibrav_to_cell_( self):
+	def _ibrav_to_cell_(self):
 		if self.ibrav == None:
-			raise error( "Failed to generate cell structure from self.ibrav: self.ibrav not set.")
+			raise error("Failed to generate cell structure from self.ibrav: self.ibrav not set.")
 		"""
-			v1 = np.array( [,,]) * lp
-			v2 = np.array( [,,]) * lp
-			v3 = np.array( [,,]) * lp
+			v1 = np.array([,,]) * lp
+			v2 = np.array([,,]) * lp
+			v3 = np.array([,,]) * lp
 		"""
 
 		lp = self.alat
 
 		if   self.ibrav ==  1:
-			v1 = np.array( [1,0,0]) * lp
-			v2 = np.array( [0,1,0]) * lp
-			v3 = np.array( [0,0,1]) * lp
+			v1 = np.array([1,0,0]) * lp
+			v2 = np.array([0,1,0]) * lp
+			v3 = np.array([0,0,1]) * lp
 		elif self.ibrav ==  2:
-			v1 = np.array( [-1,0,1]) * lp/2
-			v2 = np.array( [0,1,1]) * lp/2
-			v3 = np.array( [-1,1,0]) * lp/2
+			v1 = np.array([-1,0,1]) * lp/2
+			v2 = np.array([0,1,1]) * lp/2
+			v3 = np.array([-1,1,0]) * lp/2
 		elif self.ibrav ==  3:
-			v1 = np.array( [1,1,1]) * lp/2
-			v2 = np.array( [-1,1,1]) * lp/2
-			v3 = np.array( [-1,-1,1]) * lp/2
+			v1 = np.array([1,1,1]) * lp/2
+			v2 = np.array([-1,1,1]) * lp/2
+			v3 = np.array([-1,-1,1]) * lp/2
 		elif self.ibrav == -3:
-			v1 = np.array( [-1,1,1]) * lp/2
-			v2 = np.array( [1,-1,1]) * lp/2
-			v3 = np.array( [1,1,-1]) * lp/2
+			v1 = np.array([-1,1,1]) * lp/2
+			v2 = np.array([1,-1,1]) * lp/2
+			v3 = np.array([1,1,-1]) * lp/2
 		elif self.ibrav ==  4:
 			c = self.celldm[2]
-			v1 = np.array( [1,0,0]) * lp
-			v2 = np.array( [-1,np.sqrt(3),0]) * lp/2
-			v3 = np.array( [0,0,c]) * lp
+			v1 = np.array([1,0,0]) * lp
+			v2 = np.array([-1,np.sqrt(3),0]) * lp/2
+			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav ==  5:
 			c = self.celldm[3]
 			tx = (1-c)/2
 			ty = (1-c)/6
 			tz = (1+2*c)/3
-			v1 = np.array( [tx,-ty,tz]) * lp
-			v2 = np.array( [0,2*ty,tz]) * lp
-			v3 = np.array( [-tx,-ty,tz]) * lp
+			v1 = np.array([tx,-ty,tz]) * lp
+			v2 = np.array([0,2*ty,tz]) * lp
+			v3 = np.array([-tx,-ty,tz]) * lp
 		elif self.ibrav ==  -5:
 			c = self.celldm[3]
 			ty = (1-c)/6
 			tz = (1+2*c)/3
 			u = tz - 2*np.sqrt(2)*ty
 			v = tz +np.sqrt(2)*ty
-			v1 = np.array( [u,v,v]) * lp/np.sqrt(3)
-			v2 = np.array( [v,u,v]) * lp/np.sqrt(3)
-			v3 = np.array( [v,v,u]) * lp/np.sqrt(3)
+			v1 = np.array([u,v,v]) * lp/np.sqrt(3)
+			v2 = np.array([v,u,v]) * lp/np.sqrt(3)
+			v3 = np.array([v,v,u]) * lp/np.sqrt(3)
 		elif self.ibrav ==  6:
 			c = self.celldm[2]
-			v1 = np.array( [1,0,0]) * lp
-			v2 = np.array( [0,1,0]) * lp
-			v3 = np.array( [0,0,c]) * lp
+			v1 = np.array([1,0,0]) * lp
+			v2 = np.array([0,1,0]) * lp
+			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav ==  7:
 			c = self.celldm[2]
-			v1 = np.array( [1,-1,c]) * lp/2
-			v2 = np.array( [1,1,c]) * lp/2
-			v3 = np.array( [-1,-1,c]) * lp/2
+			v1 = np.array([1,-1,c]) * lp/2
+			v2 = np.array([1,1,c]) * lp/2
+			v3 = np.array([-1,-1,c]) * lp/2
 		elif self.ibrav ==  8:
 			b = self.celldm[1]
 			c = self.celldm[2]
-			v1 = np.array( [1,0,0]) * lp
-			v2 = np.array( [0,b,0]) * lp
-			v3 = np.array( [0,0,c]) * lp
+			v1 = np.array([1,0,0]) * lp
+			v2 = np.array([0,b,0]) * lp
+			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav ==  9:
 			b = self.celldm[1]
 			c = self.celldm[2]
-			v1 = np.array( [1,b,0]) * lp/2
-			v2 = np.array( [-1,b,0]) * lp/2
-			v3 = np.array( [0,0,c]) * lp
+			v1 = np.array([1,b,0]) * lp/2
+			v2 = np.array([-1,b,0]) * lp/2
+			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav == -9:
 			b = self.celldm[1]
 			c = self.celldm[2]
-			v1 = np.array( [1,-b,0]) * lp/2
-			v2 = np.array( [1,b,0]) * lp/2
-			v3 = np.array( [0,0,c]) * lp
+			v1 = np.array([1,-b,0]) * lp/2
+			v2 = np.array([1,b,0]) * lp/2
+			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav == 91:
 			b = self.celldm[1]
 			c = self.celldm[2]
-			v1 = np.array( [1,0,0]) * lp
-			v2 = np.array( [0,b,-c]) * lp/2
-			v3 = np.array( [0,b,c]) * lp/2
+			v1 = np.array([1,0,0]) * lp
+			v2 = np.array([0,b,-c]) * lp/2
+			v3 = np.array([0,b,c]) * lp/2
 		elif self.ibrav ==  10:
 			b = self.celldm[1]
 			c = self.celldm[2]
-			v1 = np.array( [1,0,c]) * lp/2
-			v2 = np.array( [1,b,0]) * lp/2
-			v3 = np.array( [0,b,c]) * lp/2
+			v1 = np.array([1,0,c]) * lp/2
+			v2 = np.array([1,b,0]) * lp/2
+			v3 = np.array([0,b,c]) * lp/2
 		elif self.ibrav ==  11:
 			b = self.celldm[1]
 			c = self.celldm[2]
-			v1 = np.array( [1,b,c]) * lp/2
-			v2 = np.array( [-1,b,b]) * lp/2
-			v3 = np.array( [-1,-b,c]) * lp/2
+			v1 = np.array([1,b,c]) * lp/2
+			v2 = np.array([-1,b,b]) * lp/2
+			v3 = np.array([-1,-b,c]) * lp/2
 		elif self.ibrav ==  12:
 			b = self.celldm[1]
 			c = self.celldm[2]
 			cab = self.celldm[3]
 			sab = np.sqrt(1 - cab**2)
-			v1 = np.array( [1,0,0]) * lp
-			v2 = np.array( [b*cab,b*sab,0]) * lp
-			v3 = np.array( [0,0,c]) * lp
+			v1 = np.array([1,0,0]) * lp
+			v2 = np.array([b*cab,b*sab,0]) * lp
+			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav == -12:
 			b = self.celldm[1]
 			c = self.celldm[2]
 			cac = self.celldm[4]
 			sac = np.sqrt(1 - cac**2)
-			v1 = np.array( [1,0,0]) * lp
-			v2 = np.array( [0,b,0]) * lp
-			v3 = np.array( [c*cac,0,c*sac]) * lp
+			v1 = np.array([1,0,0]) * lp
+			v2 = np.array([0,b,0]) * lp
+			v3 = np.array([c*cac,0,c*sac]) * lp
 		elif self.ibrav ==  13:
 			b = self.celldm[1]
 			c = self.celldm[2]
 			cg = self.celldm[3]
 			sg = np.sqrt(1 - cg**2)
-			v1 = np.array( [1,0,-c]) * lp/2
-			v2 = np.array( [b*cg,b*sg,0]) * lp/2
-			v3 = np.array( [1,0,c]) * lp
+			v1 = np.array([1,0,-c]) * lp/2
+			v2 = np.array([b*cg,b*sg,0]) * lp/2
+			v3 = np.array([1,0,c]) * lp
 		elif self.ibrav ==  -13:
 			b = self.celldm[1]
 			c = self.celldm[2]
 			cb = self.celldm[4]
 			sb = np.sqrt(1 - cb**2)
-			v1 = np.array( [1,-b,0]) * lp/2
-			v2 = np.array( [1,b,0]) * lp/2
-			v3 = np.array( [c*cb,0,c*sb]) * lp
+			v1 = np.array([1,-b,0]) * lp/2
+			v2 = np.array([1,b,0]) * lp/2
+			v3 = np.array([c*cb,0,c*sb]) * lp
 		elif self.ibrav ==  14:
 			b = self.celldm[1]
 			c = self.celldm[2]
@@ -392,14 +470,14 @@ class structure( dfp):
 			cab = self.celldm[5]
 			cg = cab
 			sg = np.sqrt(1 - cg**2)
-			v1 = np.array( [1,0,0]) * lp
-			v2 = np.array( [b*cg,b*sg,0]) * lp
-			v3 = np.array( [c*cac,
+			v1 = np.array([1,0,0]) * lp
+			v2 = np.array([b*cg,b*sg,0]) * lp
+			v3 = np.array([c*cac,
 				c*(cbc-cac*cg)/sg,
 				c*np.sqrt(1+2*cbc*cac*cg-cbc**2-cac**2-cg**2)/sg]) * lp
 
 		self.cell_p = 'bohr'
-		self.cell=[{'a1':v1, 'a2':v2, 'a3':v3}]
+		return np.array([v1,v2,v3])
 
 
 

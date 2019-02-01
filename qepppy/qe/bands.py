@@ -1,7 +1,7 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..logger import logger, warning
-from .._decorators import save_opt, plot_opt
+from .._decorators import save_opt, plot_opt, store_property
 
 HA_to_eV = 27.21138602
 
@@ -121,41 +121,37 @@ class bands(dfp):
 		return super().__getitem__(key)
 
 	@property
+	@store_property
 	def kpt_cart(self):
-		if not 'kpt_cart' in self.__dict__:
-			kpt = np.array([a['kpt'] for a in self.__dict__['_kpt']])
-			kpt = kpt[:self.n_kpt,:]
-			self.__dict__['kpt_cart'] = kpt
-		return self.__dict__['kpt_cart']
+		kpt = np.array([a['kpt'] for a in self._kpt])
+		kpt = kpt[:self.n_kpt,:]
+		return kpt
 
 	@property
+	@store_property
 	def kpt_cryst(self):
-		if not 'kpt_cryst' in self.__dict__:
-			n = self.n_kpt
-			kpt = np.array([a['kpt'] for a in self.__dict__['_kpt']])
-			if kpt.shape[0] > n:
-				self.__dict__['kpt_cryst'] = kpt[n:2*n,:]
-			else:
-				raise NotImplementedError()
-		return self.__dict__['kpt_cryst']
+		n = self.n_kpt
+		kpt = np.array([a['kpt'] for a in self._kpt])
+		if kpt.shape[0] > n:
+			kpt = kpt[n:2*n,:]
+		else:
+			raise NotImplementedError()
+		return kpt
 
 	@property
+	@store_property
 	def weight(self):
-		if not 'weight' in self.__dict__:
-			self.__dict__['weight'] = np.array([a['weight'] for a in self._kpt])
-		return self.__dict__['weight']
+		return np.array([a['weight'] for a in self._kpt])
 
 	@property
+	@store_property
 	def egv(self):
-		if not 'egv' in self.__dict__:
-			self.__dict__['egv'] = np.array([a['egv'] for a in self._egv]) * self.e_units
-		return self.__dict__['egv']
+		return np.array([a['egv'] for a in self._egv]) * self.e_units
 
 	@property
+	@store_property
 	def occ(self):
-		if not 'occ' in self.__dict__:
-			self.__dict__['occ'] = np.array([a['occ'] for a in self._occ])
-		return self.__dict__['occ']
+		return np.array([a['occ'] for a in self._occ])
 	
 	
 

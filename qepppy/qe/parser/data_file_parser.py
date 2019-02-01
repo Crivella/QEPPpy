@@ -31,7 +31,7 @@ def _get_value_(f, search_data, dtype=str):
 	try:
 		if dtype == list:
 			a = re.finditer(string, f)
-			a = [ x.groupdict() for x in a]
+			a = [x.groupdict() for x in a]
 			for n,e in enumerate(a):
 				for k,v in e.items():
 					b = np.fromstring(v, sep=' ')
@@ -41,16 +41,19 @@ def _get_value_(f, search_data, dtype=str):
 						b = b[0]
 					a[n][k] = b*m
 		else:
-			a = re.search(string + matches[dtype], f).group('flag')
+			sstring = string
+			if r'(?P<flag>' not in string:
+				sstring += matches[dtype]
+			a = re.search(sstring, f).group('flag')
 	except Exception as e:
-		#print(e)
+		# print(e)
 		pass
 
 	val = None
 	try:
 		val = dtype(a)
 	except:
-		warning.print( "Failed to convert '{}'(from '{}') to dtype '{}'".format(a, string, dtype))
+		warning.print("Failed to convert '{}'(from '{}') to dtype '{}'".format(a, string, dtype))
 	return val
 
 def _xml_attr_(node, f="", n=""):
@@ -69,9 +72,9 @@ def _xml_node_list_(node, f="", n=""):
 	for c in node:
 		d=c.attrib
 		d = {k:_format_(v) for k,v in d.items()}
-		add = c.text.strip().replace( "\n", " ")
+		add = c.text.strip().replace("\n", " ")
 		if add:
-			add = list(filter(None, add.split( " ")))
+			add = list(filter(None, add.split(" ")))
 			if len(add) == 1:
 				add = add[0]
 			if isinstance(add, list):
@@ -133,7 +136,7 @@ class data_file_parser(object):
 			self._parse_xml_()
 		elif outfile:
 			self.outfile = outfile
-			self._parse_outfile_( )
+			self._parse_outfile_()
 		if kwargs:
 			for k, v in kwargs.items():
 				if not k in self.__dict__:
@@ -153,18 +156,14 @@ class data_file_parser(object):
 
 		for k, v in self._data_.items():
 			t = v['res_type']
-			search = v.get( 'outfile_regex', None)
+			search = v.get('outfile_regex', None)
 			if search is None:
 				continue
-			#print(k,v)
-			#print(search)
-
 			val = None
 			try:
 				val = _get_value_(content, v, dtype=t)
 			except Exception as e:
-				print( "ERROR: ", e)
-			#print(val)
+				print("ERROR: ", e)
 			self.__dict__[k] = val
 		return
 
@@ -181,13 +180,16 @@ class data_file_parser(object):
 		for k, v in self._data_.items():
 			res = None
 			t = v['res_type']
-			n = v['extra_name']
-			f = v['xml_search_string']
-			func = xml_acq_rule[v['xml_ptype']]
+			try:
+				n = v['extra_name']
+				f = v['xml_search_string']
+				func = xml_acq_rule[v['xml_ptype']]
+			except:
+				continue
 			try: 
 				res = func(root, f, n)
 			except Exception as e: 
-				continue # raise Exception( "{}, {}".format(k,e));print(k, e);
+				continue # raise Exception("{}, {}".format(k,e));print(k, e);
 			#print(k, t, res)
 			#if res == None: continue
 			if t == np.array: 
