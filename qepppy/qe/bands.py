@@ -3,27 +3,84 @@ from .parser.data_file_parser import data_file_parser as dfp
 from ..logger import logger, warning
 from .._decorators import save_opt, plot_opt
 
+HA_to_eV = 27.21138602
+
 
 data={
-	'n_kpt':{'x':'text', 'f':'output//nk', 'n':None, 't':int, 
-		'bu':r'number of k points[\s]*='},
-	'n_bnd':{'x':'attr', 'f':'output//ks_energies/eigenvalues', 'n':'size', 't':int, 
-		'bu':r'number of Kohn-Sham states[\s]*='},
-	'n_el':{'x':'text', 'f':'output//nelec', 'n':None, 't':float, 
-		'bu':r'number of electrons[\s]*='},
-	'fermi':{'x':'text', 'f':'output//fermi_energy', 'n':None, 't':float, 
-		'bu':r'the Fermi energy is'},
-	'fermi_s':{'x':'nodelist', 'f':'output//two_fermi_energies', 'n':'fermi', 't':list},
-	'homo':{'x':'text', 'f':'output//highestOccupiedLevel', 'n':None, 't':float},
-	'lsda':{'x':'text', 'f':'output//lsda', 'n':None, 't':bool},
-	'noncolin':{'x':'text', 'f':'output//noncolin', 'n':None, 't':bool, 
-		'bu':r'spin'},
-	'_kpt':{'x':'nodelist', 'f':'output//ks_energies/k_point', 'n':'kpt', 't':list, 
-		'bu':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)'},
-	'_egv':{'x':'nodelist', 'f':'output//ks_energies/eigenvalues', 'n':'egv', 't':list, 
-		'bu':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 'm':1/27.21138602},
-	'_occ':{'x':'nodelist', 'f':'output//ks_energies/occupations', 'n':'occ', 't':list, 
-		'bu':r'occupation numbers(?P<occ>[\s\d\.]+)'},
+	'n_kpt':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//nk', 
+		'extra_name':None, 
+		'res_type':int,
+		'outfile_regex':r'number of k points[\s]*='
+		},
+	'n_bnd':{
+		'xml_ptype':'attr', 
+		'xml_search_string':'output//ks_energies/eigenvalues', 
+		'extra_name':'size', 
+		'res_type':int,
+		'outfile_regex':r'number of Kohn-Sham states[\s]*='
+		},
+	'n_el':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//nelec', 
+		'extra_name':None, 
+		'res_type':float,
+		'outfile_regex':r'number of electrons[\s]*='
+		},
+	'fermi':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//fermi_energy', 
+		'extra_name':None, 
+		'res_type':float,
+		'outfile_regex':r'the Fermi energy is'
+		},
+	'fermi_s':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//two_fermi_energies', 
+		'extra_name':'fermi', 
+		'res_type':list
+		},
+	'homo':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//highestOccupiedLevel', 
+		'extra_name':None, 
+		'res_type':float
+		},
+	'lsda':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//lsda', 
+		'extra_name':None, 
+		'res_type':bool
+		},
+	'noncolin':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//noncolin', 
+		'extra_name':None, 
+		'res_type':bool,
+		'outfile_regex':r'spin'
+		},
+	'_kpt':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//ks_energies/k_point', 
+		'extra_name':'kpt', 
+		'res_type':list,
+		'outfile_regex':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)'
+		},
+	'_egv':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//ks_energies/eigenvalues', 
+		'extra_name':'egv', 
+		'res_type':list,
+		'outfile_regex':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 'm':1/HA_to_eV
+		},
+	'_occ':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//ks_energies/occupations', 
+		'extra_name':'occ', 
+		'res_type':list,
+		'outfile_regex':r'occupation numbers(?P<occ>[\s\d\.]+)'
+		},
 	}
 
 @logger()
@@ -38,7 +95,7 @@ class bands(dfp):
 	- smallest_gap(): Print an analysis of the band gap.
 	"""
 	__name__ = "bands"
-	e_units = 27.21138602
+	e_units = HA_to_eV
 	def __init__(self, d={}, **kwargs):
 		d.update(data)
 		super().__init__(d=d, **kwargs)
@@ -79,7 +136,7 @@ class bands(dfp):
 			if kpt.shape[0] > n:
 				self.__dict__['kpt_cryst'] = kpt[n:2*n,:]
 			else:
-				raise NotImplemented()
+				raise NotImplementedError()
 		return self.__dict__['kpt_cryst']
 
 	@property

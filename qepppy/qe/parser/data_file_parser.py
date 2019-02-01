@@ -24,7 +24,7 @@ matches = {
 def _get_value_( f, search_data, dtype=str):
 	import re
 
-	string = search_data['bu']
+	string = search_data['outfile_regex']
 	m = search_data.get('m', 1)
 
 	a = None
@@ -99,10 +99,10 @@ class data_file_parser( object):
 	The rule dict has to follow the format:
 	{
 	'varname':{
-	    't':type, (int/float/ndarray/...)
-	    'f':element to find, (string)
-	    'x':xmlacquisition rule, ('attr'/text/nodelist)
-	    'n':name
+	    'res_type':type, (int/float/ndarray/...)
+	    'xml_search_string':element to find, (string)
+	    'xml_ptype':xmlacquisition rule, ('attr'/text/nodelist)
+	    'extra_name':name
 	    }
 	'varname1':{...}
 	}
@@ -150,8 +150,8 @@ class data_file_parser( object):
 			content = f.read()
 
 		for k, v in self._data_.items():
-			t = v['t']
-			search = v.get( 'bu', None)
+			t = v['res_type']
+			search = v.get( 'outfile_regex', None)
 			if search is None:
 				continue
 			#print(k,v)
@@ -180,12 +180,14 @@ class data_file_parser( object):
 
 		for k, v in self._data_.items():
 			res = None
-			t = v['t']
-			n = v['n']
-			f = v['f']
-			func = xml_acq_rule[v['x']]
-			try: res = func( root, f, n)
-			except Exception as e: continue # raise Exception( "{}, {}".format(k,e));print( k, e);
+			t = v['res_type']
+			n = v['extra_name']
+			f = v['xml_search_string']
+			func = xml_acq_rule[v['xml_ptype']]
+			try: 
+				res = func( root, f, n)
+			except Exception as e: 
+				continue # raise Exception( "{}, {}".format(k,e));print( k, e);
 			#print( k, t, res)
 			#if res == None: continue
 			if t == np.array: self.__dict__[k] = t( res, dtype=float)

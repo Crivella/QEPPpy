@@ -9,17 +9,52 @@ bravais_index={	'0':'free', '1':'simple cubic (sc)', '2':'face-centered cubic (f
 	'12':'monoclinic P', '-12':'as 12 unique axis', '13':'base-centered monoclinic', '14':'triclinic'}
 
 data={
-	'ibrav':{'x':'attr', 'f':'output//atomic_structure', 'n':'bravais_index', 't':int,
-		'bu':r'bravais-lattice index[\s]*='},
-	'alat':{'x':'attr', 'f':'output//atomic_structure', 'n':'alat', 't':float,
-		'bu':r'lattice parameter \(alat\)[\s]*='},
-	'cell':{'x':'nodelist', 'f':'output//cell', 'n':None, 't':list},
-	'recip':{'x':'nodelist', 'f':'output//reciprocal_lattice', 'n':None, 't':list},
-	'atoms':{'x':'nodelist', 'f':'output//atom', 'n':'coord', 't':list,
-		'bu':r'\d +(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'},
-	'atom_spec':{'x':'nodelist', 'f':'input//species', 'n':None, 't':list,
-		'bu':r' {4,}(?P<name>\w+) +[\d\.]+ +(?P<mass>[\d\.]+) + (?P<pseudo_file>\w+\([ \d\.]+\))'},
-	'symm':{'x':'nodelist', 'f':'output//symmetry', 'n':None, 't':list}
+	'ibrav':{
+		'xml_ptype':'attr', 
+		'xml_search_string':'output//atomic_structure', 
+		'extra_name':'bravais_index', 
+		'res_type':int,
+		'outfile_regex':r'bravais-lattice index[\s]*='
+		},
+	'alat':{
+		'xml_ptype':'attr', 
+		'xml_search_string':'output//atomic_structure', 
+		'extra_name':'alat', 
+		'res_type':float,
+		'outfile_regex':r'lattice parameter \(alat\)[\s]*='
+		},
+	'cell':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//cell', 
+		'extra_name':None, 
+		'res_type':list
+		},
+	'recip':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//reciprocal_lattice', 
+		'extra_name':None, 
+		'res_type':list
+		},
+	'atoms':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//atom', 
+		'extra_name':'coord', 
+		'res_type':list,
+		'outfile_regex':r'\d +(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
+		},
+	'atom_spec':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'input//species', 
+		'extra_name':None, 
+		'res_type':list,
+		'outfile_regex':r' {4,}(?P<name>\w+) +[\d\.]+ +(?P<mass>[\d\.]+) + (?P<pseudo_file>\w+\([ \d\.]+\))'
+		},
+	'symm':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//symmetry', 
+		'extra_name':None, 
+		'res_type':list
+		}
 	}
 
 
