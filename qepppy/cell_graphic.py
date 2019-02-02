@@ -58,7 +58,6 @@ def cell_repetitions(base, vect, num):
 
 def split_atom_list_by_name(atom_coord, atom_names):
 	from scipy.spatial import KDTree
-	coords = []
 	trees  = []
 	rad    = []
 	names  = []
@@ -67,18 +66,17 @@ def split_atom_list_by_name(atom_coord, atom_names):
 	for n in set(atom_names):
 		coord = atom_coord[np.where(atom_names == n)[0],:]
 
-		coords.append(coord)
 		names.append(n)
 		trees.append(KDTree(coord))
 		rad.append(periodic_table[n]['radius'])
-	return np.array(coords), np.array(names), rad, trees
+	return trees, np.array(names), rad
 
 
 def draw_atoms(ax, atom_coord, atom_names, graph_lvl=0):
-	coords, names, rad, _ = split_atom_list_by_name(atom_coord, atom_names)
+	trees, names, rad = split_atom_list_by_name(atom_coord, atom_names)
 
-	for c,n,r in zip(coords,names,rad):
-		X,Y,Z = c.T
+	for tree,n,r in zip(trees,names,rad):
+		X,Y,Z = tree.data.T
 		color = periodic_table[n]['color']
 		if graph_lvl == 0 or graph_lvl == 1:
 			ax.scatter(
@@ -177,20 +175,17 @@ def _draw_bond_(ax, start, end, color1, color2, graph_lvl=0):
 def draw_bonds(ax, atom_coord, atom_names, **kwargs):
 	from itertools import combinations_with_replacement as cwr
 
-	coords, names, rad, trees = split_atom_list_by_name(atom_coord, atom_names)
+	trees, names, rad = split_atom_list_by_name(atom_coord, atom_names)
 
-	for tree1, tree2 in cwr(trees,2):
-		n1 = trees.index(tree1)
-		n2 = trees.index(tree2)
-		
-		bonds = tree1.query_ball_tree(tree2, rad[n1] + rad[n2])
-		c1 = periodic_table[names[n1]]['color']
-		c2 = periodic_table[names[n2]]['color']
+	for rad_t, (tree1,tree2), (name1,name2) in zip(cwr(rad,2), cwr(trees,2), cwr(names,2)):
+		bonds = tree1.query_ball_tree(tree2, sum(rad_t))
+		c1 = periodic_table[name1]['color']
+		c2 = periodic_table[name2]['color']
 		for i1,b in enumerate(bonds):
 			for i2 in b:
 				if i1 == i2 and tree1 == tree2:
 					continue
-				start = coords[n1][i1]
-				end   = coords[n2][i2]
+				start = tree1.data[i1]
+				end   = tree2.data[i2]
 				_draw_bond_(ax, start, end, c1, c2, **kwargs)
 
