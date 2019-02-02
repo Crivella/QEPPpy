@@ -109,25 +109,6 @@ data={
 		}
 	}
 
-"""
-      isym =  1     identity                                     
-
- cryst.   s( 1) = (     1          0          0      )
-                  (     0          1          0      )
-                  (     0          0          1      )
-
-{'class': 'E',
- 'dims': '3 3',
- 'equivalent_atoms': array([1., 2.]),
- 'fractional_translation': array([0., 0., 0.]),
- 'info': 'crystal_symmetry',
- 'name': 'identity',
- 'nat': 2,
- 'order': 'F',
- 'rank': 2,
- 'rotation': array([1., 0., 0., 0., 1., 0., 0., 0., 1.]),
- 'size': 2}
-"""
 def _recip_space_(v1, v2, v3):
 	vol = v1.dot(np.cross(v2, v3))
 	c   = 1. / vol
@@ -348,7 +329,7 @@ class structure(dfp):
 			ax.set_xlabel(r"$x (Bohr^{-1})$")
 			ax.set_ylabel(r"$y (Bohr^{-1})$")
 			ax.set_zlabel(r"$z (Bohr^{-1})$")
-			cg.draw_Wigner_Seitz(ax, *self.recip)
+			cg.draw_Wigner_Seitz(ax, self.recip)
 			plt.show()
 			return
 		else:
@@ -361,15 +342,12 @@ class structure(dfp):
 		for rep, v in zip([repX,repY,repZ],self.cell):
 			typ = typ * rep
 			L = cg.cell_repetitions(L, v, rep)
-		atom_list = list(zip(typ, L))
 
+		cg.draw_atoms(ax, L, typ, graph_lvl=graph_lvl)
 		if cell:
 			cg.draw_cell(ax, *self.cell)
 		if bonds:
-			cg.draw_bonds(ax, atom_list, graph_lvl=graph_lvl)
-		for t in self._atom_spec:
-			cg.draw_atoms(ax, atom_list, t['name'], graph_lvl=graph_lvl)
-
+			cg.draw_bonds(ax, L, typ, graph_lvl=graph_lvl)
 		ax.legend()
 		plt.show()
 
