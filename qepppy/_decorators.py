@@ -3,7 +3,7 @@ from decorator import decorator
 
 
 @decorator
-def save_opt(
+def numpy_save_opt(
 	func, 
 	_fname='', _fmt="",
 	*args, 
@@ -18,12 +18,12 @@ def save_opt(
 	  - _fmt: Default format string to be used if not specified
 	"""
 	# try:
-	# 	func.doc_save_opt
+	# 	func.doc_numpy_save_opt
 	# except:
 	# 	if func.__doc__ is None:
 	# 		func.__doc__ = ''
-	# 	func.__doc__ += '\n' + save_opt.__doc__
-	# 	func.doc_save_opt = True
+	# 	func.__doc__ += '\n' + numpy_save_opt.__doc__
+	# 	func.doc_numpy_save_opt = True
 
 	if not fname:
 		fname = _fname
@@ -43,7 +43,7 @@ def save_opt(
 	return res
 
 @decorator
-def plot_opt(
+def numpy_plot_opt(
 	func,
 	_xlab="", _ylab="",
 	*args, 
@@ -64,12 +64,12 @@ def plot_opt(
 	  - ylab: string to use as y label
 	"""
 	# try:
-	# 	func.doc_plot_opt
+	# 	func.doc_numpy_plot_opt
 	# except:
 	# 	if func.__doc__ is None:
 	# 		func.__doc__ = ''
-	# 	func.__doc__ += '\n' + plot_opt.__doc__
-	# 	func.doc_plot_opt = True
+	# 	func.__doc__ += '\n' + numpy_plot_opt.__doc__
+	# 	func.doc_numpy_plot_opt = True
 
 	if not xlab:
 		xlab = _xlab

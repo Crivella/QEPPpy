@@ -1,7 +1,7 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..logger import logger, warning
-from .._decorators import save_opt, plot_opt, store_property
+from .._decorators import numpy_save_opt, numpy_plot_opt, store_property
 
 HA_to_eV = 27.21138602
 
@@ -156,8 +156,8 @@ class bands(dfp):
 	
 	
 
-	@plot_opt(_ylab="Energy (eV)")
-	@save_opt(_fname="plotted.dat",_fmt="")
+	@numpy_plot_opt(_ylab="Energy (eV)")
+	@numpy_save_opt(_fname="plotted.dat",_fmt="")
 	def band_structure(
 		self, *args,
 		**kwargs
@@ -171,12 +171,12 @@ class bands(dfp):
 		  The first column is the coordinates of |dK| to be used as X axis for a band plot.
 		  The other column are the ordered band eigenvalue for the corresponding kpt.
 
-		save_opt specific params:
+		numpy_save_opt specific params:
 		  - pFile: (True/False) Enable/disable save functionality (default = True)
 		  - fname: Output file name (must be present)
 		  - fmt:   Format string to pass to np.savetxt
 
-		plot_opt specific params:
+		numpy_plot_opt specific params:
 		  - plot:      (True/False) Enable/disable plot functionality (default = True)
 		  - xlab:      String to use as x label
 		  - ylab:      String to use as y label
@@ -200,8 +200,8 @@ class bands(dfp):
 
 		return res
 
-	@plot_opt(_xlab="Energy (eV)",_ylab="DOS (arb. units)")
-	@save_opt(_fname="dos.dat")
+	@numpy_plot_opt(_xlab="Energy (eV)",_ylab="DOS (arb. units)")
+	@numpy_save_opt(_fname="dos.dat")
 	def density_of_states(
 		self, *args, 
 		emin=-20, emax=20, deltaE=0.001, deg=0.00, 
@@ -222,12 +222,12 @@ class bands(dfp):
 		  The first column is the value of the energies generated using np.linspace(emin,emax,(emax-emin)/(deltaE)+1)
 		  The second column is the value of the DOS
 
-		save_opt specific params:
+		numpy_save_opt specific params:
 		  - pFile: (True/False) Enable/disable save functionality (default = True)
 		  - fname: Output file name (must be present)
 		  - fmt:   Format string to pass to np.savetxt
 
-		plot_opt specific params:
+		numpy_plot_opt specific params:
 		  - plot:      (True/False) Enable/disable plot functionality (default = True)
 		  - xlab:      String to use as x label
 		  - ylab:      String to use as y label

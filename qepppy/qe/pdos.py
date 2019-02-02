@@ -2,7 +2,7 @@ import re
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 # from ..logger import logger, warning
-from .._decorators import save_opt, plot_opt, store_property
+from .._decorators import numpy_save_opt, numpy_plot_opt, store_property
 
 
 data={
@@ -108,15 +108,15 @@ class pdos(dfp):
 		return res
 
 	def pdos_char(self, kpt_list=[], bnd_list=[], thr=1E-2):
-		# if isinstance(kpt_list, str):
-		# 	kpt_list = kpt_list.split(",")
-		# if isinstance(bnd_list, str):
-		# 	bnd_list = bnd_list.split(",")
+		msg = ""
 		for k in kpt_list:
-			print("KPT(#{:5d}): {}".format(k, self.kpt[k-1]))
+			msg += ("KPT(#{:5d}): " + "{:9.4f}"*3 + "\n").format(k, *self.kpt[k-1])
 			for b in bnd_list:
-				print("\tE = {} eV".format(self.egv[k-1][b-1]))
+				msg += "\tE = {} eV\n".format(self.egv[k-1][b-1])
 				for p in np.where(self.components[k-1,b-1,:] >= thr)[0]:
-					print("\t\t{}: {:8.3f}%".format(self.states[p], self.components[k-1,b-1,p]*100))
+					msg += "\t\t{}: {:8.3f}%\n".format(self.states[p], self.components[k-1,b-1,p]*100)
+				msg += "\n"
+			msg += "\n"
 
+		return msg
 
