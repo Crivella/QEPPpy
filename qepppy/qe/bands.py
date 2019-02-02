@@ -72,7 +72,8 @@ data={
 		'xml_search_string':'output//ks_energies/eigenvalues', 
 		'extra_name':'egv', 
 		'res_type':list,
-		'outfile_regex':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 'm':1/HA_to_eV
+		'outfile_regex':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
+		'modifier':1/HA_to_eV
 		},
 	'_occ':{
 		'xml_ptype':'nodelist', 
@@ -103,13 +104,13 @@ class bands(dfp):
 
 	def __str__(self):
 		msg = super().__str__()
-		bnd = len(self.egv[0]['egv'])-1
+		bnd = self.n_bnd
 		kpt_fmt = "\nkpt(#{{:5d}}):  " + "{:8.4f}"*3 + " [2pi/alat]"
-		egv_fmt = "\nEigenvalues(eV):\n"+("  "+"{:12.6f}"*8+"\n")*int(bnd/8)
-		egv_fmt += "  "+"{:12.6f}"*(bnd%8+1)+"\n"
+		egv_fmt = "\nEigenvalues(eV):\n" + ("  "+"{:12.6f}"*8+"\n")*(bnd//8)
+		egv_fmt += "  " + "{:12.6f}"*(bnd%8) + "\n"
 		for i in range(self.n_kpt):
-			msg += kpt_fmt.format(*self.kpt_cart[i]['kpt']).format(i)
-			msg += egv_fmt.format(*self.egv[i]['egv'])
+			msg += kpt_fmt.format(*self.kpt_cart[i]).format(i)
+			msg += egv_fmt.format(*self.egv[i])
 		return msg
 
 	def __getitem__(self, key):

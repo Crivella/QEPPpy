@@ -25,7 +25,7 @@ def _get_value_(f, search_data, dtype=str):
 	import re
 
 	string = search_data['outfile_regex']
-	m = search_data.get('m', 1)
+	m = search_data.get('modifier', 1)
 
 	a = None
 	try:
@@ -35,7 +35,6 @@ def _get_value_(f, search_data, dtype=str):
 			for n,e in enumerate(a):
 				for k,v in e.items():
 					b = np.fromstring(v, sep=' ')
-					# if len(b) == 0:
 					if len(b) == 0 or re.findall(r'\s[a-zA-Z]', v):
 						b = str(v).strip()
 					elif len(b) == 1:

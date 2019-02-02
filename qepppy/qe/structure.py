@@ -128,33 +128,40 @@ class structure(dfp):
 		super().__init__(d=d, **kwargs)
 		return
 
-	def __str__(self, info=0):
-		msg = super().__str__()
-		fact = self.alat if self.cell_p == 'alat' else 1				
-		if not self.ibrav or info > 0:
-			msg += "CELL_PARAMETERS\n"
-			for l in self.cell:
-				for e in l:
-					msg += "{:9.4f}".format(e * fact)
-				msg += "\n"
-			msg += "\n"
-
-		msg += "ATOMIC_SPECIES\n"
-		for s in self._atom_spec:
-			msg += "{:6}{:12.4f}  {}".format(s['name'], s['mass'], s['pseudo_file'])
-		msg += "\n\n"
-
-		fact = self.alat if self.atom_p == 'alat' else 1
-		msg += "ATOMIC_POSITIONS\n"
-		for a in self.atoms:
-			msg += "{:4}  ".format(a['name'])
-			for c in a['coord']:
-				msg += "{:10.5f}".format(c * fact)
+	def _format_cell_(self, info):
+		if self.ibrav and info == 0:
+			return ""
+		msg = "CELL_PARAMETERS\n"
+		for l in self.cell:
+			for e in l:
+				msg += "{:9.4f}".format(e)
 			msg += "\n"
 		msg += "\n"
+		return msg
 
-		if info == 1:
-			msg += "dbg info"
+	def _format_atom_spec_(self):
+		msg = "ATOMIC_SPECIES\n"
+		for s in self._atom_spec:
+			msg += "{:6}{:12.4f}  {}".format(s['name'], s['mass'], s['pseudo_file'])
+			msg += "\n"
+		msg += "\n\n"
+		return msg
+
+	def _format_atom_pos_(self):
+		msg = "ATOMIC_POSITIONS\n"
+		for coord,name in zip(self.atoms_coord_cart, self.atoms_typ):
+			msg += "{:4}  ".format(name)
+			for c in coord:
+				msg += "{:10.5f}".format(c)
+			msg += "\n"
+		msg += "\n"
+		return msg
+
+	def __str__(self, info=0):
+		msg = super().__str__()
+		msg += self._format_cell_(info)
+		msg += self._format_atom_spec_()
+		msg += self._format_atom_pos_()
 
 		return msg
 
