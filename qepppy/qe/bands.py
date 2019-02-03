@@ -1,7 +1,7 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..logger import logger, warning
-from .._decorators import numpy_save_opt, numpy_plot_opt, store_property
+from .._decorators import numpy_save_opt, numpy_plot_opt, store_property, IO_stdout_redirect
 
 HA_to_eV = 27.21138602
 
@@ -260,7 +260,8 @@ class bands(dfp):
 
 		return data.T
 
-	def smallest_gap(self, radius=0., comp_point=(0.,0.,0.)):
+	@IO_stdout_redirect()
+	def smallest_gap(self, radius=0., comp_point=(0.,0.,0.), **kwargs):
 		"""
 		Print to screen the following information concerning the band gap:
 		  - Fermi energy
@@ -272,7 +273,7 @@ class bands(dfp):
 		  - radius: radius of the crop sphere centered around comp_point
 		  - comp_point: tuple of coordinates for the center of the crop sphere
 		"""
-		print("\nSMALLEST_GAP: radius={}, comp_point={}\n".format(radius, comp_point))
+		print("SMALLEST_GAP: radius={}, comp_point={}\n".format(radius, comp_point))
 
 		if(radius < 0):
 			raise ValueError("Radius can't be negative")

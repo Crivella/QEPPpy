@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from decorator import decorator
 
@@ -126,3 +127,22 @@ def store_property(func, *args, **kwargs):
 		res = func(*args, **kwargs)
 		cls.__dict__[name] = res
 	return res
+
+@decorator
+def IO_stdout_redirect(
+	func,
+	_outfile=None,
+	*args,
+	outfile=None,
+	**kwargs,
+	):
+	from contextlib import redirect_stdout
+
+	if outfile is None:
+		outfile = _outfile
+	if outfile:
+		with open(outfile, "w") as f:
+			with redirect_stdout(f):
+				return func(*args, **kwargs)
+
+	return func(*args, **kwargs)
