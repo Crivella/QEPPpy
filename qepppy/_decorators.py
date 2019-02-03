@@ -4,7 +4,11 @@ import numpy as np
 from decorator import decorator
 
 def join_doc(func, add):
-	tabs = re.findall(r"^\s*", func.__doc__)[0]
+	tabs='\t'
+	if func.__doc__:
+		tabs = re.findall(r"^\s*", func.__doc__)[0]
+	else:
+		func.__doc__ = ""
 	if tabs[0] == '\n':
 		tabs = tabs[1:]
 	for line in add.split("\n"):
@@ -121,7 +125,7 @@ def numpy_plot_opt(_xlab='',_ylab=''):
 def store_property(func, *args, **kwargs):
 	"""
 	The first time the property value is accessed, generate it and store the result in the 
-	object __dict__ for future calls.
+	object's __dict__ for future calls.
 	"""
 	name = func.__name__
 	cls=args[0]
