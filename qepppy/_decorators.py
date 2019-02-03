@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 from decorator import decorator
 
@@ -136,13 +135,25 @@ def IO_stdout_redirect(
 	outfile=None,
 	**kwargs,
 	):
+	import sys
 	from contextlib import redirect_stdout
 
 	if outfile is None:
 		outfile = _outfile
-	if outfile:
-		with open(outfile, "w") as f:
-			with redirect_stdout(f):
-				return func(*args, **kwargs)
 
-	return func(*args, **kwargs)
+	f = None
+	if isinstance(outfile, str):
+		f = open(outfile, "w")
+	elif not outfile is None and hasattr(outfile, 'close') and not outfile is sys.stdout:
+		f = outfile
+
+	if f:
+		with redirect_stdout(f):
+			res = func(*args, **kwargs)
+	else:
+		res = func(*args, **kwargs)
+
+	if f:
+		f.close()
+
+	return res
