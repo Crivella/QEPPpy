@@ -170,26 +170,6 @@ class bands(dfp):
 		  numpy array with shape(n_kpt,n_bnd+1).
 		  The first column is the coordinates of |dK| to be used as X axis for a band plot.
 		  The other column are the ordered band eigenvalue for the corresponding kpt.
-
-		numpy_save_opt specific params:
-		  - pFile: (True/False) Enable/disable save functionality (default = True)
-		  - fname: Output file name (must be present)
-		  - fmt:   Format string to pass to np.savetxt
-
-		numpy_plot_opt specific params:
-		  - plot:      (True/False) Enable/disable plot functionality (default = True)
-		  - xlab:      String to use as x label
-		  - ylab:      String to use as y label
-		  - start:     First column of the Y axis data to be plotted
-		  - end:       Last column of the Y axis data to be plotted
-		  - colors:    List of matplotlib color string to be used.
-		               % is used to loop if (end-start > len(colors))
-		  - labels:    List of strings to be used as labes.
-		               No label is set if (end-start > len(labels))
-		  - dash_list: List of tuples of dashes option to be used.
-		               % is used to loop if (end-start > len(colors))
-		               If no dash_list is specified, the lines will switch from nodash to dash=(8,2)
-		               for every loop of the colors
 		"""
 		kpt = self.kpt_cart
 		# kpt = kpt[:self.n_kpt,:]
@@ -221,26 +201,6 @@ class bands(dfp):
 		  numpy array of shape ((emax-emin)/(deltaE)+1,2)
 		  The first column is the value of the energies generated using np.linspace(emin,emax,(emax-emin)/(deltaE)+1)
 		  The second column is the value of the DOS
-
-		numpy_save_opt specific params:
-		  - pFile: (True/False) Enable/disable save functionality (default = True)
-		  - fname: Output file name (must be present)
-		  - fmt:   Format string to pass to np.savetxt
-
-		numpy_plot_opt specific params:
-		  - plot:      (True/False) Enable/disable plot functionality (default = True)
-		  - xlab:      String to use as x label
-		  - ylab:      String to use as y label
-		  - start:     First column of the Y axis data to be plotted
-		  - end:       Last column of the Y axis data to be plotted
-		  - colors:    List of matplotlib color string to be used.
-		               % is used to loop if (end-start > len(colors))
-		  - labels:    List of strings to be used as labes.
-		               No label is set if (end-start > len(labels))
-		  - dash_list: List of tuples of dashes option to be used.
-		               % is used to loop if (end-start > len(colors))
-		               If no dash_list is specified, the lines will switch from nodash to dash=(8,2)
-		               for every loop of the colors
 		"""
 		x = np.linspace(emin, emax, (emax-emin)/deltaE+1)
 		y = np.zeros(x.size)
