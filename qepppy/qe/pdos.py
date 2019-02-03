@@ -96,11 +96,12 @@ class pdos(dfp):
 		m = max([len(a['atom_name']) for a in self._states])
 		for e in self._states:
 			msg = ""
+			msg += "atom (#{:3d}): ".format(int(e['atom_num']))
 			msg += "{1:>.{0}s} ".format(m,e['atom_name'])
-			msg += "(#{:5d}) ".format(int(e['atom_num']))
+			# msg += "(#{:5d}) ".format(int(e['atom_num']))
 			if not e['l'] is None:
-				msg += "l = {}".format(e['l']) + "   "
-				msg += "m = {}".format(e['m'])
+				msg += "(l = {}".format(e['l']) + "  "
+				msg += "m = {})".format(e['m'])
 
 			res.append(msg)
 		if len(res) != self.n_states:
@@ -112,9 +113,7 @@ class pdos(dfp):
 		for k in kpt_list:
 			print(("KPT(#{:5d}): " + "{:9.4f}"*3).format(k, *self.kpt[k-1]))
 			for b in bnd_list:
-				print("\tE = {} eV".format(self.egv[k-1][b-1]))
+				print("\tBND (#{:3d}): {} eV".format(b, self.egv[k-1][b-1]))
 				for p in np.where(self.components[k-1,b-1,:] >= thr)[0]:
 					print("\t\t{}: {:8.3f}%".format(self.states[p], self.components[k-1,b-1,p]*100))
-				print()
-			print()
-
+		print()
