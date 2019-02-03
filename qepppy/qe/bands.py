@@ -339,11 +339,14 @@ class bands(dfp):
 		
 		if not np.isnan(ef):
 			w = np.where((egv[:,vb] < ef) & (egv[:,cb] > ef))
-			res = np.argmin(egv[w,cb] - egv[w,vb])
-			opt_gap = egv[res,cb] - egv[res,vb]
+			app_egv = egv[w,:]
+			app_kpt = kpt[w,:]
+			app_num = num[w,:]
+			res = np.argmin(app_egv[:,cb] - app_egv[:,vb])
+			opt_gap = app_egv[res,cb] - app_egv[res,vb]
 			print("\nMin_opt_gap: {:f} eV".format(opt_gap))
-			print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1})".format(kpt[res], num[res]+1))
-			print("\t{} -> {}   Ef: {} eV".format(egv[res,vb], egv[res,cb], ef))		
+			print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1})".format(app_kpt[res], app_num[res]+1))
+			print("\t{} -> {}   Ef: {} eV".format(app_egv[res,vb], app_egv[res,cb], ef))		
 		else:
 			print("\nCannot calculate min_opt_gap with invalid fermi energy")
 
