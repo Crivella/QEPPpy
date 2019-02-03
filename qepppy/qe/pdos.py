@@ -20,7 +20,7 @@ data={
 		'outfile_regex':
 			r'state #\s*(?P<state_num>\d+)\s*\:\s*' + 
 			r'atom\s*(?P<atom_num>\d+)\s*'          + 
-			r'\(\s*(?P<atom_name>\S+)\s*\)\s*,'      +
+			r'\(\s*(?P<atom_name>\S+)\s*\)\s*,'     +
 			r'\s*wfc\s*(?P<wfc_num>\d+)\s*'         +
 			r'\(l=\s*(?P<l>\d+)\s+m=\s*(?P<m>\d+)\s*\)'
 		},
@@ -117,3 +117,31 @@ class pdos(dfp):
 				for p in np.where(self.components[k-1,b-1,:] >= thr)[0]:
 					print("\t\t{}: {:8.3f}%".format(self.states[p], self.components[k-1,b-1,p]*100))
 		print()
+
+	@numpy_plot_opt()
+	@numpy_save_opt()
+	def sum_pdos(
+		self, *args,
+		emin=-20, emax=20, deltaE=0.001, deg=0.00,
+		weight=None,
+		**kwargs
+		):
+		if weight is None:
+			weight = np.ones(self.n_kpt)
+		res = np.linspace(emin, emax, (emax-emin)/deltaE+1).reshape(1,-1)
+		res = np.pad(res, ((0,self.n_states),(0,0)), 'constant')
+
+		for k,egv in enumerate(self.egv):
+			i = np.floor((egv - emin) / deltaE +0.5).astype(dtype='int')
+			w = np.where( (0 <= i) & (i < res[0].size))[0]
+			i = i[w]
+			res[1:,i] += self.components[k,w,:].T * weight[k]
+
+		res[1:,:] /= deltaE
+
+		if deg > 0:
+			from ..tools.broad import broad
+			res = broad(res, t='gauss', deg=deg, axis=1)
+
+		return res.T
+

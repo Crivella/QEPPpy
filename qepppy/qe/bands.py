@@ -202,23 +202,21 @@ class bands(dfp):
 		  The first column is the value of the energies generated using np.linspace(emin,emax,(emax-emin)/(deltaE)+1)
 		  The second column is the value of the DOS
 		"""
-		x = np.linspace(emin, emax, (emax-emin)/deltaE+1)
-		y = np.zeros(x.size)
+		res = np.linspace(emin, emax, (emax-emin)/deltaE+1).reshape(1,-1)
+		res = np.pad(res, ((0,1),(0,0)), 'constant')
 
 		for n,egv in enumerate(self.egv):
-			for e in egv:
-				index = int((e - emin) / deltaE)
-				if 0 <= index < x.size:
-					y[index] += self.weight[n]
+			i = np.floor((egv - emin) / deltaE +0.5).astype(dtype='int')
+			i = i[np.where( (0 <= i) & (i < res[0].size))]
+			res[1,i] += self.weight[n]
 
-		y /= deltaE
+		res[1:] /= deltaE
 
-		data = np.vstack((x,y))
 		if deg > 0:
 			from ..tools.broad import broad
-			data = broad(data, t='gauss', deg=deg, axis=1)
+			res = broad(res, t='gauss', deg=deg, axis=1)
 
-		return data.T
+		return res.T
 
 	@IO_stdout_redirect()
 	def smallest_gap(self, radius=0., comp_point=(0.,0.,0.), **kwargs):
