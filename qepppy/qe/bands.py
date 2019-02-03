@@ -338,10 +338,10 @@ class bands(dfp):
 
 		
 		if not np.isnan(ef):
-			w = np.where((egv[:,vb] < ef) & (egv[:,cb] > ef))
+			w = np.where((egv[:,vb] < ef) & (egv[:,cb] > ef))[0]
 			app_egv = egv[w,:]
 			app_kpt = kpt[w,:]
-			app_num = num[w,:]
+			app_num = num[w]
 			res = np.argmin(app_egv[:,cb] - app_egv[:,vb])
 			opt_gap = app_egv[res,cb] - app_egv[res,vb]
 			print("\nMin_opt_gap: {:f} eV".format(opt_gap))
