@@ -127,7 +127,7 @@ class pdos(dfp):
 		**kwargs
 		):
 		if weight is None:
-			weight = np.ones(self.n_kpt)
+			weight = np.ones(self.n_kpt) / self.n_kpt
 		res = np.linspace(emin, emax, (emax-emin)/deltaE+1).reshape(1,-1)
 		res = np.pad(res, ((0,self.n_states),(0,0)), 'constant')
 
