@@ -12,9 +12,10 @@ def join_doc(func, add):
 
 save_opt_doc = """
 	numpy_save_opt specific params:
-	  - pFile: (True/False) Enable/disable save functionality (default = True)
-	  - fname: Output file name (must be present)
-	  - fmt:   Format string to pass to np.savetxt"""
+	  - pFile:  (True/False) Enable/disable save functionality (default = True)
+	  - fname:  Output file name (must be present)
+	  - fmt:    Format string to pass to np.savetxt
+	  - header: Header for np.savetxt"""
 
 plot_opt_doc = """
 	numpy_plot_opt specific params:
@@ -32,41 +33,45 @@ plot_opt_doc = """
 	               If no dash_list is specified, the lines will switch from 
 	               nodash to dash=(8,2) for every loop of the colors"""
 
-def numpy_save_opt(_fname='',_fmt=''):
+def numpy_save_opt(_fname='',_fmt='', _header=''):
 	"""
 	Decorator factory to add functionality to save return value to file 
 	using np.savetxt
 	Params:
-	  - _fname: Default save_file name to be used if not specified
-	  - _fmt: Default format string to be used if not specified
+	  - _fname:  Default save_file name to be used if not specified
+	  - _fmt:    Default format string to be used if not specified
+	  -_ header: Default header string to be used if not specified
 	"""
 	def decorator(func):
 		@functools.wraps(func)
-		def wrapped(*args, pFile=True, fname=_fname, fmt=_fmt, **kwargs):
+		def wrapped(*args, pFile=True, fname=_fname, fmt=_fmt, header=_header, **kwargs):
 			res = func(*args, **kwargs)
 			if not pFile:
 				return res
 
 			if not fname:
 				raise ValueError("Must pass valid file name to arg 'fname'")
+			save_args = {}
 			if fmt:
-				np.savetxt( fname=fname, X=res, fmt=fmt)
-			else:
-				np.savetxt( fname=fname, X=res)
+				save_args['fmt'] = fmt
+			if header:
+				save_args['header'] = header
+			np.savetxt( fname=fname, X=res, **save_args)
 			return res
 
 		join_doc(wrapped, save_opt_doc)
 		return wrapped
 	return decorator
 
-def numpy_plot_opt(_xlab='',_ylab='', _plot=True):
+def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
 	"""
 	Decorator factory to add functionality to plot return value to file 
 	using matplotlib.
 	Params:
-	  - _plot: Default enable/disable plot (default = True)
-	  - _xlab: Default label for the x axis
-	  - _ylab: Default label for the x axis
+	  - _plot:   Default enable/disable plot (default = True)
+	  - _xlab:   Default label for the x axis
+	  - _ylab:   Default label for the x axis
+	  - _labels: Default labels
 	"""
 	def decorator(func):
 		@functools.wraps(func)
@@ -77,7 +82,7 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True):
 			start=1, end=None,
 			xlab=_xlab, ylab=_ylab,
 			colors=['k','r','b','g','c','m'],
-			labels=[''],
+			labels=_labels,
 			dash_list=[],
 			**kwargs
 			):
