@@ -142,7 +142,7 @@ def IO_stdout_redirect(
 	_outfile=None,
 	*args,
 	outfile=None,
-	**kwargs,
+	**kwargs
 	):
 	"""
 	Decorator factory to catch and redirect stdout from a function call.
