@@ -9,8 +9,10 @@ def join_doc(func, add):
 		tabs = re.findall(r"^\s*", func.__doc__)[0]
 	else:
 		func.__doc__ = ""
-	if tabs[0] == '\n':
+	while tabs[0] == '\n':
 		tabs = tabs[1:]
+	if '\n' in tabs:
+		tabs = tabs.split('\n')[0]
 	for line in add.split("\n"):
 		func.__doc__ += tabs + line + "\n"
 
@@ -72,7 +74,8 @@ def numpy_plot_opt(_xlab='',_ylab=''):
 	def decorator(func):
 		@functools.wraps(func)
 		def wrapped(	
-			*args, 
+			*args,
+			ax=None,
 			plot=True,
 			start=1, end=-1,
 			xlab=_xlab, ylab=_ylab,
@@ -87,7 +90,13 @@ def numpy_plot_opt(_xlab='',_ylab=''):
 
 			import matplotlib.pyplot as plt
 			from matplotlib.ticker import AutoMinorLocator as AML
-			fig, ax = plt.subplots()
+			to_plot = False
+			if ax is None:
+				offset = 0
+				to_plot = True
+				fig, ax = plt.subplots()
+			else:
+				offset = len(ax.get_lines())
 			cl = len(colors)
 			X = res[:,0]
 
@@ -98,12 +107,12 @@ def numpy_plot_opt(_xlab='',_ylab=''):
 
 			for i,Y in enumerate(y_data):
 				if dash_list:
-					dash = dash_list[i%len(dash_list)]
+					dash = dash_list[(i+offset)%len(dash_list)]
 				else:
-					dash = (8,2*((i//cl)%2))
+					dash = (8,2*(((i+offset)//cl)%2))
 				ax.plot( 
 					X, Y, 
-					color=colors[i%cl], 
+					color=colors[(i+offset)%cl], 
 					label=labels[i] if i<len(labels) else '',
 					dashes=dash,
 					)
@@ -112,8 +121,9 @@ def numpy_plot_opt(_xlab='',_ylab=''):
 			ml1 = AML(5)
 			ax.yaxis.set_minor_locator(ml1)
 			ax.yaxis.set_tick_params(which='both', right = True)
-			fig.legend()
-			plt.show()
+			if to_plot:
+				fig.legend()
+				plt.show()
 
 			return res
 
