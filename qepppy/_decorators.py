@@ -5,43 +5,38 @@ from decorator import decorator
 
 def join_doc(func, add):
 	tabs='\t'
-	if func.__doc__:
-		tabs = re.findall(r"^\s*", func.__doc__)[0]
-	else:
+	if not func.__doc__:
 		func.__doc__ = ""
-	while tabs[0] == '\n':
-		tabs = tabs[1:]
-	if '\n' in tabs:
-		tabs = tabs.split('\n')[0]
 	for line in add.split("\n"):
-		func.__doc__ += tabs + line + "\n"
+		func.__doc__ += tabs + re.sub(r"^\t*", "", line) + "\n"
 
 save_opt_doc = """
-numpy_save_opt specific params:
-  - pFile: (True/False) Enable/disable save functionality (default = True)
-  - fname: Output file name (must be present)
-  - fmt:   Format string to pass to np.savetxt"""
+	numpy_save_opt specific params:
+	  - pFile: (True/False) Enable/disable save functionality (default = True)
+	  - fname: Output file name (must be present)
+	  - fmt:   Format string to pass to np.savetxt"""
 
 plot_opt_doc = """
-numpy_plot_opt specific params:
-  - plot:      (True/False) Enable/disable plot functionality (default = True)
-  - xlab:      String to use as x label
-  - ylab:      String to use as y label
-  - start:     First column of the Y axis data to be plotted
-  - end:       Last column of the Y axis data to be plotted
-  - colors:    List of matplotlib color string to be used.
-               % is used to loop if (end-start > len(colors))
-  - labels:    List of strings to be used as labes.
-               No label is set if (end-start > len(labels))
-  - dash_list: List of tuples of dashes option to be used.
-               % is used to loop if (end-start > len(colors))
-               If no dash_list is specified, the lines will switch from nodash to dash=(8,2)
-               for every loop of the colors"""
+	numpy_plot_opt specific params:
+	  - plot:      Enable/disable plot functionality (default = True)
+	  - xlab:      String to use as x label
+	  - ylab:      String to use as y label
+	  - start:     First column of the Y axis data to be plotted
+	  - end:       Last column of the Y axis data to be plotted
+	  - colors:    List of matplotlib color string to be used.
+	               % is used to loop if (end-start > len(colors))
+	  - labels:    List of strings to be used as labes.
+	               No label is set if (end-start > len(labels))
+	  - dash_list: List of tuples of dashes option to be used.
+	               % is used to loop if (end-start > len(colors))
+	               If no dash_list is specified, the lines will switch from 
+	               nodash to dash=(8,2) for every loop of the colors"""
 
 def numpy_save_opt(_fname='',_fmt=''):
 	"""
-	Decorator factory to add functionality to save return value to file using np.savetxt
-	params:
+	Decorator factory to add functionality to save return value to file 
+	using np.savetxt
+	Params:
 	  - _fname: Default save_file name to be used if not specified
 	  - _fmt: Default format string to be used if not specified
 	"""
@@ -64,10 +59,12 @@ def numpy_save_opt(_fname='',_fmt=''):
 		return wrapped
 	return decorator
 
-def numpy_plot_opt(_xlab='',_ylab=''):
+def numpy_plot_opt(_xlab='',_ylab='', _plot=True):
 	"""
-	Decorator factory to add functionality to plot return value to file using matplotlib
-	params:
+	Decorator factory to add functionality to plot return value to file 
+	using matplotlib.
+	Params:
+	  - _plot: Default enable/disable plot (default = True)
 	  - _xlab: Default label for the x axis
 	  - _ylab: Default label for the x axis
 	"""
@@ -76,8 +73,8 @@ def numpy_plot_opt(_xlab='',_ylab=''):
 		def wrapped(	
 			*args,
 			ax=None,
-			plot=True,
-			start=1, end=-1,
+			plot=_plot,
+			start=1, end=None,
 			xlab=_xlab, ylab=_ylab,
 			colors=['k','r','b','g','c','m'],
 			labels=[''],
@@ -103,6 +100,8 @@ def numpy_plot_opt(_xlab='',_ylab=''):
 			if res.shape[1] == 2:
 				y_data = res[:,1].reshape(1,X.size)
 			else:
+				if not end is None:
+					end += 1
 				y_data = res[:,start:end].T
 
 			for i,Y in enumerate(y_data):
@@ -134,8 +133,8 @@ def numpy_plot_opt(_xlab='',_ylab=''):
 @decorator
 def store_property(func, *args, **kwargs):
 	"""
-	The first time the property value is accessed, generate it and store the result in the 
-	object's __dict__ for future calls.
+	The first time the property value is accessed, generate it and store the 
+	result in the object's __dict__ for future calls.
 	"""
 	name = func.__name__
 	cls=args[0]

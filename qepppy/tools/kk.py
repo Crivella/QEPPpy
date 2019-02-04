@@ -1,60 +1,97 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from scipy.integrate import trapz
+from scipy.signal import hilbert
+from .._decorators import numpy_save_opt, numpy_plot_opt
 
 
-def kk_im( data, off=1, broad=1E-4):
-	data = np.array(data)
-	res = np.zeros( data.shape)
-	res[:,0] = data[:,0]
+@numpy_plot_opt(_plot=False)
+@numpy_save_opt(_fname='kk_real.dat')
+def kk_imag2real(data):
+	"""
+	Apply the Hilbert transformation (Kramers-Kronig) to the imaginary part of 
+	the dielectric function.
+	1 is added to the result to get the real part of the dielectric function.
+	Params:
+	 - data: An array where the first column is the x-axis data and all the 
+	         other column are y-axis to which the Hilbert transform is applied.
+	         If a an array of shape (1,n_pt) or (n_pt,) is given, it is treated 
+	         as a y-axis and the x-axis is generated using np.arange(n_pt).
+	"""
+	n_pt = data.shape[0]
+	data = data.reshape(n_pt,-1)
+	if data.shape[1] > 1:
+		x    = data[:,0]
+		y    = data[:,1:]
+	else:
+		x = np.arange(n_pt)
+		y = data[:,0:]
 
-	for n1 in range( 1, data.shape[1]):
-		f = lambda o: trapz( data[:,n1] * data[:,0] / (data[:,0]**2 - o**2 + 1j*broad)*2/np.pi, data[:,0])
-		res[:,n1] = np.array( [np.real( f(o)) + off for o in data[:,0]])
-	return res
+	s1 = 0
+	if np.all(y[0] > 0):
+		s1 = n_pt
+		y = np.vstack((-y[::-1],y))
+	y = np.pad(y, ((0,n_pt), (0,0)), 'edge')
+	res  = -np.imag(hilbert(y, axis=0)) + 1
+	res  = res[s1:s1+n_pt]
+	return np.column_stack((x,res))
 
-def kk_real( data, off=1, broad=1E-4):
-	data = np.array(data)
-	res = np.zeros( data.shape)
-	res[:,0] = data[:,0]
+@numpy_plot_opt(_plot=False)
+@numpy_save_opt(_fname='kk_imag.dat')
+def kk_real2imag(data):
+	"""
+	Apply the Hilbert transformation (Kramers-Kronig) to the real part of the 
+	dielectric function.
+	1 is subtracted to the starting data to the result to get the imaginary part
+	of the dielectric function.
+	Params:
+	 - data: An array where the first column is the x-axis data and all the 
+	         other column are y-axis to which the Hilbert transform is applied.
+	         If a an array of shape (1,n_pt) or (n_pt,) is given, it is treated 
+	         as a y-axis and the x-axis is generated using np.arange(n_pt).
+	"""
+	n_pt = data.shape[0]
+	data = data.reshape(n_pt,-1)
+	if data.shape[1] > 1:
+		x    = data[:,0]
+		y    = data[:,1:] - 1
+	else:
+		x = np.arange(n_pt)
+		y = data[:,0:] - 1
 
-	for n1 in range( 1, data.shape[1]):
-		f = lambda o: trapz( (data[:,n1] - off) / (data[:,0]**2 - o**2 + 1j*broad)* -2/np.pi*o, data[:,0])
-		res[:,n1] = np.array( [np.real( f(o)) for o in data[:,0]])
-	return res
+	s1 = 0
+	if np.all(y[0] > 0):
+		s1 = n_pt
+		y = np.vstack((y[::-1],y))
+	y = np.pad(y, ((0,n_pt), (0,0)), 'edge')
+	res  = np.imag(hilbert(y, axis=0))
+	res  = res[s1:s1+n_pt]
+	return np.column_stack((x,res))
 
-def kk( data, sf='imag', off=1, broad=1E-4):
+
+def kk(data, sf='imag'):
 	switch = {
-		'imag':kk_im,
-		'real':kk_real,
+		'imag':kk_imag2real,
+		'real':kk_real2imag,
 	}
-	if not sf in switch:
-		print( "Wrong operation type. Must be:", switch.keys)
-		return
 
-	return switch[sf]( data, off=off, broad=broad)
+	return switch[sf](data)
 
 
 if __name__ == "__main__":
 	import sys
-	argc = len( sys.argv)
-	if( not 2<=argc<=5):
-		print("Incorrect use. Pleas pass arguments:"
+	argc = len(sys.argv)
+	if not 2<= argc <=5:
+		print(
+			"Incorrect use. Pleas pass arguments:"
 			"\n\t'data_file'\t (),"
 			"\n\t'start_from\t(optional) (imag/real, default=imag)',"
-			"\n\t'off (add to final result in imag->real or subtract to starting data in real->imag)\t(optional) (default=1)'"
-			"\n\t'broad\t(optional) (default=1E-4)'")
+			)
 		exit()
-	data = np.loadtxt( sys.argv[1])
-	if( argc==2):
-		res = kk( data)
-	if( argc==3):
-		res = kk( data, str( sys.argv[2]))
-	if( argc==4):
-		res = kk( data, str( sys.argv[2]), int( sys.argv[3]))
-	if( argc==5):
-		res = kk( data, str( sys.argv[2]), int( sys.argv[3]), float( sys.argv[4]))
-	np.savetxt( 'kk.dat', res)
+	data = np.loadtxt(sys.argv[1])
+	if argc == 2:
+		res = kk(data)
+	if argc == 3:
+		res = kk(data, str(sys.argv[2]))
 
 
