@@ -2,30 +2,30 @@ import numpy as np
 from .parser.binary_io import binary_io as bin_io
 from ..logger import logger, warning
 
-@logger()
+# @logger()
 class wavefnc( bin_io):
 	binary_format =[
 		[
-			{'t':4, 's':(1,), 'n':'kpt_num'},
-			{'t':8, 's':(3,), 'n':'kpt'},
-			{'t':4, 's':(1,), 'n':'ispin'},
-			{'t':4, 's':(1,), 'n':'gamma_only'},
-			{'t':8, 's':(1,), 'n':'scale_factor'},
+			{'type':'i4', 'shape':(1,), 'name':'kpt_num'},
+			{'type':'f8', 'shape':(3,), 'name':'kpt'},
+			{'type':'i4', 'shape':(1,), 'name':'ispin'},
+			{'type':'i4', 'shape':(1,), 'name':'gamma_only'},
+			{'type':'f8', 'shape':(1,), 'name':'scale_factor'},
 		],
 		[
-			{'t':4, 's':(1,), 'n':'max_index'},
-			{'t':4, 's':(1,), 'n':'igwx'},
-			{'t':4, 's':(1,), 'n':'nspin'},
-			{'t':4, 's':(1,), 'n':'nbnd'},
+			{'type':'i4', 'shape':(1,), 'name':'max_index'},
+			{'type':'i4', 'shape':(1,), 'name':'igwx'},
+			{'type':'i4', 'shape':(1,), 'name':'nspin'},
+			{'type':'i4', 'shape':(1,), 'name':'nbnd'},
 		],
 		[
-			{'t':8, 's':(3,3), 'n':'recipr'},
+			{'type':'f8', 'shape':(3,3), 'name':'recipr'},
 		],
 		[
-			{'t':4, 's':('igwx',3,), 'n':'gvect'},
+			{'type':'i4', 'shape':('igwx',3,), 'name':'gvect'},
 		],
 		([
-			{'t':16, 's':('igwx',), 'n':'val'},
+			{'type':'c16', 'shape':('igwx',), 'name':'val'},
 		], 'nbnd'),
 	]
 

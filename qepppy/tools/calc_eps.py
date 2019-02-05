@@ -1,8 +1,52 @@
+import re
 import numpy as np
 from .._decorators import numpy_save_opt, numpy_plot_opt
+from ..qe.parser.binary_io import binary_io
 
 
 HARTREE = 27.2113
+
+class dpforexc_rhotw(binary_io):
+	binary_format =[
+		[
+			{'type':'i4', 'shape':(1,), 'name':'nt'},
+			{'type':'i4', 'shape':(1,), 'name':'nqpol'},
+		],
+		([
+			{'type':'c8', 'shape':('nt',), 'name':'rhotw'},
+		], 'nqpol'),
+		[
+			{'type':'f4', 'shape':('nqpol',), 'name':'vcol'},
+		],
+		[
+			{'type':'f4', 'shape':(1,), 'name':'FAQ'},
+		],
+	]
+	def __init__(self, src='out.rhotw'):
+		self.read_binary(src=src)
+
+
+def dpforexc_read_trans(fname='exc.out'):
+	"""
+	Read from the dpforexc main output.
+	Use regex syntax to extract the information about the transitions.
+	Return a tuple containing the following variables (in order):
+	 en   = numpy array of shape (nt,) with real elements
+			contains the transition energy in eV for every transition
+	 fact = numpy array of shape (nt,) with real elements
+			contains the fact (f_i - f_j) for every transition
+	"""
+	r = re.compile(
+		r'\sis,ikp,iv,ik,ic,it,fact,gwten =' + 
+		r'\s+(?P<is>[\d]+)\s+(?P<kpt>[\d]+)\s+(?P<iv>[\d]+)\s+(?P<ik>[\d]+)\s+' + 
+		r'(?P<ic>[\d]+)\s+(?P<num>[\d]+)\s+(?P<fact>[\d\.]+)\s+(?P<en>[\d\.]+)'
+		)
+	with open('exc.out', 'r') as f:
+		trans = [a.groupdict() for a in  r.finditer(f.read())]
+	en   = np.array([a['en']   for a in trans], dtype=float)/HARTREE
+	fact = np.array([a['fact'] for a in trans], dtype=float)
+	
+	return en, fact
 
 
 def calc_eps_dft(w, mel, en, fact, FAQ, weight):
@@ -101,3 +145,11 @@ def calc_eps_pw2gw(
 
 	return res
 
+def calc_eps(
+	src="",
+	vol=1,
+	Emin=0, Emax=30, deltaE=0.05, 
+	band_low=1, band_high=np.inf,
+	deg=5E-2
+	):
+	pass

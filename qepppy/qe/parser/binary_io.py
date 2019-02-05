@@ -1,7 +1,5 @@
 import sys
-import struct
 import numpy as np
-from ...logger import logger
 from functools import reduce
 
 
@@ -11,38 +9,13 @@ _endian = {
 	'big':'>'
 }
 
-def _int(binary, n=1, endian="little"):
-	res = struct.unpack('{}{}l'.format(_endian[endianess], n), binary)
-	if n == 1:
-		return res[0]
-	return res
-
-def _dbl(binary, n=1, endian="little"):
-	res = struct.unpack('{}{}d'.format(_endian[endianess], n), binary)
-	if n == 1:
-		return res[0]
-	return res
-
-def _cpl(binary, n=1, endian="little"):
-	res = struct.unpack('{}{}d'.format(_endian[endianess], 2*n), binary)
-	res = np.array(res)
-	res.shape = (n, 2)
-	res = res[:,0] + 1j * res[:,1]
-	return res
-
-wrap = {
-	4:_int,
-	8:_dbl,
-	16:_cpl,
-	}
-
-@logger()
 class binary_io():
 	def __init__(self):
 		self.binary = False
 		return
 		
 	def read_binary(self, src="", endian=endianess):
+		endian = _endian[endian]
 		with open(src, "rb") as file:
 			for vect in self.binary_format:
 				rep = 1
@@ -50,28 +23,20 @@ class binary_io():
 					rep = self._conv_val_(vect[1])
 					vect = vect[0]
 				for n in range(rep):
-					size = _int(file.read(4))
+					size = np.fromfile(file, '{}i4'.format(endian), 1) # _int(file.read(4))
 					if not size:
 						break
-					content = file.read(size)
-					start = 0
-					end = 0
 					for s in vect:
-						name = s['n']
+						name = s['name']
 						if rep > 1 and n==0:
 							self.__dict__[name] = ['']*rep
-						t = s['t']
-
-						shape = self._convert_shape_(s['s'])
-						chunk = reduce(lambda x,y: x*y, shape) # self._get_chunk_(shape)
-
-						end += chunk*t
-						if end > size:
-							raise Exception("Binary file does not match the specified format.")
-						splice = content[start:end]
-						start = end
-
-						res = wrap[t](splice, n=chunk, endian=endianess)
+						t = s['type']
+						shape = self._convert_shape_(s['shape'])
+						chunk = reduce(lambda x,y: x*y, shape)
+						print('{}{}'.format(endian, t))
+						res = np.fromfile(file, '{}{}'.format(endian, t), chunk)
+						if res.size == 1:
+							res = res[0]
 						if not shape == (1,):
 							res = np.array(res).reshape(shape)
 
@@ -79,7 +44,7 @@ class binary_io():
 							self.__dict__[name] = res
 						else:
 							self.__dict__[name][n] = res
-					size = _int(file.read(4))
+					size = np.fromfile(file, '{}i4'.format(endian), 1)
 		self.binary = True
 		return
 
