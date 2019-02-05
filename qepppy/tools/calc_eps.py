@@ -43,10 +43,12 @@ def dpforexc_read_trans(fname='exc.out'):
 		)
 	with open('exc.out', 'r') as f:
 		trans = [a.groupdict() for a in  r.finditer(f.read())]
-	en   = np.array([a['en']   for a in trans], dtype=float)/HARTREE
-	fact = np.array([a['fact'] for a in trans], dtype=float)
+	iv   = np.array([a['iv'] for a in trans], dtype='int')
+	ib   = np.array([a['ib'] for a in trans], dtype='int')
+	en   = np.array([a['en']   for a in trans], dtype='float')/HARTREE
+	fact = np.array([a['fact'] for a in trans], dtype='float')
 	
-	return en, fact
+	return iv, ib, en, fact
 
 
 def _calc_eps_dft_(w, mel, en, fact, FAQ, weight):
@@ -115,8 +117,14 @@ def calc_eps(
 		weight = np.loadtxt(fname, comments='#')[:,3]
 		vol    = kwargs.get('vol', 1)
 
-		data   = data[:,np.where((band_low <= data[1]) & (data[2] <= band_high))[0]]
-		data   = data[:,np.where((Emin-20*deg <= data[6]) & (data[6] <= Emax+20*deg) & (data[6] != 0.0))[0]]
+		w      = np.where(
+			(band_low <= data[1])    &
+			(data[2] <= band_high)   &
+			(Emin-20*deg <= data[6]) & 
+			(data[6] <= Emax+20*deg) & 
+			(data[6] != 0.0)
+			)[0]
+		data   = data[:,w]
 		weight = weight[data[0].astype(dtype='int')-1]
 		mel    = data[(3,4,5),:]
 		en     = data[6]/HARTREE
@@ -126,12 +134,22 @@ def calc_eps(
 		fname  = kwargs.get('rhotw', 'out.rhotw')
 		data   = dpforexc_rhotw(fname)
 		fname  = kwargs.get('exc', 'exc.out')
-		en, fact = dpforexc_read_trans(fname)
+		iv, ic, en, fact = dpforexc_read_trans(fname)
 
 		mel    = data.rhotw * np.conj(data.rhotw) * en**2
 		weight = 1
 		FAQ    = data.FAQ * data.vcol
 
+		w      = np.where(
+			(band_low <= iv)    & 
+			(ic <= band_high)   & 
+			(Emin-20*deg <= en) & 
+			(en <= Emax+20*deg) & 
+			(en != 0)
+			)[0]
+		en     = en[w]
+		fact   = fact[w]
+		mel    = mel[:,w]
 	npol = mel.shape[0]
 
 	omega = np.arange(Emin, Emax+deltaE, deltaE, dtype='complex') + 1j * deg
