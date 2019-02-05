@@ -20,6 +20,9 @@ def kk_imag2real(data):
 	"""
 	n_pt = data.shape[0]
 	data = data.reshape(n_pt,-1)
+	if data[0,0] == 0.0:
+		n_pt -= 1
+		data = data[1:,:]
 	if data.shape[1] > 1:
 		x    = data[:,0]
 		y    = data[:,1:]
@@ -28,7 +31,7 @@ def kk_imag2real(data):
 		y = data[:,0:]
 
 	s1 = 0
-	if np.all(y[0] > 0):
+	if np.all(y[0] >= 0):
 		s1 = n_pt
 		y = np.vstack((-y[::-1],y))
 	y = np.pad(y, ((0,n_pt), (0,0)), 'edge')
@@ -52,6 +55,11 @@ def kk_real2imag(data):
 	"""
 	n_pt = data.shape[0]
 	data = data.reshape(n_pt,-1)
+	if data[0,0] == 0.0:
+		n_pt -= 1
+		data = data[1:,:]
+
+	print(data.shape)
 	if data.shape[1] > 1:
 		x    = data[:,0]
 		y    = data[:,1:] - 1

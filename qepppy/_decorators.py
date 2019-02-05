@@ -12,10 +12,11 @@ def join_doc(func, add):
 
 save_opt_doc = """
 	numpy_save_opt specific params:
-	  - pFile:  (True/False) Enable/disable save functionality (default = True)
-	  - fname:  Output file name (must be present)
-	  - fmt:    Format string to pass to np.savetxt
-	  - header: Header for np.savetxt"""
+	  - pFile:     Enable/disable save functionality (default = True)
+	  - fname:     Output file name (must be present)
+	  - fmt:       Format string to pass to np.savetxt
+	  - header:    Header for np.savetxt
+	  - delimiter: Delimiter between coloumns"""
 
 plot_opt_doc = """
 	numpy_plot_opt specific params:
@@ -33,18 +34,19 @@ plot_opt_doc = """
 	               If no dash_list is specified, the lines will switch from 
 	               nodash to dash=(8,2) for every loop of the colors"""
 
-def numpy_save_opt(_fname='',_fmt='', _header=''):
+def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
 	"""
 	Decorator factory to add functionality to save return value to file 
 	using np.savetxt
 	Params:
-	  - _fname:  Default save_file name to be used if not specified
-	  - _fmt:    Default format string to be used if not specified
-	  -_ header: Default header string to be used if not specified
+	  - _fname:     Default save_file name to be used if not specified
+	  - _fmt:       Default format string to be used if not specified
+	  - _ header:   Default header string to be used if not specified
+	  - _delimiter: Default delimiter to be used to separate coloumns
 	"""
 	def decorator(func):
 		@functools.wraps(func)
-		def wrapped(*args, pFile=True, fname=_fname, fmt=_fmt, header=_header, **kwargs):
+		def wrapped(*args, pFile=True, fname=_fname, fmt=_fmt, header=_header, delimiter=_delimiter, **kwargs):
 			res = func(*args, **kwargs)
 			if not pFile:
 				return res
@@ -56,6 +58,7 @@ def numpy_save_opt(_fname='',_fmt='', _header=''):
 				save_args['fmt'] = fmt
 			if header:
 				save_args['header'] = header
+			save_args['delimiter'] = delimiter
 			np.savetxt( fname=fname, X=res, **save_args)
 			return res
 

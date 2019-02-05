@@ -33,7 +33,6 @@ class binary_io():
 						t = s['type']
 						shape = self._convert_shape_(s['shape'])
 						chunk = reduce(lambda x,y: x*y, shape)
-						print('{}{}'.format(endian, t))
 						res = np.fromfile(file, '{}{}'.format(endian, t), chunk)
 						if res.size == 1:
 							res = res[0]

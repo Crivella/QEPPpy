@@ -49,7 +49,7 @@ def dpforexc_read_trans(fname='exc.out'):
 	return en, fact
 
 
-def calc_eps_dft(w, mel, en, fact, FAQ, weight):
+def _calc_eps_dft_(w, mel, en, fact, FAQ, weight):
 	"""
 	Calculate the macroscopic dielectric function for a precise value of energy
 	(w) in the spectra.
@@ -78,78 +78,82 @@ def calc_eps_dft(w, mel, en, fact, FAQ, weight):
 	function for every polarization.
 	Implement the formula:
 	  \varepsilon(\omega) = 1 + FAQ * 
-		sum_{t}[fact_t* rhotw_t*conjg(rhotw_t) * (1/(en_t - w) - 1/(-en_t - w))]
+		sum_{t}[fact_t* mel/(en^2) * (1/(en_t - w) - 1/(-en_t - w))]
 	"""
 	return 1 + FAQ * np.sum(mel / en**2 * fact *(1./ (en - w) - 1./ (-en - w)) * weight, axis=1)
+
 
 @numpy_plot_opt(
 	_xlab=r"$\hbar\omega (eV)$", 
 	_ylab=r"$\varepsilon(\omega) (arb. units)$",
-	_labels=['real_x','imag_x','real_y','imag_y','real_z','imag_z',]
+	# _labels=['real_x','imag_x','real_y','imag_y','real_z','imag_z',]
 	)
 @numpy_save_opt(
-	_fname="eps_pw2gw.dat",
-	_fmt=['%13.7f'] + ['%15.5e']*6,
-	_header='{:>11s}{:>16s}{:>16s}{:>16s}{:>16s}{:>16s}{:>16s}'.format(
-		'omega (eV)', 'realX', 'imagX', 'realY', 'imagY', 'realZ', 'imagZ'
-		)
+	_fname="eps.dat",
+	_fmt="%12.4E",
+	_header=("{:>10s}" + "{:>12s}"*2).format("En (eV)", 'real', 'imag'),
+	_delimiter='',
+	# _fmt=['%13.7f'] + ['%15.5e']*6,
+	# _header='{:>11s}{:>16s}{:>16s}{:>16s}{:>16s}{:>16s}{:>16s}'.format(
+	# 	'omega (eV)', 'realX', 'imagX', 'realY', 'imagY', 'realZ', 'imagZ'
+	# 	)
 	)
-def calc_eps_pw2gw(
-	vol,
+def calc_eps(
+	mode="pw2gw",
 	Emin=0, Emax=30, deltaE=0.05, 
 	band_low=1, band_high=np.inf,
 	deg=5E-2,
-	mel='matrixelements', weight='k.dat', 
+	**kwargs
 	):
+	modes = ['pw2gw', 'dpforexc']
+	if not mode in modes:
+		raise NotImplementedError("Mode {} is not implemented.".format(mode))
+	if mode == 'pw2gw':
+		fname  = kwargs.get('mel', 'matrixelements')
+		data   = np.loadtxt(fname, comments='#').T
+		fname  = kwargs.get('weight', 'k.dat')
+		weight = np.loadtxt(fname, comments='#')[:,3]
+		vol    = kwargs.get('vol', 1)
 
-	if isinstance(mel, str):
-		mel = np.loadtxt(mel).T
-	mel = mel[:,np.where((band_low <= mel[1]) & (mel[2] <= band_high))[0]]
-	mel = mel[:,np.where((Emin-1 <= mel[6]) & (mel[6] <= Emax+1))[0]]
+		data   = data[:,np.where((band_low <= data[1]) & (data[2] <= band_high))[0]]
+		data   = data[:,np.where((Emin-20*deg <= data[6]) & (data[6] <= Emax+20*deg) & (data[6] != 0.0))[0]]
+		weight = weight[data[0].astype(dtype='int')-1]
+		mel    = data[(3,4,5),:]
+		en     = data[6]/HARTREE
+		fact   = data[7]
+		FAQ    = 4 * np.pi / vol
+	elif mode == 'dpforexc':
+		fname  = kwargs.get('rhotw', 'out.rhotw')
+		data   = dpforexc_rhotw(fname)
+		fname  = kwargs.get('exc', 'exc.out')
+		en, fact = dpforexc_read_trans(fname)
 
-	en   = mel[6]/HARTREE
-	fact = mel[7]
-	mel  = mel[(3,4,5),:]
+		mel    = data.rhotw * np.conj(data.rhotw) * en**2
+		weight = 1
+		FAQ    = data.FAQ * data.vcol
 
-	if isinstance(weight, str):
-		if weight == 'k.dat':
-			kpt_loc = np.array(mel[0], dtype=int)-1
-			kpt = np.loadtxt(weight).T
-			weight = kpt[3,kpt_loc]
-			del(kpt)
-			del(kpt_loc)
-		else:
-			raise NotImplementedError()
+	npol = mel.shape[0]
 
-	FAQ = 8 * np.pi / vol
-	l1 = Emin -15*deg
-	if l1<0:
-		l1 = 0
-	l2 = Emax + 15*deg
-	omega = np.arange(l1, l2, deltaE) + 1j * deg
+	omega = np.arange(Emin, Emax+deltaE, deltaE, dtype='complex') + 1j * deg
 	omega /= HARTREE
-	eps = np.empty((3, omega.shape[0]),dtype=complex)
+
+	eps = np.empty((npol, omega.size), dtype='complex')
 
 	for n1, w in enumerate(omega):
-		eps[:,n1] = calc_eps_dft(w, mel, en, fact, FAQ, weight)
+		eps[:,n1] = _calc_eps_dft_(w, mel, en, fact, FAQ, weight)
 
 	omega *= HARTREE
 	w     = np.where((Emin<=omega) & (omega<=Emax))[0]
 	omega = omega[w]
 	eps   = eps[:,w].T
 
-	res = np.empty((omega.shape[0],7))
+	res = np.empty((omega.size, 2*npol+1))
+
 	res[:,0]    = np.real(omega)
 	res[:,1::2] = np.real(eps)
 	res[:,2::2] = np.imag(eps)
 
 	return res
 
-def calc_eps(
-	src="",
-	vol=1,
-	Emin=0, Emax=30, deltaE=0.05, 
-	band_low=1, band_high=np.inf,
-	deg=5E-2
-	):
-	pass
+
+
