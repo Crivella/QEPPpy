@@ -173,5 +173,54 @@ def calc_eps(
 
 	return res
 
+@numpy_plot_opt(
+	_xlab=r"$\hbar\omega (eV)$", 
+	_ylab=r"$\varepsilon(\omega) (arb. units)$",
+	_labels=['eps2 X','eps2 Y','eps2 Z','eps2 AVG',]
+	)
+@numpy_save_opt(
+	_fname="eps.dat",
+	_fmt="%9.4f" + "%12.4E"*4,
+	_header=("{:>7s}" + "{:>12s}"*4).format("En (eV)", 'eps2 X','eps2 Y','eps2 Z','eps2 AVG'),
+	_delimiter='',
+	)
+def calc_eps_pw2gw_light(
+	mel="matrixelements", kdat="k.dat",
+	Emin=0, Emax=30, deltaE=0.05, 
+	band_low=1, band_high=np.inf,
+	deg=0, deg_type='gauss',
+	**kwargs
+	):
+	vol = kwargs.get('vol', 1)
+
+	x = np.arange(Emin, Emax+deltaE, deltaE)
+	res = np.zeros((x.size, 4))
+	res[:,0] = x
+
+	weight = np.loadtxt(kdat, comments="#")
+	weight = weight[:,3]
+
+	with open(mel) as f:
+		for line in f:
+			k, v, c, px, py, pz, en, fact = np.fromstring(line, sep=' ')
+			if en < Emin or Emax < en or en == 0:
+				continue
+			if v < band_low or c > band_high:
+				continue
+			p = np.array([px,py,pz])
+			index = int((en-Emin)/deltaE + 0.5)
+			res[index,1:] +=  p* fact  *weight[int(k)-1] / en**2
+
+	res[:,1:] *= 4 * np.pi**2 * HARTREE**3 / vol / deltaE
+
+	res = (res[:-1] + res[1:])/2
+
+	res = np.column_stack((res,np.sum(res[:,1:], axis=1)/3))
+
+	if deg > 0:
+		from .broad import broad
+		res = broad(res, deg_type, deg)
+
+	return res
 
 
