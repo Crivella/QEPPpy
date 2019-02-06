@@ -86,8 +86,9 @@ def _calc_eps_dft_(w, mel, en, fact, FAQ, weight):
 
 
 @numpy_plot_opt(
-	_xlab=r"$\hbar\omega (eV)$", 
-	_ylab=r"$\varepsilon(\omega) (arb. units)$",
+	_plot=False,
+	_xlab=r"$\hbar\omega$ (eV)", 
+	_ylab=r"$\varepsilon(\omega)$ (arb. units)",
 	# _labels=['real_x','imag_x','real_y','imag_y','real_z','imag_z',]
 	)
 @numpy_save_opt(
@@ -113,7 +114,7 @@ def calc_eps(
 	if mode == 'pw2gw':
 		fname  = kwargs.get('mel', 'matrixelements')
 		data   = np.loadtxt(fname, comments='#').T
-		fname  = kwargs.get('weight', 'k.dat')
+		fname  = kwargs.get('kdat', 'k.dat')
 		weight = np.loadtxt(fname, comments='#')[:,3]
 		vol    = kwargs.get('vol', 1)
 
@@ -174,8 +175,9 @@ def calc_eps(
 	return res
 
 @numpy_plot_opt(
-	_xlab=r"$\hbar\omega (eV)$", 
-	_ylab=r"$\varepsilon(\omega) (arb. units)$",
+	_plot=False,
+	_xlab=r"$\hbar\omega$ (eV)", 
+	_ylab=r"$\varepsilon_2(\omega)$ (arb. units)",
 	_labels=['eps2 X','eps2 Y','eps2 Z','eps2 AVG',]
 	)
 @numpy_save_opt(
