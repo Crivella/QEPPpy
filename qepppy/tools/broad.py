@@ -24,38 +24,46 @@ def _lorentz(x, broad):
 	g /= norm
 	return g
 
-sw = {
-	'gauss':_gaussian,
-	'lorentz':_lorentz,
-}
-def broad(data, t="gauss", deg=0.1, axis=0):
-	if not t in sw:
-		raise Exception("Invalide type of broadening '{}'.`n".format(t))
-
-	if axis:
-		data = np.transpose(data)
-	res = np.zeros(data.shape)
-
-	x = res[:,0] = data[:,0]
+def _check_and_pad_(data,deg):
+	x = data[:,0]
 	y = data[:,1:]
 
 	dx = x[1] - x[0]
-	add_x1 = np.arange(x[0]-15*deg, x[0]-dx, dx)
-	add_x2 = np.arange(x[-1]+dx, x[-1]+15*deg, dx)
-	x = np.hstack((add_x1, x, add_x2))
-	
-	add_y1 = np.ones((add_x1.shape[0], y.shape[1])) * y[0]
-	add_y2 = np.ones((add_x2.shape[0], y.shape[1])) * y[-1]
-	y = np.vstack((add_y1, y, add_y2))
+	if np.any((x[1:] - x[:-1]) - dx > 1E-4):
+		raise ValueError("X-axis data must be uniformely distributed.")
+
+	padding = int(15*deg/dx)
+	x = np.pad(x, (padding,padding), 'linear_ramp', end_values=(x[0]-15*deg, x[-1] + 15*deg))
+	y = np.pad(y, ((padding,padding),(0,0)), 'edge')
+
+	return x,y
+
+def _get_conv_function_(t):
+	if t == 'gauss':
+		return _gaussian
+	if t == 'lorentz':
+		return _lorentz
+	else:
+		raise NotImplemented("Invalid convolution function {}.".format(t))
 
 
-	conv = sw[t](x, deg)
-	for n,yi in enumerate(y.transpose()):
+def broad(data, t="gauss", deg=0.1, axis=0):
+	if axis:
+		data = data.T
+
+	res = np.zeros(data.shape)
+	res[:,0] = data[:,0]
+
+	x,y = _check_and_pad_(data,deg)
+
+	conv = _get_conv_function_(t)(x,deg)
+	w = np.where((res[0,0] <= x) & (x <= res[-1,0]))
+	for n,yi in enumerate(y.T):
 		new = np.convolve(yi, conv, mode='same')
-		res[:,n+1] = new[np.where((res[0,0] <= x) & (x <= res[-1,0]))]
+		res[:,n+1] = new[w]
 
 	if axis:
-		res = np.transpose(res)
+		res = res.T
 
 	return res
 
