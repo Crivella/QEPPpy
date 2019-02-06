@@ -11,7 +11,8 @@ max_orb = len(orb_types)
 @numpy_save_opt()
 def _sum_pdos_(atom, path=".", deg=0.0, **kwargs):
 	"""
-	Use the output files from a PDOS (projwfc.x) calculation to calculated the PDOS resolved per atom name and per orbital angular momentum (l).
+	Use the output files from a PDOS (projwfc.x) calculation to calculated the 
+	PDOS resolved per atom name and per orbital angular momentum (l).
 	"""
 	res = None
 	print("-"*80)
