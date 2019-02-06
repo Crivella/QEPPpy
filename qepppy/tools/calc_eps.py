@@ -1,6 +1,6 @@
 import re
 import numpy as np
-from .._decorators import numpy_save_opt, numpy_plot_opt
+from .._decorators import numpy_save_opt, numpy_plot_opt, join_doc
 from ..qe.parser.binary_io import binary_io
 
 
@@ -84,73 +84,116 @@ def _calc_eps_dft_(w, mel, en, fact, FAQ, weight):
 	"""
 	return 1 + FAQ * np.sum(mel / en**2 * fact *(1./ (en - w) - 1./ (-en - w)) * weight, axis=1)
 
+def _get_dpforexc_data_(
+	Emin=0, Emax=30, deltaE=0.05, 
+	band_low=1, band_high=np.inf,
+	deg=5E-2,
+	rhotw='out.rhotw', exc='exc.out',
+	**kwargs
+	):
+	"""
+	dpforexc mode:
+	 - band_low:   Exclude all the transition originating from bands lower than 
+	               bands_low (default=1).
+	 - bands_high: Exclude all the transitions arriving at bands higher than 
+	               bands_high (default=np.inf).
+	 - rhotw:      Path/name of the out.rhotw file from a dpforexc calculation
+	               (default='out.rhotw')
+	 - exc:        Path/name of the exc.out file from a dpforexc calculation
+	               (default='exc.out')"""
+	data   = dpforexc_rhotw(rhotw)
+	iv, ic, en, fact = dpforexc_read_trans(exc)
+
+	mel    = data.rhotw * np.conj(data.rhotw) * en**2
+	weight = 1
+	FAQ    = data.FAQ * data.vcol
+
+	w      = np.where(
+		(band_low <= iv)    & 
+		(ic <= band_high)   & 
+		(Emin-20*deg <= en) & 
+		(en <= Emax+20*deg) & 
+		(en != 0)
+		)[0]
+	en     = en[w]
+	fact   = fact[w]
+	mel    = mel[:,w]
+	return mel, weight, en, fact, FAQ
+
+def _get_pw2gw_data(
+	Emin=0, Emax=30, deltaE=0.05, 
+	band_low=1, band_high=np.inf,
+	deg=5E-2,
+	mel='matrixelements', kdat='k.dat',
+	vol=1,
+	):
+	"""
+	pw2gw mode:
+	 - band_low:   Exclude all the transition originating from bands lower than 
+	               bands_low (default=1).
+	 - bands_high: Exclude all the transitions arriving at bands higher than 
+	               bands_high (default=np.inf).
+	 - mel:        Path/name of the matrixelements file from a pw2gw calculation
+	               (default='matrixelements')
+	 - kdat:       Path/name of the k.dat file from a pw2gw calculation
+	               (default='k.dat')
+	 - vol:        Volume in atomic units of the cell to be used for the 
+	               normalization constant."""
+	data   = np.loadtxt(mel,  comments='#').T
+	weight = np.loadtxt(kdat, comments='#')[:,3]
+
+	w      = np.where(
+		(band_low <= data[1])    &
+		(data[2] <= band_high)   &
+		(Emin-20*deg <= data[6]) & 
+		(data[6] <= Emax+20*deg) & 
+		(data[6] != 0.0)
+		)[0]
+	data   = data[:,w]
+	weight = weight[data[0].astype(dtype='int')-1]
+	mel    = data[(3,4,5),:]
+	en     = data[6]/HARTREE
+	fact   = data[7]
+	FAQ    = 4 * np.pi / vol
+	return mel, weight, en, fact, FAQ
 
 @numpy_plot_opt(
 	_plot=False,
 	_xlab=r"$\hbar\omega$ (eV)", 
 	_ylab=r"$\varepsilon(\omega)$ (arb. units)",
-	# _labels=['real_x','imag_x','real_y','imag_y','real_z','imag_z',]
 	)
 @numpy_save_opt(
 	_fname="eps.dat",
 	_fmt="%12.4E",
 	_header=("{:>10s}" + "{:>12s}"*2).format("En (eV)", 'real', 'imag'),
 	_delimiter='',
-	# _fmt=['%13.7f'] + ['%15.5e']*6,
-	# _header='{:>11s}{:>16s}{:>16s}{:>16s}{:>16s}{:>16s}{:>16s}'.format(
-	# 	'omega (eV)', 'realX', 'imagX', 'realY', 'imagY', 'realZ', 'imagZ'
-	# 	)
 	)
 def calc_eps(
 	mode="pw2gw",
 	Emin=0, Emax=30, deltaE=0.05, 
-	band_low=1, band_high=np.inf,
 	deg=5E-2,
 	**kwargs
 	):
+	r"""
+	Compute the complex dielectric function using the formula:
+	  \varepsilon(\omega) = 1 + FAQ * 
+		sum_{t}[fact_t* mel/(en^2) * (1/(en_t - w) - 1/(-en_t - w))]
+
+	Params:
+	 - mode:   A value from ['pw2gw', 'dpforexc']. Select the kind of output
+	           files to be used for the calculation.
+	 - Emin:   Low limit of energy range.
+	 - Emax:   High limit of energy range.
+	 - deltaE: Tick size.
+	 - deg:    Lorentzian broadening (must be > 0) used in 'w = r(w) + 1j * deg'"""
 	modes = ['pw2gw', 'dpforexc']
 	if not mode in modes:
 		raise NotImplementedError("Mode {} is not implemented.".format(mode))
 	if mode == 'pw2gw':
-		fname  = kwargs.get('mel', 'matrixelements')
-		data   = np.loadtxt(fname, comments='#').T
-		fname  = kwargs.get('kdat', 'k.dat')
-		weight = np.loadtxt(fname, comments='#')[:,3]
-		vol    = kwargs.get('vol', 1)
-
-		w      = np.where(
-			(band_low <= data[1])    &
-			(data[2] <= band_high)   &
-			(Emin-20*deg <= data[6]) & 
-			(data[6] <= Emax+20*deg) & 
-			(data[6] != 0.0)
-			)[0]
-		data   = data[:,w]
-		weight = weight[data[0].astype(dtype='int')-1]
-		mel    = data[(3,4,5),:]
-		en     = data[6]/HARTREE
-		fact   = data[7]
-		FAQ    = 4 * np.pi / vol
+		mel, weight, en,fact, FAQ = _get_pw2gw_data(Emin=Emin, Emax=Emax, deltaE=deltaE, deg=deg, **kwargs)
 	elif mode == 'dpforexc':
-		fname  = kwargs.get('rhotw', 'out.rhotw')
-		data   = dpforexc_rhotw(fname)
-		fname  = kwargs.get('exc', 'exc.out')
-		iv, ic, en, fact = dpforexc_read_trans(fname)
+		mel, weight, en,fact, FAQ = _get_dpforexc_data_(Emin=Emin, Emax=Emax, deltaE=deltaE, deg=deg, **kwargs)
 
-		mel    = data.rhotw * np.conj(data.rhotw) * en**2
-		weight = 1
-		FAQ    = data.FAQ * data.vcol
-
-		w      = np.where(
-			(band_low <= iv)    & 
-			(ic <= band_high)   & 
-			(Emin-20*deg <= en) & 
-			(en <= Emax+20*deg) & 
-			(en != 0)
-			)[0]
-		en     = en[w]
-		fact   = fact[w]
-		mel    = mel[:,w]
 	npol = mel.shape[0]
 
 	omega = np.arange(Emin, Emax+deltaE, deltaE, dtype='complex') + 1j * deg
@@ -172,7 +215,10 @@ def calc_eps(
 	res[:,1::2] = np.real(eps)
 	res[:,2::2] = np.imag(eps)
 
+	res = (res[:-1] + res[1:])/2
+
 	return res
+
 
 @numpy_plot_opt(
 	_plot=False,
@@ -226,3 +272,5 @@ def calc_eps_pw2gw_light(
 	return res
 
 
+join_doc(calc_eps, _get_pw2gw_data.__doc__)
+join_doc(calc_eps, _get_dpforexc_data_.__doc__)
