@@ -24,11 +24,11 @@
     "radius": 1.26606198
   },
   "N": {
-    "color": "",
+    "color": "green",
     "radius": 1.058201058
   },
   "O": {
-    "color": "",
+    "color": "red",
     "radius": 0.907029478
   },
   "F": {
@@ -48,7 +48,7 @@
     "radius": 2.739984883
   },
   "Al": {
-    "color": "",
+    "color": "yellow",
     "radius": 2.229780801
   },
   "Si": {

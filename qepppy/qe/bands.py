@@ -1,24 +1,91 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
-from ..logger import *
+from ..logger import logger, warning
+from .._decorators import numpy_save_opt, numpy_plot_opt, store_property, IO_stdout_redirect
+
+HA_to_eV = 27.21138602
 
 
 data={
-	'n_kpt':{'x':'text', 'f':'output//nk', 'n':None, 't':int},
-	'n_bnd':{'x':'attr', 'f':'output//ks_energies/eigenvalues', 'n':'size', 't':int},
-	'n_el':{'x':'text', 'f':'output//nelec', 'n':None, 't':float},
-	'fermi':{'x':'text', 'f':'output//fermi_energy', 'n':None, 't':float},
-	'fermi_s':{'x':'nodelist', 'f':'output//two_fermi_energies', 'n':'fermi', 't':list},
-	'homo':{'x':'text', 'f':'output//highestOccupiedLevel', 'n':None, 't':float},
-	'lsda':{'x':'text', 'f':'output//lsda', 'n':None, 't':bool},
-	'noncolin':{'x':'text', 'f':'output//noncolin', 'n':None, 't':bool},
-	'kpt':{'x':'nodelist', 'f':'output//ks_energies/k_point', 'n':'kpt', 't':list},
-	'egv':{'x':'nodelist', 'f':'output//ks_energies/eigenvalues', 'n':'egv', 't':list},
-	'occ':{'x':'nodelist', 'f':'output//ks_energies/occupations', 'n':'occ', 't':list},
+	'n_kpt':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//nk', 
+		'extra_name':None, 
+		'res_type':int,
+		'outfile_regex':r'number of k points[\s]*='
+		},
+	'n_bnd':{
+		'xml_ptype':'attr', 
+		'xml_search_string':'output//ks_energies/eigenvalues', 
+		'extra_name':'size', 
+		'res_type':int,
+		'outfile_regex':r'number of Kohn-Sham states[\s]*='
+		},
+	'n_el':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//nelec', 
+		'extra_name':None, 
+		'res_type':float,
+		'outfile_regex':r'number of electrons[\s]*='
+		},
+	'fermi':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//fermi_energy', 
+		'extra_name':None, 
+		'res_type':float,
+		'outfile_regex':r'the Fermi energy is'
+		},
+	'fermi_s':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//two_fermi_energies', 
+		'extra_name':'fermi', 
+		'res_type':list
+		},
+	'homo':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//highestOccupiedLevel', 
+		'extra_name':None, 
+		'res_type':float
+		},
+	'lsda':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//lsda', 
+		'extra_name':None, 
+		'res_type':bool
+		},
+	'noncolin':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//noncolin', 
+		'extra_name':None, 
+		'res_type':bool,
+		'outfile_regex':r'spin'
+		},
+	'_kpt':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//ks_energies/k_point', 
+		'extra_name':'kpt', 
+		'res_type':list,
+		'outfile_regex':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)'
+		},
+	'_egv':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//ks_energies/eigenvalues', 
+		'extra_name':'egv', 
+		'res_type':list,
+		'outfile_regex':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
+		'modifier':1/HA_to_eV
+		},
+	'_occ':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//ks_energies/occupations', 
+		'extra_name':'occ', 
+		'res_type':list,
+		'outfile_regex':r'occupation numbers(?P<occ>[\s\d\.]+)'
+		},
 	}
 
 @logger()
-class bands( dfp):
+class bands(dfp):
 	"""
 	Instance used for QE eigenvalues/vector(k-points) and occupations numbers.
 	Uses the internal "data_file_parser" to read from a "data-file*.xml" input.
@@ -29,184 +96,252 @@ class bands( dfp):
 	- smallest_gap(): Print an analysis of the band gap.
 	"""
 	__name__ = "bands"
-	e_units = 27.21138602
-	def __init__( self, d={}, **kwargs):
-		d.update( data)
-		super().__init__( d=d, **kwargs)
+	e_units = HA_to_eV
+	def __init__(self, d={}, **kwargs):
+		d.update(data)
+		super().__init__(d=d, **kwargs)
 		return
 
-	def __str__( self):
+	def __str__(self):
 		msg = super().__str__()
-		bnd = len(self.egv[0]['egv'])-1
+		bnd = self.n_bnd
 		kpt_fmt = "\nkpt(#{{:5d}}):  " + "{:8.4f}"*3 + " [2pi/alat]"
-		egv_fmt = "\nEigenvalues( eV):\n"+("  "+"{:12.6f}"*8+"\n")*int(bnd/8)
-		egv_fmt += "  "+"{:12.6f}"*(bnd%8+1)+"\n"
-		for i in range( self.n_kpt):
-			msg += kpt_fmt.format( *self.kpt[i]['kpt']).format( i)
-			msg += egv_fmt.format( *self.egv[i]['egv'])
+		egv_fmt = "\nEigenvalues(eV):\n" + ("  "+"{:12.6f}"*8+"\n")*(bnd//8)
+		egv_fmt += "  " + "{:12.6f}"*(bnd%8) + "\n"
+		for i in range(self.n_kpt):
+			msg += kpt_fmt.format(*self.kpt_cart[i]).format(i)
+			msg += egv_fmt.format(*self.egv[i])
 		return msg
 
-	def __getitem__( self, key):
-		if( isinstance( key, int)):
-			if( 0 <= key < self.n_kpt):
-				return { 'kpt':self.kpt[key], 'egv':self.egv[key], 'occ':self.occ[key]} 
+	def __getitem__(self, key):
+		if(isinstance(key, int)):
+			if(0 <= key < self.n_kpt):
+				return {'kpt':self.kpt_cart[key], 'egv':self.egv[key], 'occ':self.occ[key]} 
 			else:
-				raise Exception( "Index '{}' out of range {}-{}".format( key, 0, self.n_kpt - 1))
-		return super().__getitem__( key)
+				raise KeyError("Index '{}' out of range {}-{}".format(key, 0, self.n_kpt - 1))
+		return super().__getitem__(key)
 
-	def band_structure( self, fname="plotted.dat", plot=True, pfile=True):
+	@property
+	@store_property
+	def kpt_cart(self):
+		kpt = np.array([a['kpt'] for a in self._kpt])
+		kpt = kpt[:self.n_kpt,:]
+		return kpt
+
+	@property
+	@store_property
+	def kpt_cryst(self):
+		n = self.n_kpt
+		kpt = np.array([a['kpt'] for a in self._kpt])
+		if kpt.shape[0] > n:
+			kpt = kpt[n:2*n,:]
+		else:
+			raise NotImplementedError()
+		return kpt
+
+	@property
+	@store_property
+	def weight(self):
+		return np.array([a['weight'] for a in self._kpt])
+
+	@property
+	@store_property
+	def egv(self):
+		return np.array([a['egv'] for a in self._egv]) * self.e_units
+
+	@property
+	@store_property
+	def occ(self):
+		return np.array([a['occ'] for a in self._occ])
+	
+	
+
+	@numpy_plot_opt(_ylab="Energy (eV)")
+	@numpy_save_opt(_fname="plotted.dat",_fmt="")
+	def band_structure(
+		self, *args,
+		**kwargs
+		):
 		"""
-		Plot/print_to_file the band structure of.
-		Use plot=True to plot the band structure using matplotlib
-		Use pfile=True to print the band structure data to a file "fname"
+		Compute the band structure.
+		Params:
+		  -
+		Return:
+		  numpy array with shape(n_kpt,n_bnd+1).
+		  The first column is the coordinates of |dK| to be used as X axis for a band plot.
+		  The other column are the ordered band eigenvalue for the corresponding kpt.
 		"""
-		n_kpt = self.n_kpt
-		kpt = [a['kpt'] for a in self.kpt]
-		egv = [a['egv'] for a in self.egv]
-		n_bnd = self.n_bnd
-		x = [0]*n_kpt
-		for i in range( 1, n_kpt):
-			x[i] = x[i-1] + np.linalg.norm( kpt[i] - kpt[i-1])
-		x = np.array( x)
-		res = np.column_stack( ( x, egv))
-		#print( res[:,0], res[:,1:])
+		kpt = self.kpt_cart
+		# kpt = kpt[:self.n_kpt,:]
+		egv = self.egv
 
-		if pfile:
-			np.savetxt( fname=fname, X=res, fmt="%13.8f"+"%11.6f"*n_bnd)
+		x = np.linalg.norm(kpt, axis=1)
+		res = np.column_stack((x, egv))
 
-		if plot:
-			import matplotlib.pyplot as plt
-			from matplotlib.ticker import AutoMinorLocator as AML
-			fig, ax = plt.subplots()
-			plt.plot( res[:,0], res[:,1:])
-			plt.ylabel( "Energy( eV)")
-			plt.xlabel( "")
-			ml1 = AML(5)
-			ax.yaxis.set_minor_locator(ml1)
-			ax.yaxis.set_tick_params(which='both', right = True)
-			plt.legend()
-			plt.show()
-		return 0
+		return res
 
-	def smallest_gap( self, radius=0., comp_point=(0.,0.,0.)):
+	@numpy_plot_opt(_xlab="Energy (eV)",_ylab="DOS (arb. units)")
+	@numpy_save_opt(_fname="dos.dat")
+	def density_of_states(
+		self, *args, 
+		emin=-20, emax=20, deltaE=0.001, deg=0.00, 
+		**kwargs
+		):
 		"""
-		Can focus on only a small portion of k-points by defining:
-		- radius: radius of the crop sphere centered around comp_point
-		- comp_point: tuple of coordinates for the center of the crop sphere
+		Compute the DOS.
+		  DOS(E) = sum_{n,K} [delta(E - E_{n}(K)) * weight(K)]
+		Params:
+		  - emin:   Starting energy for the DOS
+		  - emax:   Final energy for the DOS
+		  - deltaE: Tick separation on the X axis
+		  - deg:    Sigma to be used for a gaussian broadening.
+		            Default = 0.0: Does not apply any broadening.
+
+		Return:
+		  numpy array of shape ((emax-emin)/(deltaE)+1,2)
+		  The first column is the value of the energies generated using np.linspace(emin,emax,(emax-emin)/(deltaE)+1)
+		  The second column is the value of the DOS
+		"""
+		res = np.linspace(emin, emax, (emax-emin)/deltaE+1).reshape(1,-1)
+		res = np.pad(res, ((0,1),(0,0)), 'constant')
+
+		for n,egv in enumerate(self.egv):
+			i = np.floor((egv - emin) / deltaE +0.5).astype(dtype='int')
+			i = i[np.where( (0 <= i) & (i < res[0].size))]
+			res[1,i] += self.weight[n]
+
+		res[1:] /= deltaE
+
+		if deg > 0:
+			from ..tools.broad import broad
+			res = broad(res, t='gauss', deg=deg, axis=1)
+
+		return res.T
+
+	@IO_stdout_redirect()
+	def smallest_gap(self, radius=0., comp_point=(0.,0.,0.), **kwargs):
+		"""
 		Print to screen the following information concerning the band gap:
-		- Fermi energy
-		- Direct gap
-		- Min/Max of conduction/valence band (Indirect gap)
-		- Optical gap (condition: valence < Fermi < conduction)
+		  - Fermi energy
+		  - Direct gap
+		  - Min/Max of conduction/valence band (Indirect gap)
+		  - Optical gap (condition: valence < Fermi < conduction)
+		Can focus on only a small portion of k-points by defining:
+		Params:
+		  - radius: radius of the crop sphere centered around comp_point
+		  - comp_point: tuple of coordinates for the center of the crop sphere
 		"""
-		print( "SMALLEST_GAP: radius={}, comp_point={}".format( radius, comp_point))
+		print("SMALLEST_GAP: radius={}, comp_point={}\n".format(radius, comp_point))
 
-		if( radius < 0):
-			print( "Invalid negative 'radius'")
-			return 1
-		if( len(comp_point) != 3):
-			print( "'comp_point' should be an [x,y,z] vector {}".format( comp_point))
-			return 1
-		for x in comp_point:
-			try:
-				x+=1
-			except TypeError:
-				print( "Invalid type %s for 'comp_point'" % type(x))
-				return 1
+		if(radius < 0):
+			raise ValueError("Radius can't be negative")
+		cp = np.array(comp_point, dtype='float')
+		if(cp.shape != (3,)):
+			raise ValueError("'comp_point' should be an [x,y,z] vector {}".format(cp))
 
-		kpt   = np.array( [a['kpt'] for a in self.kpt])
-		egv = [ a['egv'] for a in self.egv]
-		n_kpt = self.n_kpt
+		# kpt   = np.array([a['kpt'] for a in self.kpt])
+		kpt   = self.kpt_cart
+		# egv   = np.array([ a['egv'] for a in self.egv])*self.e_units
+		egv   = self.egv
 		n_el  = self.n_el
 		ef    = self.fermi
-		if ef == None: ef = float('Nan')
+		# kpt   = kpt[:self.n_kpt,:]
 
-		print( "E_fermi(from file):\t{:f} eV".format( ef))
-		if ( self.lsda):
+		if ef == None: 
+			ef = np.nan
+		print("E_fermi(from file):\t{:f} eV".format(ef))
+
+		if self.lsda:
 			n_el /= 2
-		if ( self.noncolin):
+		if self.noncolin:
 			vb = (n_el - 1)
-			print( "spin-orbit correction detected");
+			print("spin-orbit correction detected")
 		else:
 			vb = (n_el/2 - 1)
-			print( "No spin-orbit correction")
+			print("No spin-orbit correction")
 		vb = int(vb)
 		cb = vb + 1
-		print( "vb = %d, cb = %d" % (vb+1, cb+1));
+		print("vb = {}, cb = {}".format(vb+1, cb+1))
 
-		base = np.array( egv)
-		cp = np.array( comp_point)
-		if( radius > 0):
-			mod = map( lambda x: radius - np.linalg.norm(cp-x), self.kpt)
+		mod  = np.linalg.norm(cp-kpt,axis=1) - radius
+		in_range = np.where(mod >= 0)[0]
+
+		num = np.arange(self.n_kpt)
+		num = num[in_range]
+		kpt = kpt[in_range,:]
+		egv = egv[in_range,:]
+		found = kpt.shape[0]
+		if found <= 0:
+			raise Exception("No k-point found for the given criteria")
+		print("\nFound {} points with the given criteria.".format(found))
+
+		mg1 = np.argmax(egv[:,vb])
+		top_valence = egv[mg1,vb]
+		print("\nMax_vb_energy: vb= {:f} eV".format(top_valence))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[mg1], num[mg1]+1))
+
+		mg2 = np.argmin(egv[:,cb])
+		bot_conduction = egv[mg2,cb]
+		print("\nMin_cb_energy: cb = {:f} eV".format(bot_conduction))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[mg2], num[mg2]+1))
+
+		gap = bot_conduction - top_valence
+		if mg1 == mg2:
+			print("DIRECT GAP {:.4f} eV".format(gap))
 		else:
-			mod = map( lambda x: 1, self.kpt)
-		lcb  = base[:,cb]
-		lvb  = base[:,vb]
-		lcb1 = base[:,cb+1]
-		#lg1  = lcb - lvb
-
-		lll  = list( filter( lambda x: x[1]>= 0, zip( range( n_kpt), mod, kpt, lvb, lcb, lcb1)))
-		found = len( lll)
-		if( found <= 0):
-			raise Exception( "No k-point found for the given criteria")
-		print( "\nFound {} points with the given criteria.".format( found))
-
-		res = mg1 = max( lll, key = lambda a: a[3])
-		print( "\nMax_vb_energy: vb= {:f} eV".format( res[3]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
-
-		res = mg2 = min( lll, key = lambda a: a[4])
-		print( "\nMin_cb_energy: cb= {:f} eV".format( res[4]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
-
-		if( mg1[0] == mg2[0]):
-			print( "DIRECT GAP {:.4f} eV".format( mg2[4] - mg1[3]))
-		else:
-			if( mg2[4] < mg1[3]):
-				print( "METALLIC")
+			if(gap < 0):
+				print("METALLIC")
 			else:
-				print( "INDIRECT GAP {:.5f} eV".format(mg2[4] - mg1[3]))
+				print("INDIRECT GAP {:.5f} eV".format(gap))
 
-		if( ef == ef):
-			res = min( (i for i in lll if i[3] < ef < i[4]), key = lambda a: a[4] - a[3])
-			#mog = l[ lg1.index( m)]
-			print( "\nMin_opt_gap: {:f} eV".format( res[4] - res[3]))
-			print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1})".format(res[2], res[0]+1))
-			print("\t%lf -> %lf   Ef: %lf eV" % (res[3], res[4], ef))		
+		
+		if not np.isnan(ef):
+			w = np.where((egv[:,vb] < ef) & (egv[:,cb] > ef))[0]
+			app_egv = egv[w,:]
+			app_kpt = kpt[w,:]
+			app_num = num[w]
+			res = np.argmin(app_egv[:,cb] - app_egv[:,vb])
+			opt_gap = app_egv[res,cb] - app_egv[res,vb]
+			print("\nMin_opt_gap: {:f} eV".format(opt_gap))
+			print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1})".format(app_kpt[res], app_num[res]+1))
+			print("\t{} -> {}   Ef: {} eV".format(app_egv[res,vb], app_egv[res,cb], ef))		
 		else:
-			print( "\nCannot calculate min_opt_gap with invalid fermi energy")
+			print("\nCannot calculate min_opt_gap with invalid fermi energy")
 
-		res = min( lll, key = lambda a: a[4] - a[3])
-		print( "\nMin_gap_energy (vb->cb): {:f} eV".format( res[4] - res[3]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
-		print("\t%lf -> %lf   Ef: %lf eV" % (res[3], res[4], ef))
+		res = np.argmin(egv[:,cb] - egv[:,vb])
+		print("\nMin_gap_energy (vb->cb): {:f} eV".format(egv[res,cb] - egv[res,vb]))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[res], num[res]+1))
+		print("\t{} -> {}   Ef: {} eV".format(egv[res,vb], egv[res,cb], ef))
 
-		res = min( lll, key = lambda a: a[5] - a[3])
-		print( "\nMin_gap_energy (vb->cb+1): {:f} eV".format( res[5] - res[3]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
-		print("\t%lf -> %lf   Ef: %lf eV" % (res[3], res[5], ef))	
+		res = np.argmin(egv[:,cb+1] - egv[:,vb])
+		print("\nMin_gap_energy (vb->cb+1): {:f} eV".format(egv[res,cb+1] - egv[res,vb]))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[res], num[res]+1))
+		print("\t{} -> {}   Ef: {} eV".format(egv[res,vb], egv[res,cb+1], ef))
 
-		res = min( lll, key = lambda a: a[5] - a[4])
-		print( "\nMin_gap_energy (cb->cb+1): {:f} eV".format( res[5] - res[4]))
-		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format( res[2], res[0]+1))
-		print("\t%lf -> %lf   Ef: %lf eV" % (res[4], res[5], ef))	
+		res = np.argmin(egv[:,cb+1] - egv[:,cb])
+		print("\nMin_gap_energy (cb->cb+1): {:f} eV".format(egv[res,cb+1] - egv[res,cb]))
+		print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[res], num[res]+1))
+		print("\t{} -> {}   Ef: {} eV".format(egv[res,cb], egv[res,cb+1], ef))
 
-		return
-
-	def validate( self):
+	def validate(self):
 		ret = True
 		if self.n_kpt <= 0:
-			warning.print( "Failed to read nkpt from file '{}'.".format( self.schema))
+			warning.print("Failed to read nkpt from file '{}'.".format(self.schema))
 			ret = False
-			#raise Exception( "No kpt read from file '{}'.".format( self.fname))
+			#raise Exception("No kpt read from file '{}'.".format(self.fname))
 		if self.n_bnd <= 0:
-			warning.print( "Failed to read nbnd from file '{}'.".format( self.schema))
+			warning.print("Failed to read nbnd from file '{}'.".format(self.schema))
 			ret = False
-			#raise Exception( "No band read from file '{}'.".format( self.fname))
-		if not self.n_kpt == len( self.egv) == len( self.occ):
-			warning.print( "Corrupted file. Number of kpoints does not match number egv or occ")
+			#raise Exception("No band read from file '{}'.".format(self.fname))
+		legv = len(self.egv)
+		if self.occ:
+			locc = len(self.occ)
+		else:
+			locc = legv
+		if not self.n_kpt == legv == locc:
+			warning.print("Corrupted file. Number of kpoints does not match number egv or occ")
 			ret = False
-			#raise Exception( "Corrupted file. Number of kpoints does not match number egv or occ")
+			#raise Exception("Corrupted file. Number of kpoints does not match number egv or occ")
 		return ret and super().validate()
 
 

@@ -1,91 +1,104 @@
 import numpy as np
 
-def _gaussian( x, broad):
+def _gaussian(x, broad):
 	dx = x[1] - x[0]
 	sigma = broad
 	twoSigmaSq = 2.0 * sigma**2
 	norm = np.sqrt(2 * np.pi) * sigma / dx 
 	#Divided for dx to take into account implementation as sum instead of integral (volume element)
 
-	g = np.arange( -10*sigma, 10*sigma, dx)
-	g = np.exp( -(g**2) / twoSigmaSq)
+	g = np.arange(-10*sigma, 10*sigma, dx)
+	g = np.exp(-(g**2) / twoSigmaSq)
 	g /= norm
 	return g
 
-def _lorentz( x, broad):
+def _lorentz(x, broad):
 	dx = x[1] - x[0]
 	gamma = broad
 	gammaSq = gamma**2
 	norm = np.pi / gamma / dx 
 	#Divided for dx to take into account implementation as sum instead of integral (volume element)
 
-	g = np.arange( -15*gamma, 15*gamma, dx)
+	g = np.arange(-15*gamma, 15*gamma, dx)
 	g = 1/(g**2 + gammaSq)
 	g /= norm
 	return g
 
-v = [ _gaussian, _lorentz]
-vc = [ "gauss", "lorentz"]
-def broad( fname="", type="gauss", broad = 0.1, oname=""):
-	fname = fname.split(",")
-	if oname:
-		oname = oname.split(",")
-		if len(fname) != len( oname):
-			raise Exception( "Must provide same number of output names as inputs names")
+def _check_and_pad_(data,deg):
+	x = data[:,0]
+	y = data[:,1:]
 
-	if not type in vc:
-		raise Exception( "Invalide type '{}'.`n".format( type))
+	dx = x[1] - x[0]
+	if np.any((x[1:] - x[:-1]) - dx > 1E-4):
+		raise ValueError("X-axis data must be uniformely distributed.")
 
-	func = v[ vc.index( type)]
+	padding = int(15*deg/dx)
+	x = np.pad(x, (padding,padding), 'linear_ramp', end_values=(x[0]-15*deg, x[-1] + 15*deg))
+	y = np.pad(y, ((padding,padding),(0,0)), 'edge')
 
-	for c, name in enumerate( fname):
-		print("Applying '{}' broadening of '{}' to '{}'".format( type.upper(), broad, name))
-		data = np.loadtxt( name, usecols=None)
-		x = data[:,0]
-		y = data[:,1:]
-		conv = func( x, broad)
-		lgh = int( len( conv)/2)
-		#print( lg)
-		new_m = None
-		for yi in y.transpose():
-			new = np.convolve( yi, conv, mode='full')
-			#print( len(new))
-			new = new[ lgh:-lgh]
-			#print( len(new))
-			if isinstance( new_m, np.ndarray):
-				new_m = np.vstack( (new_m, new))
-			else: 
-				new_m = np.copy( new)
+	return x,y
 
-		#print( x, x.shape)
-		#print( new_m, new_m.shape)
-		if oname:
-			n_name = oname[c]
-		else:
-			n_name = "{}_{}".format( name, broad)
-		print( "Saving broadened data to '{}'".format( n_name))
-		np.savetxt( n_name, np.c_[ x, new_m.transpose()])
+def _get_conv_function_(t):
+	if t == 'gauss':
+		return _gaussian
+	if t == 'lorentz':
+		return _lorentz
+	else:
+		raise NotImplemented("Invalid convolution function {}.".format(t))
+
+
+def broad(data, t="gauss", deg=0.1, axis=0):
+	if axis:
+		data = data.T
+
+	res = np.zeros(data.shape)
+	res[:,0] = data[:,0]
+
+	x,y = _check_and_pad_(data,deg)
+
+	conv = _get_conv_function_(t)(x,deg)
+	w = np.where((res[0,0] <= x) & (x <= res[-1,0]))
+	for n,yi in enumerate(y.T):
+		new = np.convolve(yi, conv, mode='same')
+		res[:,n+1] = new[w]
+
+	if axis:
+		res = res.T
+
+	return res
+
 
 if __name__ == "__main__":
 	import sys
-	argc = len( sys.argv)
-	if argc < 2:
-		raise Exception( "Must pass arguments:\nFilename(s).\n")
-
-	if( not 2<=argc<=5):
+	argc = len(sys.argv)
+	if not 2<=argc<=5 or sys.argv[1] == 'help':
 		print("Incorrect use. Pleas pass arguments:"
 			"\n\t'fname'\t (comma separated),"
 			"\n\t'type\t(gauss/lorentz, default=gauss)',"
 			"\n\t'broad\t (default=0.1)'"
 			"\n\t'oname\t(optional) (comma separated)'")
 		exit()
-	if( argc==2):
-		broad( sys.argv[1])
-	if( argc==3):
-		broad( sys.argv[1], sys.argv[2])
-	if( argc==4):
-		broad( sys.argv[1], sys.argv[2], sys.argv[3])
-	if( argc==5):
-		broad( sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]))
+
+	t = 'gauss'
+	if argc >= 3:
+		t = str(sys.argv[2])
+	deg = 0.1
+	if argc >= 4:
+		deg = float(sys.argv[3])
+	oname = None
+	if argc >= 5:
+		oname = str(sys.argv[4]).split(',')
+	for n, name in enumerate(str(sys.argv[1]).split(',')):
+		print("Applying '{}' broadening of '{}' to '{}'".format(t.upper(), deg, name))
+		data = np.loadtxt(name, usecols=None)
+
+		b = broad(data, t, deg)
+
+		if oname:
+			n_name = oname[n]
+		else:
+			n_name = "{}_{}".format(name, deg)
+		print("Saving broadened data to '{}'".format(n_name))
+		np.savetxt(n_name, b)
 
 		
