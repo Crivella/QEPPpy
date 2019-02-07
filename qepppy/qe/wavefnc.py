@@ -1,9 +1,10 @@
 import numpy as np
 from .parser.binary_io import binary_io as bin_io
-from ..logger import logger, warning
+from .._decorators import store_property
+# from ..logger import logger, warning
 
 # @logger()
-class wavefnc( bin_io):
+class wavefnc(bin_io):
 	binary_format =[
 		[
 			{'type':'i4', 'shape':(1,), 'name':'kpt_num'},
@@ -25,23 +26,34 @@ class wavefnc( bin_io):
 			{'type':'i4', 'shape':('igwx',3,), 'name':'gvect'},
 		],
 		([
-			{'type':'c16', 'shape':('igwx',), 'name':'val'},
+			{'type':'c16', 'shape':('igwx',), 'name':'_val'},
 		], 'nbnd'),
 	]
+	def __init__(self, src=""):
+		super().__init__()
+		self.src = src
+		if src:
+			self.read_binary(self.src)
 
-	def test_norm( self):
+	@property
+	def val(self):
+		return np.array(self._val)
+	
+
+	def test_norm(self):
 		if not self.binary:
-			raise Exception( "Must first read a wavefunction file.")
-		for i in range( self.nbnd):
-			norm = np.linalg.norm( self.val[i])
-			if np.abs( norm - 1) > 1.E-7:
-				raise Exception( "Wavefunction not normalized.")
+			raise Exception("Must first read a wavefunction file.")
+		for i in range(self.nbnd):
+			norm = np.linalg.norm(self.val[i])
+			if np.abs(norm - 1) > 1.E-7:
+				raise Exception("Wavefunction not normalized.")
 
 	@staticmethod
 	def _get_recipr_basis(a1,a2,a3):
-		b1 = np.cross(a2,a3)
-		b2 = np.cross(a3,a1)
-		b3 = np.cross(a1,a2)
+		vol = np.linalg.norm(np.dot(a1,np.cross(a2,a3)))
+		b1 = np.cross(a2,a3) / vol
+		b2 = np.cross(a3,a1) / vol
+		b3 = np.cross(a1,a2) / vol
 
 		return b1,b2,b3
 
@@ -128,7 +140,7 @@ class wavefnc( bin_io):
 
 		return X,Y
 
-	def charge_density( self,
+	def charge_density(self,
 		bnd_list=[1],
 		plot=True,
 		# interpolate_shape=None,
@@ -164,87 +176,6 @@ class wavefnc( bin_io):
 			return
 
 		return rho
-
-	def spatial_charge_density( self, 
-		x=7, y=7, z=7,
-		bnd_list=[],
-		plot=True, 
-		pfile=False, out="charge_density"
-		):
-
-		vol = np.dot( self.recipr[0], np.cross( self.recipr[1], self.recipr[2]))
-		a1 = np.cross( self.recipr[1], self.recipr[2])
-		a2 = np.cross( self.recipr[2], self.recipr[0])
-		a3 = np.cross( self.recipr[0], self.recipr[1])
-		cell = np.array( (a1,a2,a3)) * 2*np.pi / vol
-		#cell = np.array([[1,0,0],[0,1,0],[0,0,1]]) * 10.2 
-
-		div = np.array( (x-1,y-1,z-1))
-		delta  = cell / div[:,None]
-		delta = delta.transpose()
-		recipr = self.recipr.transpose()
-
-		try:
-			weight = self.weight
-		except Exception as e:
-			#logger.warning( "Weight data for kpt #{} missing... settting it to 1".format( self.kpt_num))
-			warning.print( "Weight data for kpt #{} missing... setting it to 1".format( self.kpt_num))
-			weight = 1
-
-		gvect_cart = np.array( [np.dot(recipr, G) for G in self.gvect])
-
-		grid = np.empty( (x,y,z,3))
-		dens = np.empty( (x,y,z))
-		coord = np.empty( 3)
-		for b in range( self.nbnd):
-			if bnd_list:
-				if not b+1 in bnd_list:
-					continue
-			coeff = self.val[b]
-			for n1 in range( x):
-				for n2 in range( y):
-					for n3 in range( z):
-						coord = np.dot( delta, (n1,n2,n3))
-						grid[n1][n2][n3] = coord
-						cc = 0
-						for ng, G in enumerate( gvect_cart):
-							exp = np.dot( G+self.kpt, coord)
-							cc += coeff[ng] * np.exp( 1j * exp)
-						dens[n1][n2][n3] = (cc.real**2 + cc.imag**2)
-
-		dens *= weight / vol
-		#print( dens)
-
-		"""
-		from mayavi import mlab
-		src = mlab.pipeline.scalar_field( dens)
-		print( src)
-		mlab.pipeline.iso_surface( src, contours=[dens.max()/3, ], opacity=0.3)
-		mlab.show()
-		#"""
-
-		if plot:
-			import matplotlib.pyplot as plt
-			from mpl_toolkits.mplot3d import Axes3D
-
-			fig = plt.figure()
-			for i in range( z):
-				ax = fig.add_subplot( 1,z,i+1 , projection='3d')
-				ax.set_title( "z slice #{}".format( i))
-				ax.view_init( 90, 0)
-				ax.margins( tight=True)
-				ax.set_zticks([])
-
-				ax.xaxis.pane.fill = False
-				ax.yaxis.pane.fill = False
-				ax.zaxis.pane.fill = False
-				ax.grid( False)
-				ax.plot_surface( grid[:,:,i,0], grid[:,:,i,1], dens[:,:,i], cmap='inferno')
-
-			plt.show()
-		return dens
-
-
 
 
 

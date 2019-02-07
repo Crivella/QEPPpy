@@ -184,29 +184,29 @@ class bands(dfp):
 	@numpy_save_opt(_fname="dos.dat")
 	def density_of_states(
 		self, *args, 
-		emin=-20, emax=20, deltaE=0.001, deg=0.00, 
+		Emin=-20, Emax=20, deltaE=0.001, deg=0.00, 
 		**kwargs
 		):
 		"""
 		Compute the DOS.
 		  DOS(E) = sum_{n,K} [delta(E - E_{n}(K)) * weight(K)]
 		Params:
-		  - emin:   Starting energy for the DOS
-		  - emax:   Final energy for the DOS
+		  - Emin:   Starting energy for the DOS
+		  - Emax:   Final energy for the DOS
 		  - deltaE: Tick separation on the X axis
 		  - deg:    Sigma to be used for a gaussian broadening.
 		            Default = 0.0: Does not apply any broadening.
 
 		Return:
-		  numpy array of shape ((emax-emin)/(deltaE)+1,2)
-		  The first column is the value of the energies generated using np.linspace(emin,emax,(emax-emin)/(deltaE)+1)
+		  numpy array of shape ((Emax-Emin)/(deltaE)+1,2)
+		  The first column is the value of the energies generated using np.linspace(Emin,Emax,(Emax-Emin)/(deltaE)+1)
 		  The second column is the value of the DOS
 		"""
-		res = np.linspace(emin, emax, (emax-emin)/deltaE+1).reshape(1,-1)
+		res = np.linspace(Emin, Emax, (Emax-Emin)/deltaE+1).reshape(1,-1)
 		res = np.pad(res, ((0,1),(0,0)), 'constant')
 
 		for n,egv in enumerate(self.egv):
-			i = np.floor((egv - emin) / deltaE +0.5).astype(dtype='int')
+			i = np.floor((egv - Emin) / deltaE +0.5).astype(dtype='int')
 			i = i[np.where( (0 <= i) & (i < res[0].size))]
 			res[1,i] += self.weight[n]
 
