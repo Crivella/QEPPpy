@@ -117,7 +117,7 @@ def _recip_space_(v1, v2, v3):
 	b3  = c * np.cross(v1, v2)
 	return np.array([b1,b2,b3])
 
-@logger()
+# @logger()
 class structure(dfp):
 	__name__ = "structure";
 	def __init__(self, d={}, **kwargs):

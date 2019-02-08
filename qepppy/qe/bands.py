@@ -84,7 +84,7 @@ data={
 		},
 	}
 
-@logger()
+# @logger()
 class bands(dfp):
 	"""
 	Instance used for QE eigenvalues/vector(k-points) and occupations numbers.
@@ -333,9 +333,9 @@ class bands(dfp):
 			warning.print("Failed to read nbnd from file '{}'.".format(self.schema))
 			ret = False
 			#raise Exception("No band read from file '{}'.".format(self.fname))
-		legv = len(self.egv)
-		if self.occ:
-			locc = len(self.occ)
+		legv = self.egv.shape[0]
+		if self.occ.size:
+			locc = self.occ.shape[0]
 		else:
 			locc = legv
 		if not self.n_kpt == legv == locc:
