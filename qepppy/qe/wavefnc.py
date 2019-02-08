@@ -1,9 +1,8 @@
 import numpy as np
+import scipy.fftpack
 from .parser.binary_io import binary_io as bin_io
 from .._decorators import store_property
-# from ..logger import logger, warning
 
-# @logger()
 class wavefnc(bin_io):
 	binary_format =[
 		[
@@ -26,7 +25,7 @@ class wavefnc(bin_io):
 			{'type':'i4', 'shape':('igwx',3,), 'name':'gvect'},
 		],
 		([
-			{'type':'c16', 'shape':('igwx',), 'name':'_val'},
+			{'type':'c16', 'shape':('igwx',), 'name':'val'},
 		], 'nbnd'),
 	]
 	def __init__(self, src=""):
@@ -36,8 +35,32 @@ class wavefnc(bin_io):
 			self.read_binary(self.src)
 
 	@property
-	def val(self):
-		return np.array(self._val)
+	@store_property
+	def direct(self):
+		b1,b2,b3 = self.recipr
+		vol = np.linalg.norm(np.dot(b1,np.cross(b2,b3)))
+		a1 = np.cross(b2,b3) / vol
+		a2 = np.cross(b3,b1) / vol
+		a3 = np.cross(b1,b2) / vol
+
+		return np.array([a1,a2,a3]) * 2 * np.pi
+
+	def make_density_grid(self, bnd_list=[1]):
+		rho = None
+		for band in bnd_list:
+			band -= 1
+			GRID = self._generate_g_grid_(band)
+			shape = GRID.shape
+			if rho is None:
+				rho = scipy.fftpack.fftn(GRID,shape)
+				rho = rho.real**2 + rho.imag**2
+			else:
+				app = scipy.fftpack.fftn(GRID,shape)
+				app = app.real**2 + app.imag**2
+				rho += app
+
+		self.dgrid = rho
+		return rho
 	
 
 	def test_norm(self):
@@ -48,134 +71,124 @@ class wavefnc(bin_io):
 			if np.abs(norm - 1) > 1.E-7:
 				raise Exception("Wavefunction not normalized.")
 
-	@staticmethod
-	def _get_recipr_basis(a1,a2,a3):
-		vol = np.linalg.norm(np.dot(a1,np.cross(a2,a3)))
-		b1 = np.cross(a2,a3) / vol
-		b2 = np.cross(a3,a1) / vol
-		b3 = np.cross(a1,a2) / vol
-
-		return b1,b2,b3
-
-	@staticmethod
-	def _interpolate_2d_grid(grid,n1,n2):
-		from scipy.interpolate import griddata
-		old_n1,old_n2 = grid.shape
-		old_X,old_Y = np.meshgrid(
-			np.linspace(0,1,old_n1),
-			np.linspace(0,1,old_n2)
-			)
-
-		X,Y = np.meshgrid(
-			np.linspace(0,1,n1),
-			np.linspace(0,1,n2)
-			)
-
-		new = griddata(
-			(old_X.reshape(old_X.size),old_Y.reshape(old_Y.size)),
-			grid.reshape(grid.size),
-			(X.reshape(X.size),Y.reshape(Y.size))
-			)
-
-		return X,Y,new.reshape(X.shape)
-
-	def _generate_g_grid(self,band):
-		C = self.val[band]
+	def _generate_g_grid_(self,band):
 		GRID = np.zeros(
-			(
-				np.max(self.gvect[:,0])*2+1,
-				np.max(self.gvect[:,1])*2+1,
-				np.max(self.gvect[:,2])*2+1
-				),
+			np.max(self.gvect, axis=0) - np.min(self.gvect, axis=0)+1,
 			dtype=np.complex
 			)
-		for g,c in zip(self.gvect,C):
-			i1,i2,i3 = g
-			GRID[i1,i2,i3] = c
-
+		GRID[tuple(self.gvect.T)] = self.val[band]
 		return GRID
 
-	@staticmethod
 	def _plot_grid_slice(
+		self,
 		X,Y,grid,
 		slice_index=0,
-		# interpolate_shape = None,
 		cmap='inferno'
 		):
 
 		# from mpl_toolkits.mplot3d import Axes3D
 		import matplotlib.pyplot as plt
+		import scipy.interpolate
 		fig = plt.figure()
-		ax1 = fig.add_subplot(111,
-			# projection='3d'
-			)
-		# ax2 = fig.add_subplot(122,
+		# ax1 = fig.add_subplot(131,
+		# 	projection='3d'
+		# 	)
+		# ax2 = fig.add_subplot(132,
+		# 	projection='3d'
+		# 	)
+
+		# ax3 = fig.add_subplot(133,
 		# 	# projection='3d'
 		# 	)
-		z_slice = grid[slice_index,:,:]
+		ax1 = fig.add_subplot(111)
 
+		s1, s2, _ = self.dgrid.shape
+		a = np.linspace(X.min(),X.max(), s1 * self.rep)
+		b = np.linspace(Y.min(),Y.max(), s2 * self.rep)
 
-		values = np.real(z_slice*np.conjugate(z_slice))
+		y,x = np.meshgrid(b,a)
+		z = scipy.interpolate.griddata(
+			(X,Y), grid,
+			(x.flatten(),y.flatten()),
+			'cubic',
+			fill_value = 0
+			).reshape(x.shape)
 
-		# ax1.imshow(values,cmap=cmap)
-		ax1.contourf(Y,-X,values,100,cmap=cmap)
+		ax1.contourf(x,y,z,100,cmap=cmap)
+		# ax1.plot_surface(x,y,z,cmap=cmap)
+		# ax1.scatter(X,Y,grid,cmap=cmap)
+		# ax2.scatter(X,Y,grid,cmap=cmap)
+		# ax3.contourf(x,y,z,100,cmap=cmap)
 		ax1.set_title('Slice {}'.format(slice_index))
 		ax1.set_xlabel('X')
 		ax1.set_ylabel('Y')
-		# if not interpolate_shape is None:
-		# 	n1,n2 = interpolate_shape
-		# 	X,Y,values = wavefnc._interpolate_2d_grid(values,n1,n2)
-		# 	# ax2.imshow(values,cmap=cmap)
-		# 	ax2.contourf(Y,-X,values,100,cmap=cmap)
+
+		# ax1.view_init(90,0)
 		plt.show()
 
-	def _make_xy_mesh(self,a1,a2,grid):
-		n1,n2,n3 = grid.shape
-		A,B = np.meshgrid(
-			np.arange(grid.shape[2]),
-			np.arange(grid.shape[1])
-			)
-		X = A*a1[0]/n3 + B*a2[0]/n2
-		Y = A*a1[1]/n3 + B*a2[1]/n2
+	@property
+	def _xyz_mesh_(self):
+		n1,n2,n3 = self.dgrid.shape
+		rep = self.rep
+		a = np.linspace(0, rep, n1*rep)# (n1-1)*rep + 1) # [:-1] + .5/n1
+		b = np.linspace(0, rep, n2*rep)# (n2-1)*rep + 1) # [:-1] + .5/n2
+		c = np.linspace(0, rep, n3*rep)# (n3-1)*rep + 1) # [:-1] + .5/n3
 
-		return X,Y
+		# Specific order to obtain the array with shape (n1,n2,n3) as the data grid
+		# The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
+		# The 'y,x,z' order is because of how the 3d meshgrid output behaves:
+		#    x,y,z=np.meshgrid(1,2,3) 
+		#       will cause the x to change value along axis=1
+		#					   y to change value along axis=0
+		#					   z to change value along axis=2
+		# Since the FFT grid has the axis=0,1,2 corresponding to x,y,z i need to do the proper remapping
+		y,x,z = np.meshgrid(b,a,c)
+		XYZ  = np.dot(
+			self.direct.T,
+			[x.flatten(),y.flatten(),z.flatten()]
+			).reshape(3,*x.shape)
 
-	def charge_density(self,
+		return XYZ
+
+	def plot_density(
+		self,
+		rep=1,
 		bnd_list=[1],
-		plot=True,
-		# interpolate_shape=None,
+		z_slice=[0]
 		):
+		arep = 3*rep
+		self.rep = arep 
+		rho = self.make_density_grid(bnd_list=bnd_list)
 
-		b1,b2,b3 = self.recipr
-		a1,a2,a3 = self._get_recipr_basis(b1,b2,b3)
-		# print(a1,a2,a3)
+		l_slice  = (arep-1)//2
+		r_slice  = arep//2
+		n1,n2,n3 = rho.shape
+		rho = np.pad(rho, 
+			(
+				(n1 * l_slice, n1 * r_slice),
+				(n2 * l_slice, n2 * r_slice),
+				(n3 * l_slice, n3 * r_slice)
+			), 'wrap')
+		X,Y,Z = self._xyz_mesh_
 
-		rho = None
-		from scipy.fftpack import fftn
-		for band in bnd_list:
-			band -= 1
-			GRID = self._generate_g_grid(band)
-			shape = GRID.shape
-			if rho is None:
-				rho = fftn(GRID,shape)
-				rho = rho.real**2 + rho.imag**2
-			else:
-				app = fftn(GRID,shape)
-				app = app.real**2 + app.imag**2
-				rho += app
+		xs = np.unique(np.round(X, decimals=4))
+		ys = np.unique(np.round(Y, decimals=4))
+		zs = np.unique(np.round(Z, decimals=4))
+		s1 = xs.size//arep
+		s2 = ys.size//arep
+		s3 = zs.size//arep
+		c_x = ((xs[s1*rep] < X) & (X < xs[-s1*rep]))
+		c_y = ((ys[s2*rep] < Y) & (Y < ys[-s2*rep]))
 
-		if plot:
-			X,Y = self._make_xy_mesh(a1,a2,rho)
 
-			for i in range(rho.shape[0]):
-				self._plot_grid_slice(
-					X,Y,rho,
-					i,
-					# interpolate_shape=interpolate_shape
-					)
-			return
+		for i in zs[s3*rep:-s3*rep]:
+			c_z = ((-1E-4 < Z - i) & (Z - i < 1E-4))
+			w = np.where(c_x & c_y & c_z)
 
-		return rho
+			self._plot_grid_slice(
+				X[w]-xs[s1*rep], Y[w]-ys[s2*rep], rho[w],
+				i-zs[s3*rep],
+				)
 
 
 

@@ -44,6 +44,8 @@ class binary_io():
 						else:
 							self.__dict__[name][n] = res
 					size = np.fromfile(file, '{}i4'.format(endian), 1)
+				if rep > 1:
+					self.__dict__[name] = np.array(self.__dict__[name])
 		self.binary = True
 		return
 

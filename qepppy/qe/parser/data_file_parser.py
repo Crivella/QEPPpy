@@ -49,12 +49,7 @@ def _get_value_(f, search_data, dtype=str):
 		# print(e)
 		pass
 
-	val = None
-	try:
-		val = dtype(a)
-	except:
-		warning.print("Failed to convert '{}'(from '{}') to dtype '{}'".format(a, string, dtype))
-	return val
+	return dtype(a)
 
 def _xml_attr_(node, f="", n=""):
 	if f:
@@ -91,7 +86,7 @@ def _xml_node_list_(node, f="", n=""):
 
 	return ret
 
-@logger()
+# @logger()
 class data_file_parser(object):
 	"""
 	Parser for QE data'file'schema.xml (QE>=6.2)
