@@ -30,6 +30,7 @@ class wavefnc(bin_io):
 	]
 	def __init__(self, src=""):
 		super().__init__()
+		self.rep = 1
 		self.src = src
 		if src:
 			self.read_binary(self.src)
@@ -126,13 +127,13 @@ class wavefnc(bin_io):
 		# ax1.view_init(90,0)
 		plt.show()
 
-	@property
+	# @property
 	def _xyz_mesh_(self):
 		n1,n2,n3 = self.dgrid.shape
 		rep = self.rep
-		a = np.linspace(0, rep, n1*rep)# (n1-1)*rep + 1) # [:-1] + .5/n1
-		b = np.linspace(0, rep, n2*rep)# (n2-1)*rep + 1) # [:-1] + .5/n2
-		c = np.linspace(0, rep, n3*rep)# (n3-1)*rep + 1) # [:-1] + .5/n3
+		a = np.linspace(0, rep, n1*rep + 1)[:-1]# (n1-1)*rep + 1) # [:-1] + .5/n1
+		b = np.linspace(0, rep, n2*rep + 1)[:-1]# (n2-1)*rep + 1) # [:-1] + .5/n2
+		c = np.linspace(0, rep, n3*rep + 1)[:-1]# (n3-1)*rep + 1) # [:-1] + .5/n3
 
 		# Specific order to obtain the array with shape (n1,n2,n3) as the data grid
 		# The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
@@ -156,7 +157,8 @@ class wavefnc(bin_io):
 		bnd_list=[1],
 		z_slice=[0]
 		):
-		arep = 3*rep
+		arep = 3*rep+2
+		rep+=1
 		self.rep = arep 
 		rho = self.make_density_grid(bnd_list=bnd_list)
 
@@ -169,25 +171,24 @@ class wavefnc(bin_io):
 				(n2 * l_slice, n2 * r_slice),
 				(n3 * l_slice, n3 * r_slice)
 			), 'wrap')
-		X,Y,Z = self._xyz_mesh_
+		X,Y,Z = self._xyz_mesh_()
 
 		xs = np.unique(np.round(X, decimals=4))
 		ys = np.unique(np.round(Y, decimals=4))
 		zs = np.unique(np.round(Z, decimals=4))
-		s1 = xs.size//arep
-		s2 = ys.size//arep
-		s3 = zs.size//arep
-		c_x = ((xs[s1*rep] < X) & (X < xs[-s1*rep]))
-		c_y = ((ys[s2*rep] < Y) & (Y < ys[-s2*rep]))
+		s1 = (xs.size+1)//arep
+		s2 = (ys.size+1)//arep
+		s3 = (zs.size+1)//arep
+		c_x = ((xs[s1*rep-1] < X) & (X < xs[-s1*rep+1]))
+		c_y = ((ys[s2*rep-1] < Y) & (Y < ys[-s2*rep+1]))
 
-
-		for i in zs[s3*rep:-s3*rep]:
+		for i in zs[s3*rep-1:-s3*rep+1]:
 			c_z = ((-1E-4 < Z - i) & (Z - i < 1E-4))
 			w = np.where(c_x & c_y & c_z)
 
 			self._plot_grid_slice(
-				X[w]-xs[s1*rep], Y[w]-ys[s2*rep], rho[w],
-				i-zs[s3*rep],
+				X[w]-xs[s1*rep-1], Y[w]-ys[s2*rep-1], rho[w],
+				i-zs[s3*rep-1],
 				)
 
 
