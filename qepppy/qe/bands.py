@@ -88,7 +88,8 @@ data={
 class bands(dfp):
 	"""
 	Instance used for QE eigenvalues/vector(k-points) and occupations numbers.
-	Uses the internal "data_file_parser" to read from a "data-file*.xml" input.
+	Uses the internal "data_file_parser" to read from a "data-file-schema.xml"
+	or from a pw.x output file.
 	Can be printed as a string.
 	Each k-point and its info can be called as a dictionary value using its number as the key.
 	Provide the following PostProcessing methods:
@@ -157,15 +158,44 @@ class bands(dfp):
 	@store_property
 	def occ(self):
 		return np.array([a['occ'] for a in self._occ])
+
+	@numpy_save_opt(_fname='kpt.dat', _fmt="%14.6f")
+	def kpt_crop(self, center, radius, mode='cart'):
+		"""
+		Crop all k-point from the grid, in a sphere around a center.
+		Params:
+		 - center: Iterable containing the X,Y,Z coordinates of the center of 
+		           the sphere.
+		 - radius: Radius of the sphere
+		 - mode:   Crop the k-points from cartesian('cart') or crystal('cryst')
+		           coordinates.
+		"""
+		center = np.array(center)
+		if center.size != 3:
+			raise ValueError("First positional argument must be a 3D coordinate for the center")
+
+		if mode == 'cart':
+			kpt = self.kpt_cart
+		elif mode == 'cryst':
+			kpt = self.kpt_cryst
+
+		norm = np.linalg.norm(kpt - center, axis=1)
+		w = np.where(norm <= radius)[0]
+
+		print("Cropping {} points out of {}.".format(w.size, norm.size))
+		w_red = np.sum(self.weight[w])
+		w_tot = np.sum(self.weight)
+		print("Total weight {:.5f} / {:.5f} = {:.5f} = Renormalization factor".format(
+			w_red, w_tot, w_red/w_tot
+			))
+
+		return np.column_stack((kpt[w,:], self.weight[w]))
 	
 	
 
 	@numpy_plot_opt(_ylab="Energy (eV)")
 	@numpy_save_opt(_fname="plotted.dat",_fmt="")
-	def band_structure(
-		self, *args,
-		**kwargs
-		):
+	def band_structure(self):
 		"""
 		Compute the band structure.
 		Params:
@@ -186,10 +216,8 @@ class bands(dfp):
 
 	@numpy_plot_opt(_xlab="Energy (eV)",_ylab="DOS (arb. units)")
 	@numpy_save_opt(_fname="dos.dat")
-	def density_of_states(
-		self, *args, 
-		Emin=-20, Emax=20, deltaE=0.001, deg=0.00, 
-		**kwargs
+	def density_of_states(self, 
+		Emin=-20, Emax=20, deltaE=0.001, deg=0.00
 		):
 		"""
 		Compute the DOS.
@@ -223,7 +251,9 @@ class bands(dfp):
 		return res.T
 
 	@IO_stdout_redirect()
-	def smallest_gap(self, radius=0., comp_point=(0.,0.,0.), **kwargs):
+	def smallest_gap(self,
+		radius=0., comp_point=(0.,0.,0.), **kwargs
+		):
 		"""
 		Print to screen the following information concerning the band gap:
 		  - Fermi energy

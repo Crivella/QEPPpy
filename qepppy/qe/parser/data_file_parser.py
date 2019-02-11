@@ -62,10 +62,11 @@ def _xml_text_(node, f="", n=""):
 	return _format_(node.text)
 
 def _xml_node_list_(node, f="", n=""):
-	if f: node=node.findall(f)
+	if f: 
+		node = node.findall(f)
 	ret = []
 	for c in node:
-		d=c.attrib
+		d = c.attrib
 		d = {k:_format_(v) for k,v in d.items()}
 		add = c.text.strip().replace("\n", " ")
 		if add:
@@ -89,13 +90,19 @@ def _xml_node_list_(node, f="", n=""):
 # @logger()
 class data_file_parser(object):
 	"""
-	Parser for QE data'file'schema.xml (QE>=6.2)
+	Parser for QE data'file'schema.xml (QE>=6.2) and pw.x outputs.
 
-	- d: rule dictionary defining how the parser will operate.
-	- schema: Name of the "data-file*.xml" to parse (Parsing will run if the schema is set).
-	- **kwargs: Overwrite parsed variables with user's one given as a var_name=value keyword arg.
-	            The var_name must already exist after the parsing (cannot set unrecognized variables).
-	This parser accept a rule dict passed as a keyword argument 'd' to the __init__ method.
+	- d:        Rule dictionary defining how the parser will operate.
+	- schema:   Name of the "data-file*.xml" to parse (Parsing will run if the 
+	            schema is set).
+	- outfile:  Name of the pw.x output file to parse (Parsing will run if the 
+	            outfile is set).
+	- **kwargs: Overwrite parsed variables with user's one given as a 
+	            var_name=value keyword arg.
+	            The var_name must already exist after the parsing (cannot set 
+	            unrecognized variables).
+	This parser accept a rule dict passed as a keyword argument 'd' to the 
+	__init__ method.
 	The rule dict has to follow the format:
 	{
 	'varname':{
@@ -103,23 +110,33 @@ class data_file_parser(object):
 	    'xml_search_string':element to find, (string)
 	    'xml_ptype':xmlacquisition rule, ('attr'/text/nodelist)
 	    'extra_name':name
+	    'outfile_regex': regex string to extract data from outfile
 	    }
 	'varname1':{...}
 	}
 	The parsing will generate internal variables using as name the keys of the rule dict.
 	The rule are as follow:
-	- attr: Get the value of the attribute of name "n" of the node given by root.find(f)
-	- text: Get the text of the node given by root.find(f)
+	- attr:     Get the value of the attribute of name "n" of the node given 
+	            by root.find(f)
+	- text:     Get the text of the node given by root.find(f)
 	- nodelist: Find a list of nodes using root.findall(f) and analyze them.
-	            The resulting variable will be a list dictionary (one element for every node found).
-	            "n" is used as a key name for the text value of the node, otherwise the node.tag is used.
-	            text that contains arrays of number are automatically converted into np.ndarray objects
-	            All the node attributes are saved are saved as key:values in the dict.
-	            If the node contains children instead of text, explore them recursively:
+	            The resulting variable will be a list dictionary (one element 
+	            for every node found).
+	            "extra_name" is used as a key name for the text value of the 
+	            node, otherwise the xml node.tag is used.
+	            Text that contains arrays of number are automatically converted 
+	            into np.ndarray objects.
+	            All the node attributes are saved are saved as key:values in the
+	            dict.
+	            If the node contains children instead of text, explore them 
+	            recursively:
 	            - saves all the attributes found in the dict as key:value pairs.
-	            - saves all the the text values found in the dict as node.tag:text pairs.
-	            NOTE: no conflict resolution is present for attributes with the same name across children.
-	                  The attribute are updated at every step, so the value of the last one will be stored.
+	            - saves all the the text values found in the dict as 
+	               node.tag:text pairs.
+	            NOTE: No conflict resolution is present for attributes with the 
+	                  same name across children.
+	                  The attribute are updated at every step, so the value of 
+	                  the last one will be stored.
 	"""
 	__name__ = "data_file_parser"
 	def __init__(self, schema="", outfile="", d={}, **kwargs):
