@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from ...logger import logger, warning
 
@@ -145,6 +146,9 @@ class data_file_parser(object):
 			self.__dict__[i] = None
 		if schema:
 			self.schema = schema
+			self.data_path =os.path.dirname(os.path.realpath(schema))
+			self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
+			self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
 			self._parse_xml_()
 		elif outfile:
 			self.outfile = outfile
