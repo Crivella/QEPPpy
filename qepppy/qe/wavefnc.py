@@ -67,8 +67,8 @@ class wavefnc(bin_io):
 	def test_norm(self):
 		if not self.binary:
 			raise Exception("Must first read a wavefunction file.")
-		for i in range(self.nbnd):
-			norm = np.linalg.norm(self.val[i])
+		for val in self.val:
+			norm = np.linalg.norm(val)
 			if np.abs(norm - 1) > 1.E-7:
 				raise Exception("Wavefunction not normalized.")
 
@@ -82,7 +82,7 @@ class wavefnc(bin_io):
 
 	def _plot_grid_slice(
 		self,
-		X,Y,grid,
+		X,Y,Z,grid,
 		slice_index=0,
 		cmap='inferno'
 		):
@@ -108,10 +108,11 @@ class wavefnc(bin_io):
 		b = np.linspace(Y.min(),Y.max(), s2 * self.rep)
 
 		y,x = np.meshgrid(b,a)
+		z   = np.ones(x.size) * slice_index
 		z = scipy.interpolate.griddata(
-			(X,Y), grid,
-			(x.flatten(),y.flatten()),
-			'cubic',
+			(X,Y,Z), grid,
+			(x.flatten(),y.flatten(),z),
+			'linear',
 			fill_value = 0
 			).reshape(x.shape)
 
@@ -131,9 +132,9 @@ class wavefnc(bin_io):
 	def _xyz_mesh_(self):
 		n1,n2,n3 = self.dgrid.shape
 		rep = self.rep
-		a = np.linspace(0, rep, n1*rep + 1)[:-1]# (n1-1)*rep + 1) # [:-1] + .5/n1
-		b = np.linspace(0, rep, n2*rep + 1)[:-1]# (n2-1)*rep + 1) # [:-1] + .5/n2
-		c = np.linspace(0, rep, n3*rep + 1)[:-1]# (n3-1)*rep + 1) # [:-1] + .5/n3
+		a = np.linspace(0, rep, n1*rep + 1)[:-1]
+		b = np.linspace(0, rep, n2*rep + 1)[:-1]
+		c = np.linspace(0, rep, n3*rep + 1)[:-1]
 
 		# Specific order to obtain the array with shape (n1,n2,n3) as the data grid
 		# The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
@@ -149,7 +150,7 @@ class wavefnc(bin_io):
 			[x.flatten(),y.flatten(),z.flatten()]
 			).reshape(3,*x.shape)
 
-		return XYZ
+		return np.round(XYZ, decimals=5)
 
 	def plot_density(
 		self,
@@ -173,23 +174,32 @@ class wavefnc(bin_io):
 			), 'wrap')
 		X,Y,Z = self._xyz_mesh_()
 
-		xs = np.unique(np.round(X, decimals=4))
-		ys = np.unique(np.round(Y, decimals=4))
-		zs = np.unique(np.round(Z, decimals=4))
+		xs = np.unique(X)
+		ys = np.unique(Y)
+		zs = np.unique(Z)
 		s1 = (xs.size+1)//arep
 		s2 = (ys.size+1)//arep
 		s3 = (zs.size+1)//arep
-		c_x = ((xs[s1*rep-1] < X) & (X < xs[-s1*rep+1]))
-		c_y = ((ys[s2*rep-1] < Y) & (Y < ys[-s2*rep+1]))
-
-		for i in zs[s3*rep-1:-s3*rep+1]:
-			c_z = ((-1E-4 < Z - i) & (Z - i < 1E-4))
-			w = np.where(c_x & c_y & c_z)
-
+		c_x = ((xs[s1*rep-1] <= X) & (X <= xs[-s1*rep+1]))
+		c_y = ((ys[s2*rep-1] <= Y) & (Y <= ys[-s2*rep+1]))
+		c_z = ((zs[s3*rep-1] <= Z) & (Z <= zs[-s3*rep+1]))
+		w = np.where(c_x & c_y & c_z)
+		# print(w)
+		# XYZ = XYZ[:,w] # - np.array([xs[s1*rep-1], ys[s2*rep-1], zs[s3*rep-1]]).reshape(3,1,1,1)
+		for z in z_slice:
 			self._plot_grid_slice(
-				X[w]-xs[s1*rep-1], Y[w]-ys[s2*rep-1], rho[w],
-				i-zs[s3*rep-1],
+				X[w]-xs[s1*rep-1], Y[w]-ys[s2*rep-1], Z[w]-zs[s3*rep-1], rho[w],
+				z,
 				)
+		return
+		# for i in zs[s3*rep:-s3*rep+2]:
+		# 	c_z = ((-1E-4 < Z - i) & (Z - i < 1E-4))
+		# 	w = np.where(c_x & c_y & c_z)
+
+		# 	self._plot_grid_slice(
+		# 		X[w]-xs[s1*rep-1], Y[w]-ys[s2*rep-1], rho[w],
+		# 		i-zs[s3*rep],
+		# 		)
 
 
 
