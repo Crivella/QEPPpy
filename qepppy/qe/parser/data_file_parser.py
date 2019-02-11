@@ -203,8 +203,9 @@ class data_file_parser(object):
 			except Exception as e: 
 				continue # raise Exception("{}, {}".format(k,e));print(k, e);
 			#print(k, t, res)
-			#if res == None: continue
-			if t == np.array: 
+			if res == None:
+				self.__dict__[k] = None
+			elif t == np.array: 
 				self.__dict__[k] = t(res, dtype=float)
 			else: 
 				self.__dict__[k] = t(res)
