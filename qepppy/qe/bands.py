@@ -142,7 +142,11 @@ class bands(dfp):
 	@property
 	@store_property
 	def weight(self):
-		return np.array([a['weight'] for a in self._kpt])
+		n = self.n_kpt
+		occ = np.array([a['weight'] for a in self._kpt])
+		if occ.shape[0] > n:
+			occ = occ[:n]
+		return occ
 
 	@property
 	@store_property
