@@ -1,19 +1,25 @@
 import os
 import numpy as np
-from ...logger import logger, warning
+# from ...logger import logger, warning
 
 
 def _format_(var):
-	if isinstance(var, np.ndarray): return var
-	if var == None: return None
-	try: v = int(var)
-	except:
-		try: v = float(var)
+	if isinstance(var, np.ndarray):
+		return var
+	elif var == None:
+		return None
+	elif var == "true":
+		return True
+	elif var == "false":
+		return False
+	else:
+		try:
+			return int(var)
 		except:
-			if var == "true": v = True
-			elif var == "false": v = False
-			else: v = var
-	return v
+			try:
+				return float(var)
+			except:
+				return var
 
 matches = {
 	int:   r'[\s]*(?P<flag>[\d\-]+)',
@@ -94,8 +100,11 @@ class data_file_parser(object):
 	Parser for QE data'file'schema.xml (QE>=6.2) and pw.x outputs.
 
 	- d:        Rule dictionary defining how the parser will operate.
-	- schema:   Name of the "data-file*.xml" to parse (Parsing will run if the 
-	            schema is set).
+	- schema:   Name of the "data-file*.xml" to parse or path containing the file
+			    "data-file-schema.xml" (Parsing will run if the schema is set).
+	            When schema is given will also genetate 2 attributes:
+	            - data_path: Path of the folder containing the *.save folder.
+	            - prefix:    Prefix of calculation
 	- outfile:  Name of the pw.x output file to parse (Parsing will run if the 
 	            outfile is set).
 	- **kwargs: Overwrite parsed variables with user's one given as a 
@@ -115,7 +124,8 @@ class data_file_parser(object):
 	    }
 	'varname1':{...}
 	}
-	The parsing will generate internal variables using as name the keys of the rule dict.
+	The parsing will generate internal variables using as name the keys of the 
+	rule dict.
 	The rule are as follow:
 	- attr:     Get the value of the attribute of name "n" of the node given 
 	            by root.find(f)
@@ -145,10 +155,8 @@ class data_file_parser(object):
 		for i in d:
 			self.__dict__[i] = None
 		if schema:
-			self.schema = schema
-			self.data_path =os.path.dirname(os.path.realpath(schema))
-			self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
-			self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
+			self.schema = os.path.realpath(schema)
+			self._set_data_file_()
 			self._parse_xml_()
 		elif outfile:
 			self.outfile = outfile
@@ -158,13 +166,24 @@ class data_file_parser(object):
 				if not k in self.__dict__:
 					continue
 				self.__dict__[k] = v
-		return
 
 	def __getitem__(self, key):
 		return self.__dict__.get(key)
 
-	def __str__(self):
-		return ""
+	# def __str__(self):
+	# 	return ""
+
+	def _set_data_file_(self):
+		if os.path.isfile(self.schema):
+			self.data_path = os.path.dirname(os.path.realpath(self.schema))
+		elif os.path.isdir(self.schema):
+			file = os.path.join(self.schema, "data-file-schema.xml")
+			if not os.path.isfile(file):
+				raise FileNotFoundError(file)
+			self.data_path = self.schema
+			self.schema    = file
+		self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
+		self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
 
 	def _parse_outfile_(self):
 		with open(self.outfile, "r") as f:
@@ -188,25 +207,22 @@ class data_file_parser(object):
 		root = ET.parse(self.schema).getroot()
 
 		xml_acq_rule={
-			'attr':_xml_attr_,
-			'text':_xml_text_,
-			'nodelist':_xml_node_list_,
+			'attr':     _xml_attr_,
+			'text':     _xml_text_,
+			'nodelist': _xml_node_list_,
 		}
 
 		for k, v in self._data_.items():
 			res = None
 			t = v['res_type']
 			try:
-				n = v['extra_name']
-				f = v['xml_search_string']
+				n    = v['extra_name']
+				f    = v['xml_search_string']
 				func = xml_acq_rule[v['xml_ptype']]
+				res  = func(root, f, n)
 			except:
 				continue
-			try: 
-				res = func(root, f, n)
-			except Exception as e: 
-				continue # raise Exception("{}, {}".format(k,e));print(k, e);
-			#print(k, t, res)
+
 			if res == None:
 				self.__dict__[k] = None
 			elif t == np.array: 
@@ -216,9 +232,10 @@ class data_file_parser(object):
 		return
 
 	def validate(self):
-		try:
-			return True and super().validate()
-		except:
-			return True
+		return True
+		# try:
+		# 	return True and super().validate()
+		# except:
+		# 	return True
 
 

@@ -152,7 +152,7 @@ class wavefnc(bin_io):
 
 		return np.round(XYZ, decimals=5)
 
-	def plot_density(
+	def plot_density_zslice(
 		self,
 		rep=1,
 		bnd_list=[1],

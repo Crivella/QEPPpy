@@ -32,7 +32,7 @@ class pw_out( bands, structure):
 			fname = base + '_' + str(i)
 			i += 1
 		bnd_low -= 1
-		if bnd_high is None:
+		if bnd_high is None or bnd_high > self.n_bnd:
 			bnd_high = self.n_bnd
 		f = open(fname, "a")
 		for k,psi in enumerate(self.tmp):
@@ -40,13 +40,15 @@ class pw_out( bands, structure):
 			occ = self.occ[k][bnd_low:bnd_high]*2
 			kpt = self.kpt_cart[k].reshape(3,1)
 			G   = np.dot(psi.recipr.T, psi.gvect.T)
+			kG  = G + kpt
 			for v in range(bnd_low, bnd_high):
 				if occ[v-bnd_low] < 1E-4:
 					continue
 				c  = np.where((2 - occ) > 1E-4)[0]
+				c  = c[c>v]
 				dE = egv[c] - egv[v-bnd_low]
 
-				pp = np.sum(np.conj(psi.val[v]) * psi.val[c + bnd_low].reshape(len(c),1,psi.igwx) * (G + kpt), axis=-1)
+				pp = np.sum(np.conj(psi.val[v]) * psi.val[c + bnd_low].reshape(len(c),1,psi.igwx) * kG, axis=-1)
 				pp = np.real(np.conj(pp) * pp)
 
 				res = np.column_stack((c+1 + bnd_low, pp, dE, occ[v-bnd_low]-occ[c]))
@@ -54,8 +56,6 @@ class pw_out( bands, structure):
 				fmt="{:5d}{:5d}".format(k+1,v+1) + "%5d" + "%16.8E"*3 + "%8.4f"*2
 				np.savetxt(f, res, fmt=fmt)
 				f.flush()
-
-			del(egv,occ,kpt,G,psi)
 
 		f.close()
 
