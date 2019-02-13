@@ -195,6 +195,11 @@ class structure(dfp):
 
 	@property
 	@store_property
+	def atoms_group_coord_cart(self):
+		return list([np.array(self.atoms_coord_cart[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ])
+
+	@property
+	@store_property
 	def atoms_group_coord_cryst(self):
 		return list([np.array(self.atoms_coord_cryst[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ])
 

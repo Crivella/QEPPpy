@@ -62,6 +62,17 @@ class wavefnc(bin_io):
 
 		self.dgrid = rho
 		return rho
+
+	def make_psi_grid(self, bnd=1):
+		bnd -= 1
+		GRID = self._generate_g_grid_(bnd)
+		shape = GRID.shape
+
+		rho = scipy.fftpack.fftn(GRID,shape)
+		rho = np.sqrt(rho.real**2 + rho.imag**2)
+
+		# self.dgrid = rho
+		return rho
 	
 
 	def test_norm(self):
@@ -129,8 +140,8 @@ class wavefnc(bin_io):
 		plt.show()
 
 	# @property
-	def _xyz_mesh_(self, rep=1):
-		n1,n2,n3 = self.dgrid.shape
+	def _xyz_mesh_(self, shape, rep=1):
+		n1,n2,n3 = shape
 		a = np.linspace(0, rep, n1*rep + 1)[:-1]
 		b = np.linspace(0, rep, n2*rep + 1)[:-1]
 		c = np.linspace(0, rep, n3*rep + 1)[:-1]
@@ -171,7 +182,7 @@ class wavefnc(bin_io):
 				(n2 * l_slice, n2 * r_slice),
 				(n3 * l_slice, n3 * r_slice)
 			), 'wrap')
-		X,Y,Z = self._xyz_mesh_(arep)
+		X,Y,Z = self._xyz_mesh_(rho.shape, arep)
 
 		xs = np.unique(X)
 		ys = np.unique(Y)

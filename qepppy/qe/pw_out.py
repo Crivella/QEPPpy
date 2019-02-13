@@ -38,23 +38,28 @@ class pw_out( bands, structure):
 	def test_pseudo(self):
 		import scipy
 		for psi in self.tmp:
-			psi.make_density_grid(bnd_list=range(1,int(self.n_el/2)+1))
-			XYZ = psi._xyz_mesh_()
-			print(XYZ.shape)
-			for nt,coord,pp in zip(range(len(self.pseudo)), self.atoms_group_coord_cryst, self.pseudo):
+			dgrid = psi.make_psi_grid(
+				bnd=1
+				# bnd_list=range(1,int(self.n_el/2)+1)
+				)
+			grid_shape = dgrid.shape
+			XYZ = psi._xyz_mesh_(grid_shape)
+			# grid_shape = XYZ[0].shape
+			for nt,coord,pp in zip(range(len(self.pseudo)), self.atoms_group_coord_cart, self.pseudo):
 				coord = coord.reshape(-1,3)
 
-				val = np.zeros((pp.n_wfc, *XYZ[0].shape))
-				rab = np.zeros(XYZ[0].shape)
-				f_rab = scipy.interpolate.interp1d(pp.mesh[:pp.rab.size], pp.rab, 'nearest', bounds_error=False, fill_value=0)
+				val = np.zeros((pp.n_wfc, *grid_shape))
+				# rab = np.zeros(grid_shape)
+				# f_rab = scipy.interpolate.interp1d(pp.mesh[:pp.rab.size], pp.rab, 'linear', bounds_error=False, fill_value=0)
 				for c in coord:
 					c = c.reshape(3,1,1,1)
 					norm = np.linalg.norm(XYZ - c, axis=0)
-					rab += f_rab(norm.flatten()).reshape(XYZ[0].shape)
+					# rab += f_rab(norm.flatten()).reshape(grid_shape)
 
 					for nc,chi in enumerate(pp.pswfc):
-						f_val = scipy.interpolate.interp1d(pp.mesh[:chi.size], chi, 'nearest', bounds_error=False, fill_value=0)
-						val[nc] += f_val(norm.flatten()).reshape(XYZ[0].shape)
+						f_val = scipy.interpolate.interp1d(pp.mesh[:chi.size], chi, 'linear', bounds_error=False, fill_value=0)
+						val[nc] += f_val(norm.flatten()).reshape(grid_shape)
+						print("val min max", val.min(), val.max(),  "<-->", chi.min(), chi.max())
 						# rab += f_rab(norm.flatten()).reshape(XYZ[0].shape)
 						# print(pp.mesh[:chi.size])
 						# print(norm.min(), norm.max())
@@ -63,7 +68,9 @@ class pw_out( bands, structure):
 						# val += func(norm.flatten()).reshape(XYZ[0].shape)
 
 				for i in range(pp.n_wfc):
-					print("-------> nt: {}  nc: {}   sum: {}".format(nt+1, i+1, np.sum(psi.dgrid**.5 * val[i] * rab)))
+					res = np.sum(dgrid / np.linalg.norm(dgrid) * val[i] / np.linalg.norm(val[i]))
+					print(np.sum(dgrid))
+					print("-------> nt: {}  nc: {}   sum: {}".format(nt+1, i+1, res))
 				# print(pp.pswfc.shape)
 				# print(coord)
 
