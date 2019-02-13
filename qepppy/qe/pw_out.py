@@ -1,8 +1,10 @@
 import os
 import numpy as np
-from .bands     import bands     as bands
-from .structure import structure as structure
-from .tmp       import tmp
+from .bands        import bands     as bands
+from .structure    import structure as structure
+from .tmp          import tmp
+from .UPF          import UPF
+from .._decorators import store_property
 # from ..logger import logger
 
 # @logger()
@@ -18,22 +20,35 @@ class pw_out( bands, structure):
 		super().__init__( **kwargs)
 		self.validate()
 
-	def load_tmp(self):
-		try:
-			self.tmp
-		except AttributeError:
-			self.tmp = tmp(self.prefix, path=self.data_path)
+	@property
+	@store_property
+	def tmp(self):
+		return tmp(self.prefix, path=self.data_path)
 
-	def calc_matrixelements(self, bnd_low=1, bnd_high=None):
-		self.load_tmp()
+	@property
+	@store_property
+	def pseudo(self):
+		pseudo = []
+		path = os.path.dirname(self.schema)
+		for pp in self.atoms_pseudo:
+			file = os.path.join(path,pp)
+			pseudo.append(UPF(schema=file))
+		return pseudo
+
+	def test_pseudo(self):
+		XYZ = self.crystal_grid()
+		print(XYZ.shape)
+		pass
+
+	def calc_matrixelements(self, bnd_low=1, bnd_high=np.inf):
 		fname = base = "matrixelements"
 		i = 1
 		while os.path.exists(fname):
 			fname = base + '_' + str(i)
 			i += 1
 		bnd_low -= 1
-		if bnd_high is None or bnd_high > self.n_bnd:
-			bnd_high = self.n_bnd
+		bnd_high = min(bnd_high, self.n_bnd)
+		
 		f = open(fname, "a")
 		for k,psi in enumerate(self.tmp):
 			egv = self.egv[k][bnd_low:bnd_high]

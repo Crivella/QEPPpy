@@ -146,11 +146,11 @@ def store_property(func, *args, **kwargs):
 	"""
 	name = func.__name__
 	cls=args[0]
-	try:
-		res = cls.__dict__[name]
-	except:
-		res = func(*args, **kwargs)
-		cls.__dict__[name] = res
+	if name in cls.__dict__:
+		return cls.__dict__[name]
+
+	res = func(*args, **kwargs)
+	cls.__dict__[name] = res
 	return res
 
 @decorator

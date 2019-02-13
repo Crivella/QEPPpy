@@ -4,22 +4,22 @@ import numpy as np
 
 
 def _format_(var):
+	if var is None:
+		return None
 	if isinstance(var, np.ndarray):
 		return var
-	elif var == None:
-		return None
-	elif var == "true":
-		return True
-	elif var == "false":
-		return False
-	else:
+	if isinstance(var, str):
+		if var.upper() in ['TRUE', 'T', 'YES', 'Y']:
+			return True
+		elif var.upper() in ['FALSE', 'F', 'NO', 'N']:
+			return False
+	try:
+		return int(var)
+	except:
 		try:
-			return int(var)
+			return float(var)
 		except:
-			try:
-				return float(var)
-			except:
-				return var
+			return var
 
 matches = {
 	int:   r'[\s]*(?P<flag>[\d\-]+)',
@@ -69,13 +69,15 @@ def _xml_text_(node, f="", n=""):
 	return _format_(node.text)
 
 def _xml_node_list_(node, f="", n=""):
-	if f: 
+	if f:
 		node = node.findall(f)
-	ret = []
+	res = []
 	for c in node:
 		d = c.attrib
 		d = {k:_format_(v) for k,v in d.items()}
-		add = c.text.strip().replace("\n", " ")
+		add = None
+		if not c.text is None:
+			add = c.text.strip().replace("\n", " ")
 		if add:
 			add = list(filter(None, add.split(" ")))
 			if len(add) == 1:
@@ -90,9 +92,9 @@ def _xml_node_list_(node, f="", n=""):
 		else:
 			for e in  _xml_node_list_(c.getchildren()):
 				d.update(e)
-		ret.append(d)
+		res.append(d)
 
-	return ret
+	return res
 
 # @logger()
 class data_file_parser(object):
@@ -182,8 +184,9 @@ class data_file_parser(object):
 				raise FileNotFoundError(file)
 			self.data_path = self.schema
 			self.schema    = file
-		self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
-		self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
+		if "data-file-schema.xml" in self.schema:
+			self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
+			self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
 
 	def _parse_outfile_(self):
 		with open(self.outfile, "r") as f:
@@ -216,17 +219,18 @@ class data_file_parser(object):
 			res = None
 			t = v['res_type']
 			try:
-				n    = v['extra_name']
+				n    = v.get('extra_name', None)
 				f    = v['xml_search_string']
 				func = xml_acq_rule[v['xml_ptype']]
 				res  = func(root, f, n)
-			except:
+			except Exception as e:
+				# print(k, "!!!!!!!!!", e)
 				continue
 
-			if res == None:
+			if res is None:
 				self.__dict__[k] = None
 			elif t == np.array: 
-				self.__dict__[k] = t(res, dtype=float)
+				self.__dict__[k] = np.fromstring(res, sep=' ', dtype=float)
 			else: 
 				self.__dict__[k] = t(res)
 		return

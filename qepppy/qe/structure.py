@@ -205,6 +205,11 @@ class structure(dfp):
 
 	@property
 	@store_property
+	def atoms_pseudo(self):
+		return np.array([a['pseudo_file'] for a in self._atom_spec])
+
+	@property
+	@store_property
 	def all_atoms_typ(self):
 		return set(self.atoms_typ)
 
@@ -212,14 +217,11 @@ class structure(dfp):
 	@store_property
 	def cell(self):
 		res = None
-		try:
-			res =  np.array(list(self._cell[0].values()))
-			if res.size != 9:
-				raise
-			fact = self.alat if self.cell_p == 'alat' else 1
-			res *= fact
-		except Exception as e:
-			res = self._ibrav_to_cell_()
+		res =  np.array(list(self._cell[0].values()))
+		if res.size != 9:
+			return self._ibrav_to_cell_()
+		fact = self.alat if self.cell_p == 'alat' else 1
+		res *= fact
 		return res
 
 	@property
@@ -298,6 +300,28 @@ class structure(dfp):
 				warning.print("Cell structure is not set with 'ibrav = 0'.")
 				ret = False
 		return ret and super().validate()
+
+	def crystal_grid(self):
+		n1,n2,n3 = 30,30,180 #self.dgrid.shape
+		a = np.linspace(0, 1, n1 + 1)[:-1] + .5/n1
+		b = np.linspace(0, 1, n2 + 1)[:-1] + .5/n2
+		c = np.linspace(0, 1, n3 + 1)[:-1] + .5/n3
+
+		# Specific order to obtain the array with shape (n1,n2,n3) as the data grid
+		# The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
+		# The 'y,x,z' order is because of how the 3d meshgrid output behaves:
+		#    x,y,z=np.meshgrid(1,2,3) 
+		#       will cause the x to change value along axis=1
+		#					   y to change value along axis=0
+		#					   z to change value along axis=2
+		# Since the FFT grid has the axis=0,1,2 corresponding to x,y,z i need to do the proper remapping
+		y,x,z = np.meshgrid(b,a,c)
+		XYZ  = np.dot(
+			self.cell.T/self.alat,
+			[x.flatten(),y.flatten(),z.flatten()]
+			).reshape(3,*x.shape)
+
+		return np.round(XYZ, decimals=5)
 
 	def plot(
 		self, 

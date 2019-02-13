@@ -1,6 +1,6 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
-from ..logger import logger, warning
+# from ..logger import logger, warning
 from .._decorators import numpy_save_opt, numpy_plot_opt, store_property, IO_stdout_redirect
 
 HA_to_eV = 27.21138602
@@ -9,7 +9,7 @@ HA_to_eV = 27.21138602
 data={
 	'n_kpt':{
 		'xml_ptype':'text', 
-		'xml_search_string':'output//nk', 
+		'xml_search_string':'output//nks', 
 		'extra_name':None, 
 		'res_type':int,
 		'outfile_regex':r'number of k points[\s]*='
