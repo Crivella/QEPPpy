@@ -129,9 +129,8 @@ class wavefnc(bin_io):
 		plt.show()
 
 	# @property
-	def _xyz_mesh_(self):
+	def _xyz_mesh_(self, rep=1):
 		n1,n2,n3 = self.dgrid.shape
-		rep = self.rep
 		a = np.linspace(0, rep, n1*rep + 1)[:-1]
 		b = np.linspace(0, rep, n2*rep + 1)[:-1]
 		c = np.linspace(0, rep, n3*rep + 1)[:-1]
@@ -172,7 +171,7 @@ class wavefnc(bin_io):
 				(n2 * l_slice, n2 * r_slice),
 				(n3 * l_slice, n3 * r_slice)
 			), 'wrap')
-		X,Y,Z = self._xyz_mesh_()
+		X,Y,Z = self._xyz_mesh_(arep)
 
 		xs = np.unique(X)
 		ys = np.unique(Y)

@@ -187,15 +187,23 @@ class structure(dfp):
 				res = res[n:n*2,:]
 		else:
 			if self.atom_p != 'crystal':
-				raise NotImplementedError()
+				# import scipy.linalg
+				cell = np.mat(self.cell.T)
+				res = np.dot(cell.I, res.T).T
+				# raise NotImplementedError()
 		return res
 
 	@property
 	@store_property
+	def atoms_group_coord_cryst(self):
+		return list([np.array(self.atoms_coord_cryst[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ])
+
+	@property
+	@store_property
 	def atoms_typ(self):
-		res = list([a['name'] for a in self._atom_spec])
-		if len(res) > self.n_types:
-			raise ValueError("Found {} types vs ntyp = {}".format(res, self.n_types))
+		res = list([a['name'] for a in self._atoms])
+		# if len(res) > self.n_types:
+		# 	raise ValueError("Found {} types vs ntyp = {}".format(res, self.n_types))
 		return res
 
 	@property
@@ -300,28 +308,6 @@ class structure(dfp):
 				warning.print("Cell structure is not set with 'ibrav = 0'.")
 				ret = False
 		return ret and super().validate()
-
-	def crystal_grid(self):
-		n1,n2,n3 = 30,30,180 #self.dgrid.shape
-		a = np.linspace(0, 1, n1 + 1)[:-1] + .5/n1
-		b = np.linspace(0, 1, n2 + 1)[:-1] + .5/n2
-		c = np.linspace(0, 1, n3 + 1)[:-1] + .5/n3
-
-		# Specific order to obtain the array with shape (n1,n2,n3) as the data grid
-		# The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
-		# The 'y,x,z' order is because of how the 3d meshgrid output behaves:
-		#    x,y,z=np.meshgrid(1,2,3) 
-		#       will cause the x to change value along axis=1
-		#					   y to change value along axis=0
-		#					   z to change value along axis=2
-		# Since the FFT grid has the axis=0,1,2 corresponding to x,y,z i need to do the proper remapping
-		y,x,z = np.meshgrid(b,a,c)
-		XYZ  = np.dot(
-			self.cell.T/self.alat,
-			[x.flatten(),y.flatten(),z.flatten()]
-			).reshape(3,*x.shape)
-
-		return np.round(XYZ, decimals=5)
 
 	def plot(
 		self, 
