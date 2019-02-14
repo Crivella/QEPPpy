@@ -12,7 +12,7 @@ from .._decorators import store_property
 # from ..logger import logger
 
 # @logger()
-class pw_out( bands, structure):
+class pw_out(bands, structure):
 	"""
 	Instance used to handle QE outputs (by parsing the "data-file*.xml" file")
 	fname: name of the "data-file*.xml" to parse
@@ -87,7 +87,7 @@ class pw_out( bands, structure):
 						fill_value=0
 						)
 					val = f_val(norm.flatten()).reshape(grid_shape)
-					val = scipy.fftpack.ifftn(val)
+					# val = scipy.fftpack.ifftn(val)
 					states_mesh.append(val)
 					states_name.append("atom{:>4d} ({:<3s}), wfc{:>3d}".format(na,name,nc))
 
@@ -95,32 +95,34 @@ class pw_out( bands, structure):
 		
 	def test_pdos(self):
 		nlist, slist = self.test_pdos_orthonormalized_states()
-		# XYZ = xyz_mesh(
-		# 	np.array(self.fft_dense_grid)//2,
-		# 	base = self.cell
-		# 	)
+		XYZ = utils.xyz_mesh(
+			self.fft_dense_grid//2,
+			base = self.cell
+			)
 		grid_shape = slist[0].shape
 		for nk,psi in enumerate(self.tmp):
 			print("KPT (#{:>4d}): {}".format(nk+1, self.kpt_cart[nk]))
 			for nb in range(self.n_bnd):	
 				print("  BND (#{:>3d}): {:14.6f} eV".format(nb+1,self.egv[nk,nb]))
 				dgrid = psi._generate_g_grid_(band=nb, shape=grid_shape)
+				dgrid = np.abs(scipy.fftpack.fftn(dgrid))
 
 				for name,val in zip(nlist, slist):
 					comp = np.abs(np.vdot(dgrid.flatten(), val.flatten()) / (np.linalg.norm(dgrid) * np.linalg.norm(val)))**2 
 					print("    {}: {:8.5f}%".format(name, comp * 100))
-					# import matplotlib.pyplot as plt
-					# for i in range(0,min(XYZ.shape[-1],5),2):
-
-					# 	x = XYZ[0][:,:,i]
-					# 	y = XYZ[1][:,:,i]
-					# 	z = np.abs(val[:,:,i])
-					# 	fig, ax = plt.subplots(1,2)
-					# 	p = ax[0].contourf(x,y,z,100,cmap='inferno')
-					# 	ax[1].contourf(x,y,np.abs(dgrid[:,:,i]),100,cmap='inferno')
-					# 	ax[0].set_title(str(i))
-					# 	fig.colorbar(p)
-					# 	plt.show()
+					import matplotlib.pyplot as plt
+					for i in range(0,min(XYZ.shape[-1],5),2):
+						x = XYZ[0][:,:,i]
+						y = XYZ[1][:,:,i]
+						z = np.abs(val[:,:,i])
+						fig, ax = plt.subplots(1,2)
+						p = ax[0].contourf(x,y,z,100,cmap='inferno')
+						ax[1].contourf(x,y,np.abs(dgrid[:,:,i]),100,cmap='inferno')
+						ax[0].set_title(name)
+						ax[1].set_title('dgrid')
+						fig.suptitle(str(i))
+						fig.colorbar(p)
+						plt.show()
 			break
 
 
