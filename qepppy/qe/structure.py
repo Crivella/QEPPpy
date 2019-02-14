@@ -106,6 +106,14 @@ data={
 			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
 			r'cryst.\s*s\([\s\d]{2}\) = ' +
 			r'(?P<rotation>(\(.*\)\s*){3})'
+		},
+	'_fft_grid':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//fft_smooth', 
+		'extra_name':None, 
+		'res_type':list,
+		'outfile_regex':
+			r'FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*)'
 		}
 	}
 
@@ -196,12 +204,12 @@ class structure(dfp):
 	@property
 	@store_property
 	def atoms_group_coord_cart(self):
-		return list([np.array(self.atoms_coord_cart[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ])
+		return {a:np.array(self.atoms_coord_cart[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ}
 
 	@property
 	@store_property
 	def atoms_group_coord_cryst(self):
-		return list([np.array(self.atoms_coord_cryst[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ])
+		return {a:np.array(self.atoms_coord_cryst[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ}
 
 	@property
 	@store_property
@@ -224,7 +232,8 @@ class structure(dfp):
 	@property
 	@store_property
 	def all_atoms_typ(self):
-		return set(self.atoms_typ)
+		res = list([a['name'] for a in self._atom_spec])
+		return res
 
 	@property
 	@store_property
@@ -263,6 +272,11 @@ class structure(dfp):
 	@store_property
 	def symm_name(self):
 		return list([a['name'] for a in self._symm])
+
+	@property
+	@store_property
+	def fft_dense_grid(self):
+		return self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']
 
 	def pwin_read(self, parse="", inp=None):
 		if inp == None:

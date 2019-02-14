@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.fftpack
+from .. import utils
 from .parser.binary_io import binary_io as bin_io
 from .._decorators import store_property
 
@@ -66,13 +67,12 @@ class wavefnc(bin_io):
 	def make_psi_grid(self, bnd=1):
 		bnd -= 1
 		GRID = self._generate_g_grid_(bnd)
-		shape = GRID.shape
-
-		rho = scipy.fftpack.fftn(GRID,shape)
-		rho = np.sqrt(rho.real**2 + rho.imag**2)
+		# rho = scipy.fftpack.fftn(GRID)
+		# rho = np.sqrt(rho.real**2 + rho.imag**2)
 
 		# self.dgrid = rho
-		return rho
+		# return rho
+		return GRID
 	
 
 	def test_norm(self):
@@ -83,9 +83,11 @@ class wavefnc(bin_io):
 			if np.abs(norm - 1) > 1.E-7:
 				raise Exception("Wavefunction not normalized.")
 
-	def _generate_g_grid_(self,band):
+	def _generate_g_grid_(self,band,shape=None):
+		if shape is None:
+			shape = np.max(self.gvect, axis=0) - np.min(self.gvect, axis=0)+1
 		GRID = np.zeros(
-			np.max(self.gvect, axis=0) - np.min(self.gvect, axis=0)+1,
+			shape,
 			dtype=np.complex
 			)
 		GRID[tuple(self.gvect.T)] = self.val[band]
@@ -139,28 +141,28 @@ class wavefnc(bin_io):
 		# ax1.view_init(90,0)
 		plt.show()
 
-	# @property
-	def _xyz_mesh_(self, shape, rep=1):
-		n1,n2,n3 = shape
-		a = np.linspace(0, rep, n1*rep + 1)[:-1]
-		b = np.linspace(0, rep, n2*rep + 1)[:-1]
-		c = np.linspace(0, rep, n3*rep + 1)[:-1]
+	# # @property
+	# def _xyz_mesh_(self, shape, rep=1):
+	# 	n1,n2,n3 = shape
+	# 	a = np.linspace(0, rep, n1*rep + 1)[:-1]
+	# 	b = np.linspace(0, rep, n2*rep + 1)[:-1]
+	# 	c = np.linspace(0, rep, n3*rep + 1)[:-1]
 
-		# Specific order to obtain the array with shape (n1,n2,n3) as the data grid
-		# The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
-		# The 'y,x,z' order is because of how the 3d meshgrid output behaves:
-		#    x,y,z=np.meshgrid(1,2,3) 
-		#       will cause the x to change value along axis=1
-		#					   y to change value along axis=0
-		#					   z to change value along axis=2
-		# Since the FFT grid has the axis=0,1,2 corresponding to x,y,z i need to do the proper remapping
-		y,x,z = np.meshgrid(b,a,c)
-		XYZ  = np.dot(
-			self.direct.T,
-			[x.flatten(),y.flatten(),z.flatten()]
-			).reshape(3,*x.shape)
+	# 	# Specific order to obtain the array with shape (n1,n2,n3) as the data grid
+	# 	# The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
+	# 	# The 'y,x,z' order is because of how the 3d meshgrid output behaves:
+	# 	#    x,y,z=np.meshgrid(1,2,3) 
+	# 	#       will cause the x to change value along axis=1
+	# 	#					   y to change value along axis=0
+	# 	#					   z to change value along axis=2
+	# 	# Since the FFT grid has the axis=0,1,2 corresponding to x,y,z i need to do the proper remapping
+	# 	y,x,z = np.meshgrid(b,a,c)
+	# 	XYZ  = np.dot(
+	# 		self.direct.T,
+	# 		[x.flatten(),y.flatten(),z.flatten()]
+	# 		).reshape(3,*x.shape)
 
-		return np.round(XYZ, decimals=5)
+	# 	return np.round(XYZ, decimals=5)
 
 	def plot_density_zslice(
 		self,
@@ -182,7 +184,11 @@ class wavefnc(bin_io):
 				(n2 * l_slice, n2 * r_slice),
 				(n3 * l_slice, n3 * r_slice)
 			), 'wrap')
-		X,Y,Z = self._xyz_mesh_(rho.shape, arep)
+		X,Y,Z = utils.xyz_mesh(
+			rho.shape,
+			base = self.direct,
+			rep  = arep
+			) #self._xyz_mesh_(rho.shape, arep)
 
 		xs = np.unique(X)
 		ys = np.unique(Y)

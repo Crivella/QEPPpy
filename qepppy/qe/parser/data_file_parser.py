@@ -11,7 +11,7 @@ def _format_(var):
 	if isinstance(var, str):
 		if var.upper() in ['TRUE', 'T', 'YES', 'Y']:
 			return True
-		elif var.upper() in ['FALSE', 'F', 'NO', 'N']:
+		elif var.upper() in ['FALSE', 'F', 'NO']:
 			return False
 	try:
 		return int(var)
