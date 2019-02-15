@@ -46,7 +46,8 @@ data={
 		},
 	'_pswfc':{
 		'xml_ptype':'nodelist', 
-		'xml_search_string':'PP_PSWFC',
+		'xml_search_string':'PP_PSWFC//',
+		'extra_name':'PP_CHI',
 		'res_type':list,
 		},
 	'rho_atom':{
@@ -117,7 +118,16 @@ class UPF(dfp):
 	@store_property
 	def pswfc(self):
 		try:
-			return np.array([v for k,v in self._pswfc[0].items() if 'PP_CHI.' in k])
+			return np.array([a['PP_CHI'] for a in self._pswfc])
 		except:
+			return None
+
+	@property
+	@store_property
+	def pswfc_l(self):
+		try:
+			return np.array([a['l'] for a in self._pswfc])
+		except Exception as e:
+			print(e)
 			return None
 
