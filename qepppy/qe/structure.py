@@ -276,7 +276,7 @@ class structure(dfp):
 	@property
 	@store_property
 	def fft_dense_grid(self):
-		return np.array([self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']])
+		return np.array([self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']], dtype='int')
 
 	def pwin_read(self, parse="", inp=None):
 		if inp == None:

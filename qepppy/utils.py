@@ -1,10 +1,13 @@
 import numpy as np
 
-def xyz_mesh(shape, base=None, rep=1):
+def xyz_mesh(shape, base=None, rep=1, reverse=False):
 	n1,n2,n3 = shape
 	a = np.linspace(0, rep, n1*rep + 1)[:-1] + .5/n1
 	b = np.linspace(0, rep, n2*rep + 1)[:-1] + .5/n2
 	c = np.linspace(0, rep, n3*rep + 1)[:-1] + .5/n3
+
+	if reverse:
+		a,b,c = c,b,a
 
 	# Specific order to obtain the array with shape (n1,n2,n3) as the data grid
 	# The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
@@ -16,12 +19,13 @@ def xyz_mesh(shape, base=None, rep=1):
 	# Since the FFT grid has the axis=0,1,2 corresponding to x,y,z i need to do the proper remapping
 	y,x,z = np.meshgrid(b,a,c)
 
-	XYZ = np.array([x,y,z])
+	if reverse:
+		x,y,z = z,y,x
 
 	if not base is None:
 		XYZ  = np.dot(
 			base.T,
-			XYZ.reshape(3,-1)
-			).reshape(3,*x.shape)
+			[x.flatten(),y.flatten(),z.flatten()],
+			)
 
-	return XYZ
+	return np.array(XYZ).reshape(3,*x.shape)
