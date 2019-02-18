@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from functools import reduce
+import scipy.io
 
 
 endianess = sys.byteorder
@@ -12,44 +12,36 @@ _endian = {
 class binary_io():
 	def __init__(self):
 		self.binary = False
+		# self.no_squeeze = []
 		return
 		
 	def read_binary(self, src="", endian=endianess):
 		endian = _endian[endian]
-		with open(src, "rb") as file:
-			for vect in self.binary_format:
+		with scipy.io.FortranFile(src) as f:
+			for record in self.binary_format:
 				rep = 1
-				if isinstance(vect, tuple):
-					rep = self._conv_val_(vect[1])
-					vect = vect[0]
+				c = False
+				if isinstance(record, tuple):
+					rep = self._conv_val_(record[1])
+					record = record[0]
+					c = True
+				names = [a['name'] for a in record]
+				self.__dict__.update({n:[] for n in names})
+				rec   = [
+					endian + 
+					str(self._convert_shape_(a['shape'])) + 
+					a['type'] for a in record
+					]
 				for n in range(rep):
-					size = np.fromfile(file, '{}i4'.format(endian), 1) # _int(file.read(4))
-					if not size:
-						break
-					for s in vect:
-						name = s['name']
-						if rep > 1 and n==0:
-							self.__dict__[name] = ['']*rep
-						t = s['type']
-						shape = self._convert_shape_(s['shape'])
-						chunk = reduce(lambda x,y: x*y, shape)
-						res = np.fromfile(file, '{}{}'.format(endian, t), chunk)
-						if res.size == 1:
-							res = res[0]
-						if not shape == (1,):
-							res = np.array(res).reshape(shape)
-
-						if rep == 1:
-							self.__dict__[name] = res
-						else:
-							self.__dict__[name][n] = res
-					size = np.fromfile(file, '{}i4'.format(endian), 1)
-				if rep > 1:
-					self.__dict__[name] = np.array(self.__dict__[name])
-		self.binary = True
-		return
-
-
+					res = f.read_record(*rec)
+					if not isinstance(res, tuple):
+						res = tuple((res,))
+					for name,val in zip(names,res):
+						self.__dict__[name].append(val)
+				for n in names:
+					self.__dict__[n] = np.array(self.__dict__[n])
+					if not c:
+						self.__dict__[n] = self.__dict__[n].squeeze()
 
 	def _convert_shape_(self, tupl):
 		n = len(tupl)
@@ -64,7 +56,7 @@ class binary_io():
 		if isinstance(val, int):
 			return val
 		elif isinstance(val, str):
-			a = self.__dict__.get(val, None)
+			a = int(self.__dict__.get(val, None))
 			if a is None:
 				raise ValueError("Failed to find preassigned variable {}.".format(val))
 			return a
