@@ -133,7 +133,11 @@ class pw_out(bands, structure):
 						# ax[0,1].contourf(XYZ[0,:,:,rrrr],XYZ[1,:,:,rrrr],val[:,:,rrrr].real,cmap='seismic')
 						# ax[1,0].contourf(XYZ[0,:,:,rrrr],XYZ[1,:,:,rrrr],(val * harm)[:,:,rrrr].real,cmap='seismic')
 
-						# ax[1,1].contourf(XYZ[0,:,:,0],XYZ[1,:,:,0],np.roll(val * harm, delta, axis=(0,1,2))[:,:,(rrrr+delta[2])%val.shape[2]].real,cmap='seismic')
+						# toplot = np.roll(val * harm, delta, axis=(0,1,2))[:,:,(rrrr+delta[2])%val.shape[2]].real
+						# p = ax[1,1].contourf(XYZ[0,:,:,0],XYZ[1,:,:,0],toplot,
+						# 	cmap='seismic',
+						# 	vmin=-np.abs(toplot).max(),vmax=np.abs(toplot).max()
+						# 	)
 						# ax[1,1].scatter(c[0],c[1],color='r')
 						# for i in range(XYZ[0].shape[0]):
 						# 	ax[1,1].plot([XYZ[0,i,0,0],XYZ[0,i,-1,0]], [XYZ[1,i,0,0],XYZ[1,i,-1,0]], color='k')
@@ -142,6 +146,7 @@ class pw_out(bands, structure):
 						# ax[0,1].set_title("CHI")
 						# ax[1,0].set_title("CHI * sph_harm")
 						# ax[1,1].set_title("After ROLL")
+						# fig.colorbar(p)
 						# plt.show()
 						###########################################################################
 
@@ -162,8 +167,8 @@ class pw_out(bands, structure):
 		return states_name,states_mesh
 		
 	def test_pdos(self):
-		nlist, slist = self.test_pdos_orthonormalized_states()
-		# nlist, slist = self.test_pdos_states()
+		# nlist, slist = self.test_pdos_orthonormalized_states()
+		nlist, slist = self.test_pdos_states()
 		# print(slist.shape)
 		XYZ = utils.xyz_mesh(
 			self.fft_dense_grid//2,
@@ -185,25 +190,45 @@ class pw_out(bands, structure):
 
 					###########################################################################
 					# Test plot
-					# import matplotlib.pyplot as plt
-					# fig,ax = plt.subplots(3,3,figsize=(20, 10))
-					# ai = 0
-					# for i in range(-5,min(XYZ.shape[-1],6),5):
-					# 	x = XYZ[0][:,:,i]
-					# 	y = XYZ[1][:,:,i]
-					# 	z = np.abs(val[:,:,i])
-					# 	z = val[:,:,i].real
-					# 	# fig, ax = plt.subplots(1,2)
-					# 	ax[0,ai].contourf(x,y,z,100,cmap='seismic')
-					# 	ax[1,ai].contourf(x,y,dgrid[:,:,i].real,100,cmap='seismic')
-					# 	ax[2,ai].contourf(x,y,(np.conj(dgrid[:,:,i])*z).real,100,cmap='seismic')
-					# 	ax[0,ai].set_title(name)
-					# 	ax[1,ai].set_title('dgrid')
-					# 	ax[0,ai].set_title(name)
-					# 	ax[2,ai].set_title('prod')
-					# 	ai += 1
-					# 	# ax[0].set_title(str(i))
-					# plt.show()
+					import matplotlib.pyplot as plt
+					fig,ax = plt.subplots(3,3,figsize=(20, 10))
+					ai = 0
+					for i in range(-5,min(XYZ.shape[-1],6),5):
+						x = XYZ[0][:,:,i]
+						y = XYZ[1][:,:,i]
+						# z = np.abs(val[:,:,i])
+						z = val[:,:,i]
+
+						toplot = z.real
+						p1 = ax[0,ai].contourf(x,y,toplot,100,
+							cmap='seismic',
+							vmin=-np.abs(toplot).max(),vmax=np.abs(toplot).max()
+							)
+						cb = fig.colorbar(p1, ax=ax[0,ai])
+						cb.set_clim(vmin=-np.abs(toplot).max(),vmax=np.abs(toplot).max())
+
+						toplot = dgrid[:,:,i].real
+						p2 = ax[1,ai].contourf(x,y,toplot,100,
+							cmap='seismic',
+							vmin=-np.abs(toplot).max(),vmax=np.abs(toplot).max()
+							)
+						# ax[2,ai].contourf(x,y,(np.conj(dgrid[:,:,i])*z).real,100,cmap='seismic')
+						fig.colorbar(p2, ax=ax[1,ai])
+
+						toplot = (np.conj(dgrid[:,:,:])*val).real.sum(axis=2) / (np.linalg.norm(dgrid) * np.linalg.norm(val))
+						p3 = ax[2,ai].contourf(x,y,toplot,100,
+							cmap='seismic',
+							vmin=-np.abs(toplot).max(),vmax=np.abs(toplot).max()
+							)
+						fig.colorbar(p3, ax=ax[2,ai])
+
+						ax[0,ai].set_title(name)
+						ax[1,ai].set_title('dgrid')
+						ax[0,ai].set_title(name)
+						ax[2,ai].set_title('prod')
+						ai += 1
+						# ax[0].set_title(str(i))
+					plt.show()
 					###########################################################################
 			break
 
