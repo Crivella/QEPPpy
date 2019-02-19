@@ -67,13 +67,13 @@ class input_files(templ):
 	def __str__(self):
 		return self.convert()
 
-	def print_input(self, parse="", check=True):
+	def print_input(self, out="", check=True):
 		"""
 		Print this or a child class __str__() to a file or to the stdout
 		If check, validate the file before printing it
 		"""
-		if parse:
-			f = open(parse, "w+")
+		if out:
+			f = open(out, "w+")
 		else:
 			f = sys.stdout
 
@@ -81,35 +81,29 @@ class input_files(templ):
 			self.validate()
 		f.write(self.__str__())
 
-		if parse: 
+		if out: 
 			f.close()
 
 		return
 
 
-	def parse_input(self, parse=""):
+	def parse_input(self, parse):
 		"""
 		Read an input file and load it into the template values.
 		"""
-		if not parse:
-			raise Exception("Must pass a filename to open")
-
-		#Read all the file content into 'content'
 		with open(parse) as f:
 			content = f.readlines()
 		
 		nl = None
 		card = None
 		for l in content:
-			#Ignore comments
 			ls = l.strip()
 			if not ls: 
 				continue
 			#CASE: Namelist name
 			if '&' == ls[0]:
 				nl = ls[1:].upper()
-				if not self.check_nl(nl):
-					raise Exception("Reading unrecognized namelist '{}'".format(nl))
+				self.check_nl(nl)
 				continue
 			if '/' == ls:
 				if not nl:
@@ -118,21 +112,17 @@ class input_files(templ):
 				continue
 
 			if nl:
-				print(ls)
 				ls = ls.split("!")[0].strip()
 				if not ls:
 					continue
-				print(ls)
-				print()
-				#(not '/' in l or '=' in l) => Recognize namelist field from other fields or namelist end '/'
 				if not '=' in ls:
-					raise Exception("Invalid syntax '{}'".format(l))
+					raise Exception("Invalid syntax '{}'".format(ls))
 					#if not nl: raise Exception("Corrupted input file:\n{}".format(l))
 				#Read namelist fields separated by endline ('\n') or by commas (',')
 				for e in filter(None, ls.split(",")):
 					l1 = trim_ws(e).split("=")
 					if len(l1) != 2: 
-						raise Exception("Corrupt input file:\n{}".format(l))
+						raise Exception("Invalid syntax '{}'".format(ls))
 					v = l1[1].replace("\"", "").replace("'", "")
 					
 					#Check if the field/parameter name is present in the namelist template

@@ -78,8 +78,8 @@ class namelist(templ_base):
 		Check if NAMELIST name actually exist in template
 		"""
 		if nl in self._templ_['nl']:
-			return True
-		return False
+			return
+		raise Exception("Invalid namelist: '{}'".format(nl))
 
 	def convert(self):
 		"""
