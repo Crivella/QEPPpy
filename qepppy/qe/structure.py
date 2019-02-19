@@ -2,6 +2,7 @@ import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..logger import logger, warning, error
 from .._decorators import store_property
+from .._cell import _cell as cell
 
 bravais_index={	
 	'0':'free',
@@ -117,16 +118,8 @@ data={
 		}
 	}
 
-def _recip_space_(v1, v2, v3):
-	vol = v1.dot(np.cross(v2, v3))
-	c   = 1. / vol
-	b1  = c * np.cross(v2, v3)
-	b2  = c * np.cross(v3, v1)
-	b3  = c * np.cross(v1, v2)
-	return np.array([b1,b2,b3])
-
 # @logger()
-class structure(dfp):
+class structure(dfp, cell):
 	__name__ = "structure";
 	def __init__(self, d={}, **kwargs):
 		self.atom_p = 'bohr'
@@ -140,7 +133,7 @@ class structure(dfp):
 		if self.ibrav and info == 0:
 			return ""
 		msg = "CELL_PARAMETERS\n"
-		for l in self.cell:
+		for l in self.direct:
 			for e in l:
 				msg += "{:9.4f}".format(e)
 			msg += "\n"
@@ -182,12 +175,11 @@ class structure(dfp):
 		if n and len(res) == n*2:
 			res = res[0:n,:]
 		if self.atom_p == 'crystal':
-			res = np.dot(self.cell.T, res.T).T
+			res = np.dot(self.direct.T, res.T).T
 		return res
 
 	@property
-	@store_property
-	def atoms_coord_cryst(self):
+	def _atoms_coord_cryst(self):
 		fact = self.alat if self.atom_p == 'alat' else 1
 		res = np.array([a['coord'] for a in self._atoms]) * fact
 		n = self.n_atoms
@@ -195,50 +187,36 @@ class structure(dfp):
 				res = res[n:n*2,:]
 		else:
 			if self.atom_p != 'crystal':
-				# import scipy.linalg
-				cell = np.mat(self.cell.T)
-				res = np.dot(cell.I, res.T).T
-				# raise NotImplementedError()
+				res = np.dot(self.direct.T.I, res.T).T
 		return res
 
 	@property
-	@store_property
-	def atoms_group_coord_cart(self):
-		return {a:np.array(self.atoms_coord_cart[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ}
+	def _atoms_group_coord_cart(self):
+		return {a:np.array(self.atoms_coord_cart[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
 
 	@property
-	@store_property
-	def atoms_group_coord_cryst(self):
-		return {a:np.array(self.atoms_coord_cryst[np.where(np.array(self.atoms_typ) == a)[0]]) for a in self.all_atoms_typ}
+	def _atoms_group_coord_cryst(self):
+		return {a:np.array(self.atoms_coord_cryst[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
 
 	@property
-	@store_property
-	def atoms_typ(self):
-		res = list([a['name'] for a in self._atoms])
-		# if len(res) > self.n_types:
-		# 	raise ValueError("Found {} types vs ntyp = {}".format(res, self.n_types))
-		return res
+	def _atoms_typ(self):
+		return list([a['name'] for a in self._atoms])
 
 	@property
-	@store_property
-	def atoms_mass(self):
+	def _atoms_mass(self):
 		return np.array([a['mass'] for a in self._atom_spec])
 
 	@property
-	@store_property
-	def atoms_pseudo(self):
+	def _atoms_pseudo(self):
 		return np.array([a['pseudo_file'] for a in self._atom_spec])
 
 	@property
-	@store_property
-	def all_atoms_typ(self):
+	def _all_atoms_typ(self):
 		res = list([a['name'] for a in self._atom_spec])
 		return res
 
 	@property
-	@store_property
-	def cell(self):
-		res = None
+	def _direct(self):
 		res =  np.array(list(self._cell[0].values()))
 		if res.size != 9:
 			return self._ibrav_to_cell_()
@@ -247,13 +225,8 @@ class structure(dfp):
 		return res
 
 	@property
-	@store_property
-	def recip(self):
-		try:
-			res =  np.array(list(self._recip[0].values()))
-		except Exception as e:
-			res = self._cell_to_recip_()
-		return res
+	def _recipr(self):
+		return np.array(list(self._recip[0].values()))
 	
 	@property
 	@store_property
@@ -323,81 +296,15 @@ class structure(dfp):
 				ret = False
 
 		if self.ibrav == 0:
-			if self.cell is None:
+			if self.direct is None:
 				warning.print("Cell structure is not set with 'ibrav = 0'.")
 				ret = False
 		return ret and super().validate()
 
-	def plot(
-		self, 
-		repX=1, repY=1, repZ=1, 
-		cell=False, 
-		bonds=True,
-		recip=False,
-		graph_lvl=1,
-		):
-		"""
-		Plot the crystal cell structure.
-		Args:
-		 - reprX/Y/Z=1/1/1[or any positive integer]:
-		        repetitions of the cell along X/Y/Z (basis vector not Cartesian!!!).
-		        NOTE: They are 3 separate arguments repX, repY, repZ
-		 - cell=False[or True]: plot the contour of the cell.
-		 - bonds=True[or False]: plot the chemical bonds between atoms.
-		 - recip=False[or True]: plot the Brilloiun Zone instead of the real cell.
-		        If True all other flags are ignored.
-		 - graph_lvl=1[or 0/2/3]:
-		   - 0: Basic plot with circle dots as atoms and black lines as bonds.
-		   - 1: Colored line as bonds (color of the nearest atom).
-		   - 2: Use 3d spheres for atoms and bonds as in 1.
-		   - 3: Use 3d spheres for atoms and cylinders for bonds.
-		"""
-		from .. import cell_graphic as cg
-		import matplotlib.pyplot as plt
-		from mpl_toolkits.mplot3d import Axes3D
-
-		fig = plt.figure()
-		ax = fig.add_subplot(111, projection='3d')
-
-		typ = self.atoms_typ
-
-		if recip:
-			ax.set_xlabel(r"$x (Bohr^{-1})$")
-			ax.set_ylabel(r"$y (Bohr^{-1})$")
-			ax.set_zlabel(r"$z (Bohr^{-1})$")
-			cg.draw_Wigner_Seitz(ax, self.recip)
-			plt.show()
-			return
-		else:
-			ax.set_xlabel("x (Bohr)")
-			ax.set_ylabel("y (Bohr)")
-			ax.set_zlabel("z (Bohr)")
-
-
-		L = self.atoms_coord_cart
-		for rep, v in zip([repX,repY,repZ],self.cell):
-			typ = typ * rep
-			L = cg.cell_repetitions(L, v, rep)
-
-		cg.draw_atoms(ax, L, typ, graph_lvl=graph_lvl)
-		if cell:
-			cg.draw_cell(ax, *self.cell)
-		if bonds:
-			cg.draw_bonds(ax, L, typ, graph_lvl=graph_lvl)
-		ax.legend()
-		plt.show()
-
-	def _cell_to_recip_(self):
-		return _recip_space_(*self.cell)
 
 	def _ibrav_to_cell_(self):
 		if self.ibrav == None:
 			raise error("Failed to generate cell structure from self.ibrav: self.ibrav not set.")
-		"""
-			v1 = np.array([,,]) * lp
-			v2 = np.array([,,]) * lp
-			v3 = np.array([,,]) * lp
-		"""
 
 		lp = self.alat
 

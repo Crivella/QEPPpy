@@ -1,26 +1,26 @@
 {
   "H": {
-    "color": "",
+    "color": "k",
     "radius": 1.001511716
   },
   "He": {
-    "color": "",
+    "color": "k",
     "radius": 0.585789872
   },
   "Li": {
-    "color": "",
+    "color": "k",
     "radius": 3.155706727
   },
   "Be": {
-    "color": "",
+    "color": "k",
     "radius": 2.116402116
   },
   "B": {
-    "color": "",
+    "color": "k",
     "radius": 1.64399093
   },
   "C": {
-    "color": "",
+    "color": "k",
     "radius": 1.26606198
   },
   "N": {
@@ -32,19 +32,19 @@
     "radius": 0.907029478
   },
   "F": {
-    "color": "",
+    "color": "k",
     "radius": 0.793650794
   },
   "Ne": {
-    "color": "",
+    "color": "k",
     "radius": 0.718065004
   },
   "Na": {
-    "color": "",
+    "color": "k",
     "radius": 3.590325019
   },
   "Mg": {
-    "color": "",
+    "color": "k",
     "radius": 2.739984883
   },
   "Al": {
@@ -56,67 +56,67 @@
     "radius": 2.210884354
   },
   "P": {
-    "color": "",
+    "color": "k",
     "radius": 1.851851852
   },
   "S": {
-    "color": "",
+    "color": "k",
     "radius": 1.64399093
   },
   "Cl": {
-    "color": "",
+    "color": "k",
     "radius": 1.49281935
   },
   "Ar": {
-    "color": "",
+    "color": "k",
     "radius": 1.34164777
   },
   "K": {
-    "color": "",
+    "color": "k",
     "radius": 4.591836735
   },
   "Ca": {
-    "color": "",
+    "color": "k",
     "radius": 3.665910809
   },
   "Sc": {
-    "color": "",
+    "color": "k",
     "radius": 3.476946334
   },
   "Ti": {
-    "color": "",
+    "color": "k",
     "radius": 3.325774754
   },
   "V": {
-    "color": "",
+    "color": "k",
     "radius": 3.231292517
   },
   "Cr": {
-    "color": "",
+    "color": "k",
     "radius": 3.13681028
   },
   "Mn": {
-    "color": "",
+    "color": "k",
     "radius": 3.042328042
   },
   "Fe": {
-    "color": "",
+    "color": "k",
     "radius": 2.947845805
   },
   "Co": {
-    "color": "",
+    "color": "k",
     "radius": 2.872260015
   },
   "Ni": {
-    "color": "",
+    "color": "k",
     "radius": 2.815570673
   },
   "Cu": {
-    "color": "",
+    "color": "k",
     "radius": 2.739984883
   },
   "Zn": {
-    "color": "",
+    "color": "k",
     "radius": 2.68329554
   },
   "Ga": {
@@ -124,315 +124,315 @@
     "radius": 2.569916856
   },
   "Ge": {
-    "color": "",
+    "color": "k",
     "radius": 2.362055933
   },
   "As": {
-    "color": "",
+    "color": "k",
     "radius": 2.154195011
   },
   "Se": {
-    "color": "",
+    "color": "k",
     "radius": 1.946334089
   },
   "Br": {
-    "color": "",
+    "color": "k",
     "radius": 1.776266062
   },
   "Kr": {
-    "color": "",
+    "color": "k",
     "radius": 1.64399093
   },
   "Rb": {
-    "color": "",
+    "color": "k",
     "radius": 5.007558579
   },
   "Sr": {
-    "color": "",
+    "color": "k",
     "radius": 4.138321995
   },
   "Y": {
-    "color": "",
+    "color": "k",
     "radius": 4.006046863
   },
   "Zr": {
-    "color": "",
+    "color": "k",
     "radius": 3.892668178
   },
   "Nb": {
-    "color": "",
+    "color": "k",
     "radius": 3.741496599
   },
   "Mo": {
-    "color": "",
+    "color": "k",
     "radius": 3.590325019
   },
   "Tc": {
-    "color": "",
+    "color": "k",
     "radius": 3.458049887
   },
   "Ru": {
-    "color": "",
+    "color": "k",
     "radius": 3.363567649
   },
   "Rh": {
-    "color": "",
+    "color": "k",
     "radius": 3.269085412
   },
   "Pd": {
-    "color": "",
+    "color": "k",
     "radius": 3.193499622
   },
   "Ag": {
-    "color": "",
+    "color": "k",
     "radius": 3.117913832
   },
   "Cd": {
-    "color": "",
+    "color": "k",
     "radius": 3.042328042
   },
   "In": {
-    "color": "",
+    "color": "k",
     "radius": 2.947845805
   },
   "Sn": {
-    "color": "",
+    "color": "k",
     "radius": 2.739984883
   },
   "Sb": {
-    "color": "",
+    "color": "k",
     "radius": 2.513227513
   },
   "Te": {
-    "color": "",
+    "color": "k",
     "radius": 2.324263039
   },
   "I": {
-    "color": "",
+    "color": "k",
     "radius": 2.173091459
   },
   "Xe": {
-    "color": "",
+    "color": "k",
     "radius": 2.040816327
   },
   "Cs": {
-    "color": "",
+    "color": "k",
     "radius": 5.631141345
   },
   "Ba": {
-    "color": "",
+    "color": "k",
     "radius": 4.780801209
   },
   "La": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Ce": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Pr": {
-    "color": "",
+    "color": "k",
     "radius": 4.667422525
   },
   "Nd": {
-    "color": "",
+    "color": "k",
     "radius": 3.892668178
   },
   "Pm": {
-    "color": "",
+    "color": "k",
     "radius": 3.873771731
   },
   "Sm": {
-    "color": "",
+    "color": "k",
     "radius": 4.497354497
   },
   "Eu": {
-    "color": "",
+    "color": "k",
     "radius": 4.365079365
   },
   "Gd": {
-    "color": "",
+    "color": "k",
     "radius": 4.40287226
   },
   "Tb": {
-    "color": "",
+    "color": "k",
     "radius": 4.25170068
   },
   "Dy": {
-    "color": "",
+    "color": "k",
     "radius": 4.308390023
   },
   "Ho": {
-    "color": "",
+    "color": "k",
     "radius": 4.270597128
   },
   "Er": {
-    "color": "",
+    "color": "k",
     "radius": 4.270597128
   },
   "Tm": {
-    "color": "",
+    "color": "k",
     "radius": 4.195011338
   },
   "Yb": {
-    "color": "",
+    "color": "k",
     "radius": 4.195011338
   },
   "Lu": {
-    "color": "",
+    "color": "k",
     "radius": 4.100529101
   },
   "Hf": {
-    "color": "",
+    "color": "k",
     "radius": 3.930461073
   },
   "Ta": {
-    "color": "",
+    "color": "k",
     "radius": 3.779289494
   },
   "W": {
-    "color": "",
+    "color": "k",
     "radius": 3.647014361
   },
   "Re": {
-    "color": "",
+    "color": "k",
     "radius": 3.552532124
   },
   "Os": {
-    "color": "",
+    "color": "k",
     "radius": 3.495842782
   },
   "Ir": {
-    "color": "",
+    "color": "k",
     "radius": 3.401360544
   },
   "Pt": {
-    "color": "",
+    "color": "k",
     "radius": 3.344671202
   },
   "Au": {
-    "color": "",
+    "color": "k",
     "radius": 3.287981859
   },
   "Hg": {
-    "color": "",
+    "color": "k",
     "radius": 3.231292517
   },
   "Tl": {
-    "color": "",
+    "color": "k",
     "radius": 2.947845805
   },
   "Pb": {
-    "color": "",
+    "color": "k",
     "radius": 2.91005291
   },
   "Bi": {
-    "color": "",
+    "color": "k",
     "radius": 2.702191988
   },
   "Po": {
-    "color": "",
+    "color": "k",
     "radius": 2.551020408
   },
   "At": {
-    "color": "",
+    "color": "k",
     "radius": 2.399848828
   },
   "Rn": {
-    "color": "",
+    "color": "k",
     "radius": 2.267573696
   },
   "Fr": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Ra": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Ac": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Th": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Pa": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "U": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Np": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Pu": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Am": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Cm": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Bk": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Cf": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Es": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Fm": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Md": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "No": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Lr": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Rf": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Db": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Sg": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Bh": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Hs": {
-    "color": "",
+    "color": "k",
     "radius": 0
   },
   "Mt": {
-    "color": "",
+    "color": "k",
     "radius": 0
   }
 }

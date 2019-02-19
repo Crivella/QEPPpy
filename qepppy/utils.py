@@ -29,3 +29,12 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
 			)
 
 	return np.array(XYZ).reshape(3,*x.shape)
+
+def recipr_base(base):
+	b1,b2,b3 = base
+	vol = np.linalg.norm(np.dot(b1,np.cross(b2,b3)))
+	a1 = np.cross(b2,b3) / vol
+	a2 = np.cross(b3,b1) / vol
+	a3 = np.cross(b1,b2) / vol
+
+	return np.mat([a1,a2,a3]) * 2 * np.pi
