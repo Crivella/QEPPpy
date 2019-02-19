@@ -44,11 +44,10 @@ class binary_io():
 						self.__dict__[n] = self.__dict__[n].squeeze()
 
 	def _convert_shape_(self, tupl):
-		n = len(tupl)
-		l = [''] * n
+		l = []
 
-		for i, e in enumerate(tupl):
-			l[i] = self._conv_val_(e)
+		for e in tupl:
+			l.append(self._conv_val_(e))
 
 		return tuple(l)
 
@@ -56,9 +55,6 @@ class binary_io():
 		if isinstance(val, int):
 			return val
 		elif isinstance(val, str):
-			a = int(self.__dict__.get(val, None))
-			if a is None:
-				raise ValueError("Failed to find preassigned variable {}.".format(val))
-			return a
+			return int(self.__dict__[val])
 		raise NotImplementedError("{} must be either int or str... Correct your code!!!".format(val))
 

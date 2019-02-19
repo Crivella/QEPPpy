@@ -3,20 +3,12 @@ from .FFTgrid import FFTgrid
 from .parser.binary_io import binary_io as bin_io
 from .._decorators import store_property
 
-class wavefnc(bin_io, FFTgrid):
+class charge_density(bin_io, FFTgrid):
 	binary_format =[
 		[
-			{'type':'i4', 'shape':(1,), 'name':'kpt_num'},
-			{'type':'f8', 'shape':(3,), 'name':'kpt'},
-			{'type':'i4', 'shape':(1,), 'name':'ispin'},
-			{'type':'i4', 'shape':(1,), 'name':'gamma_only'},
-			{'type':'f8', 'shape':(1,), 'name':'scale_factor'},
-		],
-		[
-			{'type':'i4', 'shape':(1,), 'name':'max_index'},
+			{'type':'i4', 'shape':(1,), 'name':'????'},
 			{'type':'i4', 'shape':(1,), 'name':'igwx'},
-			{'type':'i4', 'shape':(1,), 'name':'nspin'},
-			{'type':'i4', 'shape':(1,), 'name':'nbnd'},
+			{'type':'i4', 'shape':(1,), 'name':'ispin'},
 		],
 		[
 			{'type':'f8', 'shape':(3,3), 'name':'recipr'},
@@ -26,7 +18,7 @@ class wavefnc(bin_io, FFTgrid):
 		],
 		([
 			{'type':'c16', 'shape':('igwx',), 'name':'val'},
-		], 'nbnd'),
+		], 'ispin'),
 	]
 	def __init__(self, src=""):
 		super().__init__()
@@ -45,8 +37,3 @@ class wavefnc(bin_io, FFTgrid):
 		a3 = np.cross(b1,b2) / vol
 
 		return np.mat([a1,a2,a3]) * 2 * np.pi
-
-
-
-
-
