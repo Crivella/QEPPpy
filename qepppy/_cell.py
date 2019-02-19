@@ -65,7 +65,7 @@ class _cell(atm, latt):
 
 		self.draw_atoms(ax, L, typ, graph_lvl=graph_lvl)
 		if cell:
-			self.draw_cell(ax)
+			self.draw_direct_cell(ax)
 		if bonds:
 			self.draw_bonds(ax, L, typ, graph_lvl=graph_lvl)
 		ax.legend()

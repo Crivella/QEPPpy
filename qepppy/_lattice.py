@@ -9,7 +9,7 @@ class _lattice():
 	def direct(self):
 		try:
 			return np.mat(self._direct)
-		except AttributeError:
+		except:
 			return utils.recipr_base(self._recipr)
 
 	@property
@@ -17,7 +17,7 @@ class _lattice():
 	def recipr(self):
 		try:
 			return np.mat(self._recipr)
-		except AttributeError:
+		except:
 			return utils.recipr_base(self._direct)
 
 	def draw_direct_cell(self, ax, center=[0,0,0]):

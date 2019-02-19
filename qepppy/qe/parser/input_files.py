@@ -26,7 +26,7 @@ def trim_ws( str):
 
 	trim_ws
 
-@logger( )
+# logger()( )
 class input_files( templ):
 	"""
 	Class to handle any QE input (after loading the proper template).
@@ -81,7 +81,8 @@ class input_files( templ):
 			self.validate()
 		f.write( self.__str__())
 
-		if parse: f.close()
+		if parse: 
+			f.close()
 
 		return
 
@@ -102,7 +103,8 @@ class input_files( templ):
 		for l in content:
 			#Ignore comments
 			ls = l.strip().split( "!")[0]
-			if not ls: continue
+			if not ls: 
+				continue
 			#CASE: Namelist name
 			if '&' == ls[0]:
 				nl = ls[1:].upper()
@@ -118,7 +120,8 @@ class input_files( templ):
 						#Read namelist fields separated by endline ('\n') or by commas (',')
 						for e in filter( None, ls.split( ",")):
 							l1 = trim_ws(e).split( "=")
-							if len(l1) != 2: raise Exception( "Corrupt input file:\n{}".format( l))
+							if len(l1) != 2: 
+								raise Exception( "Corrupt input file:\n{}".format( l))
 							v = l1[1].replace("\"", "").replace("'", "")
 							
 							#Check if the field/parameter name is present in the namelist template
@@ -130,8 +133,10 @@ class input_files( templ):
 					lt = ' '.join( filter( None, ls.replace( "{", "").replace( "}", "").split( " ")))
 					lt = lt.split( " ")
 					if self.check_card( lt[0]):
-						try: v = lt[1]
-						except: v = None
+						try: 
+							v = lt[1]
+						except: 
+							v = None
 						card=lt[0]
 						self.set_card( card=card, v=v)
 						#print( card, v)

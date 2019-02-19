@@ -2,8 +2,8 @@ from .structure import structure
 from .parser.input_files import input_files as inp_f
 from ..logger import logger
 
-@logger( )
-class pw_in( inp_f, structure):
+# logger()( )
+class pw_in(inp_f, structure):
 	"""
 	Instance used to handle QE pw.x input files
 	kwargs:

@@ -1,19 +1,19 @@
 from ._template_base import namelist as NL, card as CARD
 from ...logger import logger
 
-@logger()
-class template_parser( CARD, NL):
+# logger()()
+class template_parser(CARD, NL):
 	"""
 	Instance for handling the QE namelist dict template in the data folder.
 
 	This class provides the following methods:
 	    validate(): Check namelist template after reading
 	    convert():  Convert the internal dict in a string QE input file
-	    check_nl( nl="namelist"): Check if nl is valid (present in the internal namelist)
-	    set_nl:( nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
-	    check_card( card="cardname"): Check if card is valid (present in the internal CARDs)
-	    check_used( card="cardname"): Check if the card is under use in the input file
-	    set_card: ( card="", v="", el=[]) Set a card value in the namelist template line by line
+	    check_nl(nl="namelist"): Check if nl is valid (present in the internal namelist)
+	    set_nl:(nl="namelist", k="param", v="value to set") Set a namelist value in the namelist template
+	    check_card(card="cardname"): Check if card is valid (present in the internal CARDs)
+	    check_used(card="cardname"): Check if the card is under use in the input file
+	    set_card: (card="", v="", el=[]) Set a card value in the namelist template line by line
 	    find: (name) Find a variable (or list ) with name=name in the namelist template
 
 	Template format:
@@ -42,7 +42,7 @@ class template_parser( CARD, NL):
 	            cond: "..." (Condition on card value)
 	            l:[ [{n: varname, v: value, t: TYPE}, ..., [{...}, ...]], [...], ([{...}, {...}, ..., ], s, e, kw), ...]
 	                Every element of the list represent a line
-	                A Tuple represent a repeating line ( [line], start, end, keyword)
+	                A Tuple represent a repeating line ([line], start, end, keyword)
 	                A List within a list marks optional arguments
 	        }
 	        syntax1:{...} (if multiple syntaxes are provided)
@@ -51,7 +51,7 @@ class template_parser( CARD, NL):
 	    ...
 	}
 	"""
-	def find( self, *args, up=""):
+	def find(self, *args, up=""):
 		"""
 		*args: sequence of names of param to find.
 		up: If not set, look for the names in all possible NAMELISTs and CARDs.
@@ -60,17 +60,17 @@ class template_parser( CARD, NL):
 		NOTE: Looking for array variables (e.g. celldm) without specifying the index (celldm(1)),
 		      will return a list of all the values for that param.
 		"""
-		def _syntax_find_( el, tof):
+		def _syntax_find_(el, tof):
 			#Recursive find to descend into syntax elements
-			if not isinstance( el, list): return None
+			if not isinstance(el, list): return None
 			for e in el:
 				f = None
-				if isinstance( e, dict):
+				if isinstance(e, dict):
 					if e['n'] == tof: f = e['v']
-				if isinstance( e, list):
-					f = _syntax_find_( e, tof=tof)
-				if isinstance( e, tuple): 
-					f = _syntax_find_( e[0], tof=tof)
+				if isinstance(e, list):
+					f = _syntax_find_(e, tof=tof)
+				if isinstance(e, tuple): 
+					f = _syntax_find_(e[0], tof=tof)
 				if f != None: return f
 			return None
 
@@ -79,14 +79,14 @@ class template_parser( CARD, NL):
 			n = None
 			tof = name
 			if "(" in name:
-				tof = name.split( "(")[0]
-				n = int( name.split( "(")[1].split( ")")[0])
+				tof = name.split("(")[0]
+				n = int(name.split("(")[1].split(")")[0])
 
 			ret = None
 			for nl in self._templ_['nl']:
 				if up:
 					if up != nl: continue
-				f = self._templ_[nl].get( tof)
+				f = self._templ_[nl].get(tof)
 				if f: 
 					if n: 
 						try: ret = f['v'][n-1]
@@ -98,43 +98,43 @@ class template_parser( CARD, NL):
 					if up != card: continue
 				if card == tof:
 					return self._templ_[card]['v']
-				synt = self._get_syntax_( self._templ_[card])
-				f = _syntax_find_( synt, tof=tof)
+				synt = self._get_syntax_(self._templ_[card])
+				f = _syntax_find_(synt, tof=tof)
 				if f != None: 
 					if n: 
 						try: ret = f[n-1]
 						except: pass
 					else: ret = f
 					break
-			l.append( ret)
+			l.append(ret)
 
-		if len( l) == 1: l = l[0]
-		else: l = tuple( l)
+		if len(l) == 1: l = l[0]
+		else: l = tuple(l)
 		return l
 
-	def load_templ( self, fname=""):
+	def load_templ(self, fname=""):
 		"""
 		Load a QE template from a specified file (fname) or the internal data
 		"""
 		import os
-		if os.path.isfile( fname):
-			with open( fname) as f:
+		if os.path.isfile(fname):
+			with open(fname) as f:
 				file = f.read()
 		else:
 			from pkg_resources import resource_string, resource_listdir
-			#print( resource_listdir('qepppy.data', ''))
+			#print(resource_listdir('qepppy.data', ''))
 			if fname in resource_listdir('qepppy.qe.parser.data', ''):
-				file = resource_string( 'qepppy.qe.parser.data', fname).decode('utf-8')
+				file = resource_string('qepppy.qe.parser.data', fname).decode('utf-8')
 
 		#import json
-		#self._templ_ = json.loads( file)
+		#self._templ_ = json.loads(file)
 		#return
 
 		import ast
-		self._templ_ = ast.literal_eval( file)
+		self._templ_ = ast.literal_eval(file)
 		return
 
-	def validate( self):
+	def validate(self):
 		"""
 		Validate the template.
 		Used to check a read input file.
