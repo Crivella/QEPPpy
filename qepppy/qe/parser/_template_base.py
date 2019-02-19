@@ -345,9 +345,12 @@ class card(templ_base):
 					return _validate_syntax_(e[0], lvl+1, ext[1]-ext[0]+1)
 
 				"""
-					if e['n'] == name:return e['v']
-				if isinstance(e, tuple): return _sfind_(e[0])
-				if isinstance(e, list): return _sfind_(e)
+					if e['n'] == name:
+						return e['v']
+				if isinstance(e, tuple): 
+					return _sfind_(e[0])
+				if isinstance(e, list): 
+					return _sfind_(e)
 				"""
 			return ret1
 

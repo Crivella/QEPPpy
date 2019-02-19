@@ -29,7 +29,8 @@ def _check_and_pad_(data,deg):
 	y = data[:,1:]
 
 	dx = x[1] - x[0]
-	if np.any((x[1:] - x[:-1]) - dx > 1E-4):
+	if np.any((x[1:
+		] - x[:-1]) - dx > 1E-4):
 		raise ValueError("X-axis data must be uniformely distributed.")
 
 	padding = int(15*deg/dx)

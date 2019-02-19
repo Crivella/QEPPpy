@@ -62,16 +62,19 @@ class template_parser(CARD, NL):
 		"""
 		def _syntax_find_(el, tof):
 			#Recursive find to descend into syntax elements
-			if not isinstance(el, list): return None
+			if not isinstance(el, list): 
+				return None
 			for e in el:
 				f = None
 				if isinstance(e, dict):
-					if e['n'] == tof: f = e['v']
+					if e['n'] == tof: 
+						f = e['v']
 				if isinstance(e, list):
 					f = _syntax_find_(e, tof=tof)
 				if isinstance(e, tuple): 
 					f = _syntax_find_(e[0], tof=tof)
-				if f != None: return f
+				if f != None: 
+					return f
 			return None
 
 		l=[]
@@ -85,31 +88,41 @@ class template_parser(CARD, NL):
 			ret = None
 			for nl in self._templ_['nl']:
 				if up:
-					if up != nl: continue
+					if up != nl: 
+						continue
 				f = self._templ_[nl].get(tof)
 				if f: 
 					if n: 
-						try: ret = f['v'][n-1]
-						except: pass
-					else: ret = f['v']
+						try: 
+							ret = f['v'][n-1]
+						except: 
+							pass
+					else: 
+						ret = f['v']
 					break
 			for card in self._templ_['card']:
 				if up:
-					if up != card: continue
+					if up != card: 
+						continue
 				if card == tof:
 					return self._templ_[card]['v']
 				synt = self._get_syntax_(self._templ_[card])
 				f = _syntax_find_(synt, tof=tof)
 				if f != None: 
 					if n: 
-						try: ret = f[n-1]
-						except: pass
-					else: ret = f
+						try: 
+							ret = f[n-1]
+						except: 
+							pass
+					else: 
+						ret = f
 					break
 			l.append(ret)
 
-		if len(l) == 1: l = l[0]
-		else: l = tuple(l)
+		if len(l) == 1: 
+			l = l[0]
+		else: 
+			l = tuple(l)
 		return l
 
 	def load_templ(self, fname=""):
