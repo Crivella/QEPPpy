@@ -1,8 +1,8 @@
-debug_templ = False #Enable convert of an empty template (Print all empty values. Put the max value for array var to 7 if not defined)
-# from ...logger import logger, warning
 from ...errors import ValidateError, ParseInputError
 
+
 class templ_base(object):
+	debug_templ = False
 	def convert(self):
 		return ""
 
@@ -24,28 +24,31 @@ class templ_base(object):
 		 	# warning.print("Input: {}\nExpec: {}".format(v, ty))
 		return val
 
-	@staticmethod
-	def _format_(v, f=0, a="'"):
-		c = ""
-		if isinstance(v, str):
-			if f:
-				a = "{2}{0:>{1}}{2}".format(v, f, a)
-			else:
-				a = "{1}{0}{1}".format(v, a)
-			c += a
-		if isinstance(v, bool):
-			if v:
-				c += ".TRUE."
-			else:
-				c += ".FALSE."
+	@property
+	def formatter(self):
+		return self._formatter
+
+	@formatter.setter
+	def formatter(self, fmt):
+		from inspect import signature
+		old_sig = signature(self._formatter)
+		new_sig = signature(fmt)
+		if old_sig == new_sig:
+			self._formatter = fmt
 		else:
-			if isinstance(v, (int, float)):
-				if f:
-					a = "{0:>{1}}".format(v, f)
-				else:
-					a = "{}".format(v)
-				c += a.replace("e", "D").replace("E", "D")
-		return c
+			raise ValueError("Invalid formatter signature '{}'".format(new_sig))
+	
+	@staticmethod
+	def _formatter(v, f=0, a="'"):
+		if isinstance(v, str):
+			return "{2}{0:>{1}}{2}".format(v, f, a)
+		elif isinstance(v, bool):
+			return ".{}.".format(v).upper()
+		elif isinstance(v, (int, float)):
+			return "{0:>{1}}".format(v, f).replace("e", "D").replace("E", "D")
+		elif isinstance(v, list):
+			return " ".join(["{:>10}".format(str(a)) for a in v])
+		raise ParseInputError("Cannot apply formater to '{}'.".format(v))
 
 	def _get_arr_ext_(self, sa, ea, n=-1):
 		try:
@@ -56,7 +59,7 @@ class templ_base(object):
 			et= int(ea)
 		except:
 			et = self.find(ea)
-		if not isinstance(et, int) and debug_templ:
+		if not isinstance(et, int) and self.debug_templ:
 			et = 7
 		if any(not isinstance(a, int) for a in [st,et]):
 			raise ParseInputError("\n\tFailed to find boundary '{}-{}'.".format(sa, ea))
@@ -79,81 +82,50 @@ class namelist(templ_base):
 		Check if NAMELIST name actually exist in template
 		"""
 		if nl in self._templ_['nl']:
-			return
+			return True
 		raise ParseInputError("\n\tInvalid namelist: '{}'".format(nl))
+
+	def _get_used_namelists_(self):
+		nl = self._templ_['nl'].copy()
+		for namelist in self._templ_['nl']:
+			if not any(v['v'] for v in self._templ_[namelist].values()) and not self.debug_templ:
+				nl.pop(nl.index(namelist))
+		return nl
 
 	def convert(self):
 		"""
 		Convert the filled template in a QE input file and return it.
 		Return instance: str
 		"""
-		content = super().convert()
-		nl = self._templ_['nl'].copy()
-		#Check for unused namelist (does not print it)
-		for namelist in self._templ_['nl']:
-			if not any(v['v'] for v in self._templ_[namelist].values()) and not debug_templ:
-				nl.pop(nl.index(namelist))
-		#Write all the used namlists/parameters
+		res = super().convert()
+
+		nl = self._get_used_namelists_()
 		longest = self._maxl_()
+
 		for namelist in nl:
-			content += "&{}\n".format(namelist)
-			for el, v in self._templ_[namelist].items():
-				if v['v'] != None and v['v'] != '' or debug_templ:
-					if v['vec']:
-						if debug_templ:
-							try:
-								end = self._get_arr_ext_(v['vec'][0], v['vec'][1])[1]
-							except:
-								end = 7
-							if not v['v']:
-								v['v'] = ['']*end
-						for n, val in enumerate(v['v']):
-							if not val and not debug_templ:
-								continue
-							app = el + "({})".format(n+1)
-							content += "{0:>{1}} = ".format(app, longest,)
-							content += self._format_(val)
-							content += " ,\n"
-					else:
-						content += "{0:>{1}} = ".format(el, longest)
-						content += self._format_(v['v'])
-						content += " ,\n"
-			content += "/\n\n"
-		return content
+			res += self._convert_namelist_(namelist, longest)
+		return res
 
 	def set_nl(self, nl, k, v):
 		"""
 		Set the value "v" for param "k" in the NAMELIST "nl"
 		"""
-		n=None
-		#print(nl, k, v)
+		n = None
 		#If array case
 		if '(' in k:
-			n=int(k.split('(')[1].split(')')[0])
-			k=str(k.split('(')[0])
+			n = int(k.split('(')[1].split(')')[0])
+			k = str(k.split('(')[0])
 
-		#Check if k is present in preset namelist
-		#print (self._templ_[nl])
-		# if not k in self._templ_[nl]: 
-		# 	warning.print("Ignored unrecognized parameter '{}'".format(k))
-		# 	return
-		# 	#raise NameError("Ignored unrecognized parameter '{}'\n".format(k))
 		ptr = self._templ_[nl][k]
-		v = self._check_type_(v, ptr['t'])
+		v   = self._check_type_(v, ptr['t'])
 
 		#Check value agains possible values
-		if ptr['c']:
-			if not any(v in opt for opt in ptr['c']):
-				raise ParseInputError("\n\tParameter '{}/{}' = '{}' is not within range of possible values: \n\t\t{}".format(nl, k, v, ptr['c']))
-				# warning.print("Parameter '{}/{}' = '{}' is not within range of possible values: \n{}".format(nl, k, v, ptr['c']))
-				#return
+		if ptr['c'] and not any(v in opt for opt in ptr['c']):
+			raise ParseInputError("\n\tParameter '{}/{}' = '{}' is not within range of possible values: \n\t\t{}".format(nl, k, v, ptr['c']))
 		#If array case
 		if n:
 			if not isinstance(ptr['v'], list):
 				raise ParseInputError("\n\t'{}' from namelist '{}' is not an array variable.".format(k, nl))
-				# warning.print("'{}' from namelist '{}' is not an array variable.".format(k, nl))
-				# return
-				#raise Exception("'{}' from namelist '{}' is not an array variable.\n".format(k, nl))
 			while len(ptr['v']) < n:
 				ptr['v'].append('')
 			ptr['v'][n-1] = v
@@ -166,31 +138,39 @@ class namelist(templ_base):
 			-all REQUIRED var have been set
 			-all var type are compliant with their type
 		"""
-		# ret = True
 		for nl in self._templ_['nl']:
-			for el,v in self._templ_[nl].items():
-				val = v['v']
-				if val == "***":
-					raise ValidateError("\n\tRequired input parameter '{}' in namelist '{}' not set.\n".format(el, nl))
-					# warning.print("Required input parameter '{}' in namelist '{}' not set.\n".format(el, nl))
-					# ret = False
-				elif val:
-					if v['c']:
-						if not any(val in opt for opt in v['c']):
-							raise ValidateError("Parameter '{}/{}' = '{}' is not within range of possible values: \n{}\n".format(nl, el, val, v['c']))
-							# warning.print("Parameter '{}/{}' = '{}' is not within range of possible values: \n{}\n".format(nl, el, val, v['c']))
-							# ret = False
-					if v['vec']:
-						n = len(val)
-						if not self._get_arr_ext_(v['vec'][0], v['vec'][1], n): 
-							raise ValidateError("Parameter: {}({})".format(el, n))
-							# warning.print("Parameter: {}({})".format(el, n))
-							# ret = False
+			self._validate_namelist_(nl)
 		super().validate()
-		# return ret and super().validate()
 
+	def _convert_namelist_(self, nl, longest=0):
+		res = "&{}\n".format(nl)
+		for el, v in self._templ_[nl].items():
+			if (v['v'] != None and v['v'] != '') or self.debug_templ:
+				if v['vec']:
+					res += self._convert_vec_(el, v, longest)
+				else:
+					res += "{0:>{1}} = ".format(el, longest)
+					res += self.formatter(v['v'])
+					res += " ,\n"
+		return res + "/\n\n"
 
-
+	def _convert_vec_(self, el, v, longest=0):
+		res = ''
+		if self.debug_templ:
+			try:
+				end = self._get_arr_ext_(v['vec'][0], v['vec'][1])[1]
+			except:
+				end = 7
+			if not v['v']:
+				v['v'] = ['']*end
+		for n, val in enumerate(v['v']):
+			if not val and not self.debug_templ:
+				continue
+			app = el + "({})".format(n+1)
+			res += "{0:>{1}} = ".format(app, longest,)
+			res += self.formatter(val)
+			res += " ,\n"
+		return res
 
 	def _maxl_(self):
 		#Get the longest element to print among all namelists
@@ -198,19 +178,31 @@ class namelist(templ_base):
 		longest = 0
 		for n in self._templ_['nl']:
 			for el, v in self._templ_[n].items():
-				if v['v'] != None and v['v'] != '' or debug_templ:
+				if (v['v'] != None and v['v'] != '') or self.debug_templ:
 					app = len(el)
 					if v['vec']:
 						app += 4
-					if longest < app:
-						longest = app
-		longest += 2
-		return longest
+					longest = max((longest, app))
+		return longest + 2
+
+	def _validate_namelist_(self, nl):
+		for el,v in self._templ_[nl].items():
+			val = v['v']
+			if val == "***":
+				raise ValidateError("\n\tRequired input parameter '{}' in namelist '{}' not set.\n".format(el, nl))
+			elif val:
+				if v['c'] and not any(val in opt for opt in v['c']):
+					raise ValidateError("Parameter '{}/{}' = '{}' is not within range of possible values: \n{}\n".format(nl, el, val, v['c']))
+				if v['vec']:
+					self._validate_vec_(el, v)
+
+	def _validate_vec_(self, el, v):
+		n = len(v['v'])
+		if not self._get_arr_ext_(v['vec'][0], v['vec'][1], n): 
+			raise ValidateError("Parameter: {}({})".format(el, n))
 
 
 
-
-# logger()()
 class card(templ_base):
 	def check_card(self, card):
 		"""
@@ -218,79 +210,32 @@ class card(templ_base):
 		"""
 		if card in self._templ_['card']:
 			return True
-		return False
 
 	def check_used(self, card):
-		if self.check_card( card):
+		if self.check_card(card):
 			return self._templ_[card]['u']
-		else:
-			return False
 
 	def convert(self):
 		"""
 		Convert the filled template in a QE input file and return it.
 		Return instance: str
 		"""
-		content = super().convert()
+		res = super().convert()
 
-		def _conv_syntax_(l, lvl=0, arr_lvl=0):
-			#Convert the syntax dictionary of the internal template
-			c = ""
-			if not isinstance(l, list):
-				return ""
-			if lvl == 2:
-				if not any(a['v'] for a in l):
-					return ""
-			for e in l:
-				#print(e)
-				if isinstance(e, dict):
-					#print(e['n'], " =?= ", name)
-					v = e['v']
-					if isinstance(v, list):
-						try:
-							v = v[arr_lvl]
-						except:
-							v = 'empty1'
-					c += " "
-					c += self._format_(v, 10, a="")
-				if isinstance(e, list): 
-					c += _conv_syntax_(e, lvl+1, arr_lvl)
-				if isinstance(e, tuple):
-					ext = self._get_arr_ext_(e[1], e[2])
-					num = ext[1]-ext[0]+1
-					if e[3] == 'rows':
-						for n in range(num):
-							c +=  _conv_syntax_(e[0], lvl+1, n)
-					elif e[3] == 'cols': 
-						for r in e[0]:
-							for n in range(num):
-								try:
-									v = r['v'][n]
-								except:
-									v = 'empty2'
-								c += self._format_(v, 10, a="")
-							c += "\n"
-			if lvl == 1:
-				c += "\n"
-			return c
 		#Convert the cards
-		cards = self._templ_['card'].copy()
-		#Check for unused cards (does not print it)
-		for card in self._templ_['card']:
-			if not self._templ_[card]['u'] and not debug_templ:
-				cards.pop(cards.index(card))
+		cards = self._get_used_cards_()
 
 		for card in cards:
 			ptr = self._templ_[card]
-			content += card
+			res += card
 			if ptr['v']:
-				content += " {{{}}}".format(ptr['v'])
-			content += "\n"
+				res += " {{{}}}".format(ptr['v'])
+			res += "\n"
 
-			l = self._get_syntax_(ptr)
-			content += _conv_syntax_(l)
-			content += "\n"
-		return content
+			synt = self._get_syntax_(ptr)
+			# res += _conv_syntax_(synt)
+			res += self._convert_syntax_line_(synt) + "\n"
+		return res
 
 	def set_card(self, card, value="", line=""):
 		"""
@@ -325,40 +270,10 @@ class card(templ_base):
 				self._card_get_value_(c)
 
 				synt = self._get_syntax_(c)
-				for line in synt:
-					self._validate_syntax_line_(line)
+				self._validate_syntax_line_(synt)
 			elif c['r']:
 				raise ValidateError("\n\tMandatory card '{}' is not set.".format(card))
 		super().validate()
-
-	@staticmethod
-	def _validate_syntax_element_(elem, arr=None):
-		val = elem['v']
-		if val is None or val == '':
-			raise ValidateError("\n\tUnset value for {}.".format(elem))
-		if not arr is None and (len(val) != arr or any(a==None or a =='' for a in val)):
-			raise ValidateError(
-				"\n\tParam '{}: {}': Number of lines does not match specified value '{}'.".format(card, elem['n'], arr)
-				)
-
-	@staticmethod
-	def _validate_syntax_optional_(elem):
-		print(elem)
-		# print([a['v'] for a in elem])
-		if not any(a['v'] for a in elem):
-			return
-		card._validate_syntax_line_(elem)
-
-	@staticmethod
-	def _validate_syntax_line_(line, arr=None):
-		for elem in line:
-			if isinstance(elem, dict):
-				card._validate_syntax_element_(elem)
-			if isinstance(elem, list):
-				card._validate_syntax_optional_(elem)
-			if isinstance(elem, tuple):
-				ext = card._get_arr_ext_(elem[1], elem[2])
-				card._validate_syntax_line_(elem[0], ext[1]-ext[0]+1)
 
 	@staticmethod
 	def _get_card_default_value_(card_elem):
@@ -375,6 +290,39 @@ class card(templ_base):
 				val = card._get_card_default_value_(card_elem)
 		return val
 
+	# @staticmethod
+	def _convert_syntax_line_(self, synt, endl=''):
+		res = ""
+		for elem in synt:
+			if isinstance(elem,dict):
+				res += '  ' + self.formatter(elem['v'], a='') + endl
+			elif isinstance(elem,list):
+				res += self._convert_syntax_line_(elem)
+			elif isinstance(elem,tuple):
+				if elem[3] == 'rows':
+					ext = self._get_arr_ext_(elem[1], elem[2])
+					res += self._convert_syntax_rows_(elem[0], elem[3], ext[1]-ext[0]+1) + '\n'
+				else:
+					res += self._convert_syntax_line_(elem[0], endl='\n')
+
+		return res + '\n'
+
+	def _convert_syntax_rows_(self, synt, mode, arr):
+		res = ''
+		for i in range(arr):
+			for elem in synt:
+				if isinstance(elem, list):
+					if all(e['v'] == [] for e in elem):
+						continue
+					for e in elem:
+						m = max(len(str(a)) for a in e['v'])
+						res += self.formatter(e['v'][i], m+4, '')
+				else:
+					m = max(len(str(a)) for a in elem['v'])
+					res += self.formatter(elem['v'][i], m+4, '')
+			res += '\n'
+		return res
+
 	@staticmethod
 	def _get_syntax_(card):
 		v = card['v']
@@ -383,11 +331,17 @@ class card(templ_base):
 				continue
 			if not 'syntax' in k1:
 				continue
-			if isinstance(v1['cond'], str):
-				if not v in v1['cond']:
-					continue
+			if isinstance(v1['cond'], str) and not v in v1['cond']:
+				continue
 			return v1['l']
 		raise ParseInputError("\n\tCannot find a parsed syntax for card: '{} {}'.".format(card, v))
+
+	def _get_used_cards_(self):
+		cards = self._templ_['card'].copy()
+		for card in self._templ_['card']:
+			if not self._templ_[card]['u'] and not self.debug_templ:
+				cards.pop(cards.index(card))
+		return cards
 
 	@staticmethod
 	def _set_syntax_line_(line, synt):
@@ -420,6 +374,35 @@ class card(templ_base):
 				elem['v'].append(val)
 			return
 		raise ParseInputError("\n\tToo many lines")
+
+	@staticmethod
+	def _validate_syntax_element_(elem, arr=None):
+		val = elem['v']
+		if val is None or val == '':
+			raise ValidateError("\n\tUnset value for {}.".format(elem))
+		if not arr is None and (len(val) != arr or any(a==None or a =='' for a in val)):
+			raise ValidateError(
+				"\n\tNumber of lines/elements in '{}' does not match specified value '{}'.".format(elem['n'], arr)
+				)
+
+	# @staticmethod
+	def _validate_syntax_optional_(self, elem, arr):
+		if not any(len(a['v']) for a in elem):
+			return
+		if not any(len(a['v']) != arr for a in elem):
+			return
+		self._validate_syntax_line_(elem, arr)
+
+	# @staticmethod
+	def _validate_syntax_line_(self, synt, arr=None):
+		for line in synt:
+			if isinstance(line, dict):
+				card._validate_syntax_element_(line, arr)
+			if isinstance(line, list):
+				self._validate_syntax_optional_(line, arr)
+			if isinstance(line, tuple):
+				ext = self._get_arr_ext_(line[1], line[2])
+				self._validate_syntax_line_(line[0], ext[1]-ext[0]+1)
 
 
 
