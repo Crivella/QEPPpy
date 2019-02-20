@@ -343,11 +343,11 @@ class card(templ_base):
 		for val,elem in zip(line,synt):
 			if isinstance(elem,dict):
 				if isinstance(elem['v'], list):
-					elem['v'].append(val)
+					elem['v'].append(card._check_type_(val, elem['t']))
 				elif elem['v'] == '':
 					elem['v'] = card._check_type_(val, elem['t'])
 				else:
-					return
+					return 0
 				n += 1
 			elif isinstance(elem,list):
 				n += card._set_syntax_line_(line[n:], elem)
@@ -367,7 +367,7 @@ class card(templ_base):
 			for val in line:
 				val = card._check_type_(val, elem['t'])
 				elem['v'].append(val)
-			return
+			return 0
 		raise ParseInputError("\n\tToo many lines")
 
 	@staticmethod

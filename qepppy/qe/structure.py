@@ -167,8 +167,7 @@ class structure(dfp, cell):
 		return msg
 
 	@property
-	@store_property
-	def atoms_coord_cart(self):
+	def _atoms_coord_cart(self):
 		fact = self.alat if self.atom_p == 'alat' else 1
 		res = np.array([a['coord'] for a in self._atoms]) * fact
 		n = self.n_atoms

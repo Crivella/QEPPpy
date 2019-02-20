@@ -24,6 +24,16 @@ def split_atom_list_by_name(atom_coord, atom_names):
 class _atoms():
 	@property
 	@store_property
+	def atoms_coord_cart(self):
+		return self._atoms_coord_cart
+
+	@property
+	@store_property
+	def atoms_coord_cryst(self):
+		return self._atoms_coord_cart
+
+	@property
+	@store_property
 	def atoms_group_coord_cart(self):
 		return {a:np.array(self.atoms_coord_cart[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
 
