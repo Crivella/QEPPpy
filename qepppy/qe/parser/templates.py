@@ -63,7 +63,7 @@ class template_parser(CARD, NL):
 		def _syntax_find_(el, tof):
 			#Recursive find to descend into syntax elements
 			if not isinstance(el, list): 
-				return None
+				return
 			for e in el:
 				f = None
 				if isinstance(e, dict):
@@ -73,9 +73,8 @@ class template_parser(CARD, NL):
 					f = _syntax_find_(e, tof=tof)
 				if isinstance(e, tuple): 
 					f = _syntax_find_(e[0], tof=tof)
-				if f != None: 
+				if not f is None: 
 					return f
-			return None
 
 		l=[]
 		for name in args:

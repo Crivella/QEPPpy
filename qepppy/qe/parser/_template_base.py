@@ -63,15 +63,9 @@ class templ_base(object):
 			et = 7
 		if any(not isinstance(a, int) for a in [st,et]):
 			raise ParseInputError("\n\tFailed to find boundary '{}-{}'.".format(sa, ea))
-			# warning.print("Failed to find boundary '{}-{}'.".format(sa, ea))
-			# return
-			#raise Exception("Failed to find boundary '{}-{}'.\n".format(sa, ea))
 		if n >= 0:
 			if not st <= n <= et:
 				raise ParseInputError("\n\t'{}' out of array range '{}-{}'".format(n, st, et))
-				# warning.print("'{}' out of array range '{}-{}'".format(n, st, et))
-				# return
-				#raise Exception("'{}' out of array range '{}-{}'".format(n, st, et))
 		return (st, et)
 
 
@@ -345,24 +339,25 @@ class card(templ_base):
 
 	@staticmethod
 	def _set_syntax_line_(line, synt):
-		for n,(val,elem) in enumerate(zip(line,synt)):
+		n = 0
+		for val,elem in zip(line,synt):
 			if isinstance(elem,dict):
-				card._set_sytanx_elem_(elem, val)
+				if isinstance(elem['v'], list):
+					elem['v'].append(val)
+				elif elem['v'] == '':
+					elem['v'] = card._check_type_(val, elem['t'])
+				else:
+					return
+				n += 1
 			elif isinstance(elem,list):
-				return card._set_syntax_line_(line[n:], elem)
+				n += card._set_syntax_line_(line[n:], elem)
 			elif isinstance(elem,tuple):
 				if elem[3] == 'cols':
 					return card._set_syntax_cols_(line,elem[0])
 				return card._set_syntax_line_(line, elem[0])
 		if len(line[n+1:]) > 0:
 			raise ParseInputError("\n\tLine containes too many elements: {}".format(line))
-
-	@staticmethod
-	def _set_sytanx_elem_(elem, val):
-		try:
-			elem['v'].append(val)
-		except AttributeError:
-			elem['v'] = val
+		return n-1
 
 	@staticmethod
 	def _set_syntax_cols_(line, synt):
@@ -395,11 +390,16 @@ class card(templ_base):
 
 	# @staticmethod
 	def _validate_syntax_line_(self, synt, arr=None):
+		check = False
 		for line in synt:
 			if isinstance(line, dict):
+				check = True
 				card._validate_syntax_element_(line, arr)
 			if isinstance(line, list):
-				self._validate_syntax_optional_(line, arr)
+				if check:
+					self._validate_syntax_optional_(line, arr)
+				else:
+					self._validate_syntax_line_(line, arr)
 			if isinstance(line, tuple):
 				ext = self._get_arr_ext_(line[1], line[2])
 				self._validate_syntax_line_(line[0], ext[1]-ext[0]+1)
