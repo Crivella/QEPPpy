@@ -360,11 +360,11 @@ class bands(dfp):
 	def validate(self):
 		ret = True
 		if self.n_kpt <= 0:
-			warning.print("Failed to read nkpt from file '{}'.".format(self.schema))
+			warning.print("Failed to read nkpt from file '{}'.".format(self.xml))
 			ret = False
 			#raise Exception("No kpt read from file '{}'.".format(self.fname))
 		if self.n_bnd <= 0:
-			warning.print("Failed to read nbnd from file '{}'.".format(self.schema))
+			warning.print("Failed to read nbnd from file '{}'.".format(self.xml))
 			ret = False
 			#raise Exception("No band read from file '{}'.".format(self.fname))
 		legv = self.egv.shape[0]

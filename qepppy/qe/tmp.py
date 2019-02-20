@@ -9,7 +9,7 @@ class tmp():
 		self.prefix    = prefix
 		self.path      = path
 		self.data_path = os.path.join(self.path, "{}.save".format(self.prefix))
-		# self.data      = pw_out(schema=os.path.join(self.data_path, 'data-file-schema.xml'))
+		# self.data      = pw_out(xml=os.path.join(self.data_path, 'data-file-schema.xml'))
 
 	def __iter__(self):
 		return self

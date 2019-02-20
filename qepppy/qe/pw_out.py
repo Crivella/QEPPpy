@@ -33,10 +33,10 @@ class pw_out(bands, structure):
 	@store_property
 	def pseudo(self):
 		pseudo = []
-		path = os.path.dirname(self.schema)
+		path = os.path.dirname(self.xml)
 		for pp in self.atoms_pseudo:
 			file = os.path.join(path,pp)
-			pseudo.append(UPF(schema=file))
+			pseudo.append(UPF(xml=file))
 		return pseudo
 
 	def test_pdos_orthonormalized_states(self):

@@ -140,10 +140,10 @@ class input_files(templ):
 						v = lt[1]
 					except: 
 						v = None
-					self.set_card(card=card, v=v)
+					self.set_card(card=card, value=v)
 					#print(card, v)
 				else:
-					self.set_card(card=card, el=ls)
+					self.set_card(card=card, line=ls)
 				continue
 
 			# raise Exception("Invalid syntax '{}'".format(l))

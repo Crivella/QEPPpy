@@ -102,7 +102,7 @@ class data_file_parser(object):
 	Parser for QE data'file'schema.xml (QE>=6.2) and pw.x outputs.
 
 	- d:        Rule dictionary defining how the parser will operate.
-	- schema:   Name of the "data-file*.xml" to parse or path containing the file
+	- xml:      Name of the "data-file*.xml" to parse or path containing the file
 			    "data-file-schema.xml" (Parsing will run if the schema is set).
 	            When schema is given will also genetate 2 attributes:
 	            - data_path: Path of the folder containing the *.save folder.
@@ -152,12 +152,12 @@ class data_file_parser(object):
 	                  the last one will be stored.
 	"""
 	__name__ = "data_file_parser"
-	def __init__(self, schema="", outfile="", d={}, **kwargs):
+	def __init__(self, xml="", outfile="", d={}, **kwargs):
 		self._data_ = d
 		for i in d:
 			self.__dict__[i] = None
-		if schema:
-			self.schema = os.path.realpath(schema)
+		if xml:
+			self.xml = os.path.realpath(xml)
 			self._set_data_file_()
 			self._parse_xml_()
 		elif outfile:
@@ -176,15 +176,15 @@ class data_file_parser(object):
 	# 	return ""
 
 	def _set_data_file_(self):
-		if os.path.isfile(self.schema):
-			self.data_path = os.path.dirname(os.path.realpath(self.schema))
-		elif os.path.isdir(self.schema):
-			file = os.path.join(self.schema, "data-file-schema.xml")
+		if os.path.isfile(self.xml):
+			self.data_path = os.path.dirname(os.path.realpath(self.xml))
+		elif os.path.isdir(self.xml):
+			file = os.path.join(self.xml, "data-file-schema.xml")
 			if not os.path.isfile(file):
 				raise FileNotFoundError(file)
-			self.data_path = self.schema
-			self.schema    = file
-		if "data-file-schema.xml" in self.schema:
+			self.data_path = self.xml
+			self.xml    = file
+		if "data-file-schema.xml" in self.xml:
 			self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
 			self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
 
@@ -207,7 +207,7 @@ class data_file_parser(object):
 
 	def _parse_xml_(self):
 		import xml.etree.ElementTree as ET
-		root = ET.parse(self.schema).getroot()
+		root = ET.parse(self.xml).getroot()
 
 		xml_acq_rule={
 			'attr':     _xml_attr_,
