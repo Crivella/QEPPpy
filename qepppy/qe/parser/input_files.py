@@ -1,6 +1,5 @@
 import re
 import os
-import sys
 import numpy as np
 from collections import OrderedDict
 
@@ -201,6 +200,8 @@ class qe_card(OrderedDict):
 			if isinstance(e1, dict):
 				e1['v'] = extract[:,n1].astype(tf90_to_np[e1['t']])
 			if isinstance(e1, list):
+				if n1 == extract.shape[1]:
+					return
 				for n2,e2 in enumerate(e1):
 					e2['v'] = extract[:,n1+n2].astype(tf90_to_np[e2['t']])
 
@@ -217,7 +218,7 @@ class qe_card(OrderedDict):
 
 	def _validate_shape_(self, extract, elem):
 		types, opt_types = self._get_tuple_types_(elem)
-
+		
 		if extract.shape[1] > len(types):
 			types += opt_types
 			if extract.shape[1] > len(types):
