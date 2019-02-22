@@ -6,10 +6,6 @@ from collections import OrderedDict
 from ...errors import ParseInputError, ValidateError
 from ... import fortran_namelist as f90nml
 
-#import logging
-#logger = logging.getLogger(__name__)
-#logging.basicConfig(format='%(levelname)s: %(name)s\n%(message)s\n')
-
 tf90_to_py = {
 	'INTEGER': int,
 	'REAL': float,
@@ -44,8 +40,9 @@ class qe_namelist(f90nml.fortran_namelist):
 	def validate(self):
 		for name in self._templ_['nl']:
 			for elem,v in self._templ_[name].items():
-				comp = self.deep_find("{0}/{1}".format(name,elem))
-				if comp is None:
+				try:
+					comp = self.deep_find("{0}/{1}".format(name,elem))
+				except:
 					continue
 				typ    = v['t']
 				possib = v['c']
@@ -77,6 +74,19 @@ class qe_namelist(f90nml.fortran_namelist):
 
 class qe_card(OrderedDict):
 	_namelist = qe_namelist()
+	def __init__(self, nl, **kwargs):
+		self.namelist = nl
+		super().__init__(**kwargs)
+
+	def __str__(self):
+		return self.format_output()
+
+	def __getitem__(self, value):
+		try:
+			return super().__getitem__(value)
+		except KeyError:
+			return self.deep_find(value)
+
 	@property
 	def namelist(self):
 		return self._namelist
@@ -91,33 +101,37 @@ class qe_card(OrderedDict):
 	def _templ_(self):
 		return self.namelist._templ_
 
+	def format_output(self):
+		return '\n\n'.join(
+			card + " " +( "{{{}}}".format(value) if not value is None else '') + '\n  ' + '\n  '.join(body) 
+			for card,(value,body) in self.items()
+			)
+
 	def deep_find(self, pattern, up=None):
-		res = self.namelist.deep_find(pattern, up)
-		if not res is None:
-			return res
-
-		tof_card, tof_param, n  = self.namelist._tokenize_pattern_(pattern, up)
-
-		if tof_param in self._templ_['card']:
-			return self._templ_[tof_param]['v']
-		
-		res = self._deep_find_cards_(tof_card, tof_param)
-
 		try:
+			return self.namelist.deep_find(pattern, up)
+		except:
+			tof_card, tof_param, n  = self.namelist._tokenize_pattern_(pattern, up)
+
+			if tof_param in self._templ_['card']:
+				return self._templ_[tof_param]['v']
+			
+			res = self._deep_find_cards_(tof_card, tof_param)
+
 			for i in n:
 				res = res[i]
-		except:
-			return
-		return res
+			return res
 
 	def _deep_find_cards_(self, tof_card, tof_param):
 		for card in self._templ_['card']:
 			if tof_card and tof_card != card:
 				continue
 			synt = self._get_syntax_(card)
-			res = self._deep_find_syntax_(synt, tof_param)
-			if not res is None:
-				return res
+			try:
+				return self._deep_find_syntax_(synt, tof_param)
+			except:
+				pass
+		raise
 
 
 	def _deep_find_syntax_(self, synt, tof_param):
@@ -129,6 +143,7 @@ class qe_card(OrderedDict):
 				return self._deep_find_syntax_(e, tof_param)
 			if isinstance(e, tuple):
 				return self._deep_find_syntax_(e[0], tof_param)
+		raise
 
 
 	def parse(self, src):
@@ -150,49 +165,73 @@ class qe_card(OrderedDict):
 
 	def validate(self):
 		# from io import StringIO
-		for name,(val,body) in self.items():
+		for name in self._templ_['card']:
 			ptr = self._templ_[name]
+			if not name in self:
+				if ptr['r']:
+					raise ValidateError("Mandatory CARD '{}' not set.".format(name))
+				continue
+			val, body = self[name]
+
 			ptr['u'] = True
 			possib = ptr['c']
 			if possib and all(not val in a for a in possib) and val != '':
 				raise ValidateError("\n\t{}: '{}' not among possibilities {}".format(name,val,possib))
 			ptr['v'] = val
-			synt = self._get_syntax_(ptr, val)
-			if not synt is None:
-				with open("tmp-card.123", "w") as f:
-					f.write('\n'.join(body))
-				with open("tmp-card.123") as f:
-					try:
-						self._validate_syntax_(synt, f)
-					except ValidateError as e:
-						raise ValidateError("{}: ".format(name) + str(e))
 
-		os.remove("tmp-card.123")
+			synt = self._get_syntax_(ptr, val)
+			if synt is None:
+				continue
+
+			with open("tmp-card.123", "w") as f:
+				f.write('\n'.join(body))
+			with open("tmp-card.123") as f:
+				try:
+					self._validate_syntax_(synt, f)
+				except ValidateError as e:
+					raise ValidateError("{}: ".format(name) + str(e))
+
+			os.remove("tmp-card.123")
 
 	def _validate_syntax_(self, synt, data):
 		for elem in synt:
 			if isinstance(elem, dict):
 				typ = tf90_to_np[elem['t']]
-				extract = np.fromfile(data, dtype=typ, count=1, sep=' ')
+				extract = np.fromfile(data, dtype=typ, count=1, sep=' ')[0]
 				if isinstance(elem['v'], list):
 					elem['v'].append(extract)
 				else:
 					elem['v']=extract
 			if isinstance(elem, list):
 				self._validate_syntax_(elem, data)
-				pass
 			if isinstance(elem, tuple):
-				res = []
-				for l in data.readlines():
-					if not l:
-						continue
-					res.append(list(filter(None, l.replace("\n", " ").split(" "))))
+				lines    =  list(filter(None, data.readlines()))
+				line_tok = [list(filter(None, l.replace("\n", " ").split(" "))) for l in lines]
 
-				extract = np.array(res)
+				"""
+				TOFIX:
+				this operations is ran before checking against the max number of lines toa void cutting data.
+				The problem is, if there is an uneven line right after the datait will force the array to be
+				[list(), list(), ...] instead of a standard 2D array failing the transpose.
+
+				Example:
+				CELL_PARAMETERS {angstrom}
+				2.46    0.00    10.00
+				0.00    54.00   0.00
+				0.00    0.00    10.00
+				1
+
+				The final 1 will cause the transpose to fail and the final result will be:
+				v1:[2.46, 0.0, 0], v2:..., v3:[10.0, 0.0, 10.0] instead of v1:[2.46, 0.0, 10.0], v2:..., v3:[10.0, 0.0, 0.0]
+				"""
+				extract = np.array(line_tok)
 				if elem[3] == 'cols':
 					extract = extract.T
 
-				extract = self._validate_shape_(extract, elem)
+				extract, max_line = self._validate_shape_(extract, elem)
+				remain = lines[max_line:]
+				if len(remain) > 0:
+					print("Ignoring:\n'''\n{}\n'''".format('\n'.join(remain)))
 				self._assign_tuple_(extract, elem)
 
 	def _assign_tuple_(self, extract, elem):
@@ -217,22 +256,22 @@ class qe_card(OrderedDict):
 		return types, opt_types
 
 	def _validate_shape_(self, extract, elem):
-		types, opt_types = self._get_tuple_types_(elem)
-		
-		if extract.shape[1] > len(types):
-			types += opt_types
-			if extract.shape[1] > len(types):
-				raise ValidateError("Wrong line length.")
-
 		try:
 			max_lines = int(elem[2])
 		except:
 			max_lines = self.deep_find(elem[2])
 		if extract.shape[0] < max_lines:
 			raise ValidateError("Too few lines.")
-		extract = extract[:max_lines]
+		extract = np.array([*extract[:max_lines]])
+		
+		types, opt_types = self._get_tuple_types_(elem)
+		if extract.shape[1] > len(types):
+			types += opt_types
+			if extract.shape[1] > len(types):
+				raise ValidateError("Wrong line length.")
 
-		return extract
+
+		return extract, max_lines
 
 
 	def _get_syntax_(self, card, val=None):
@@ -247,26 +286,6 @@ class qe_card(OrderedDict):
 				continue
 			return v['l']
 
-
-def trim_ws(str):
-	"""
-	Trim all withspace not included in a string
-	"""
-	ws=[ " ", "\t", "\n"]
-	l = str.strip()
-	new = ""
-	check_str_1 = False
-	check_str_2 = False
-	for e in l:
-		if not e in ws or check_str_1 or check_str_2:
-			new += e
-		if e == "\""  and not check_str_2:
-			check_str_1 = not check_str_1
-		if e == "'" and not check_str_1:
-			check_str_2 = not check_str_2
-	return new
-
-# logger()()
 class input_files():
 	"""
 	Class to handle any QE input (after loading the proper template).
@@ -275,16 +294,15 @@ class input_files():
 	 - parse      = Name of the file to parse
 	 - templ_file = Name of the template file to use
 	"""
-	def __init__(self, src, templ_file=None, **kwargs):
-		try:
-			self.templ_file
-		except AttributeError:
-			self.templ_file = templ_file
+	templ_file = None
+	def __init__(self, src):
 		if not self.templ_file:
 			raise ParseInputError("Must give a template file.\n")
 	
 		self.parse_input(src)
 
+	def __getitem__(self, key):
+		return self.card.__getitem__(key)
 
 	def __str__(self):
 		return str(self.namelist) + str(self.card)
@@ -297,9 +315,8 @@ class input_files():
 		nl.validate()
 		self.namelist = nl
 		
-		card = qe_card()
+		card = qe_card(nl)
 		with open(src) as f:
-			card.namelist = nl
 			card.parse(f)
 		card.validate()
 		self.card = card
@@ -308,7 +325,8 @@ class input_files():
 		res = []
 		for pattern in args:
 			res.append(self.card.deep_find(pattern, up))
-
+		if len(res) == 1:
+			res = res[0]
 		return res
 
 

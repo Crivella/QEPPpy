@@ -8,38 +8,56 @@ class pw_in(inp_f, structure):
 	 - inp = Name of the file to parse
 	"""
 	templ_file = "INPUT_PW.templ"
-	def __init__(self, **kwargs):
-		super().__init__(**kwargs)
-		if 'src' in kwargs:
-			self.pwin_read(inp=self)
-		return
+
+	@property
+	def _atoms(self):
+		name, x, y, z = self.find("X", "x", "y", "z", up="ATOMIC_POSITIONS")
+		coord = [(a,b,c) for a,b,c in zip(x, y, z)]
+		return [{'name':n, 'coord':c} for n,c in zip(name, coord)]
+
+	@property
+	def _atom_spec(self):
+		name, mass, pfile = self.find("X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
+		return [{'name':n, 'mass':m, 'pseudo_file':p} for n,m,p in zip(name, mass, pfile)]
+
+	@property
+	def _cell(self):
+		a1, a2, a3 = self.find("v1", "v2", "v3")
+		return [{'a1':a1, 'a2':a2, 'a3':a3}]
+
+	@property
+	def celldm(self):
+		return self.find("celldm")
+
+	@property
+	def alat(self):
+		return self.find("celldm(1)")
+
+	@property
+	def ibrav(self):
+		return self.find("ibrav")
+
+	@property
+	def _atom_p(self):
+		return self.find("ATOMIC_POSITIONS")
+
+	@property
+	def _cell_p(self):
+		return self.find("CELL_PARAMETERS")
+
+	@property
+	def n_atoms(self):
+		return self.find("nat")
+
+	@property
+	def n_types(self):
+		return self.find("ntyp")
 
 	def __str__(self):
-		msg = super().__str__()
+		msg = inp_f.__str__(self)
 		if not 'ATOMIC_POSITIONS' in self.card:
 			msg += structure.__str__(self)
 		return msg
-	
-	# def __iadd__(self, other):
-	# 	if isinstance(other, structure):
-	# 		self._add_stc_(other)
 
-	# 	return self
-
-	# def _add_stc_(self, stc):
-	# 	if isinstance(stc.ibrav, int):
-	# 		self.set_nl(nl="SYSTEM", k="ibrav", v=stc.ibrav)
-	# 	else:
-	# 		raise Exception("Must pass a valid cell structure")
-
-	# 	self.set_nl(nl="SYSTEM", k="celldm(1)", v=stc.alat)
-	# 	self.set_nl(nl="SYSTEM", k="ntyp", v=len(stc.atom_spec))
-	# 	self.set_nl(nl="SYSTEM", k="nat", v=len(stc.atoms))
-
-	# 	for k, v in stc.__dict__.items():
-	# 		self.__dict__[k] = v
-
-	# 	return
-	
 
 

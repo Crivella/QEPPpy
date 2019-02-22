@@ -45,15 +45,13 @@ def format_f90_to_py(val, strip_s=False, strip_d=False):
 				val = True
 	return val
 
-def read(src):
-	with open(src) as f:
-		res = fortran_namelist()
-		res.parse(f)
-	return res
-
-
 class fortran_namelist(OrderedDict):
 	name = None
+	def __init__(self, src=None, **kwargs):
+		if isinstance(src, str):
+			self.parse(src)
+		super().__init__(**kwargs)
+		
 	def __getitem__(self, key):
 		if isinstance(key, str):
 			key = key.lower()
@@ -159,7 +157,7 @@ class fortran_namelist(OrderedDict):
 					return elem.deep_find(pattern, up)
 				except:
 					pass
-			return
+			raise
 
 		tof_nl, tof_param, n  = self._tokenize_pattern_(pattern, up)
 		if tof_nl is None or tof_nl == self.name:

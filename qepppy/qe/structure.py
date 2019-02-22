@@ -190,14 +190,6 @@ class structure(dfp, cell):
 		return res
 
 	@property
-	def _atoms_group_coord_cart(self):
-		return {a:np.array(self.atoms_coord_cart[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
-
-	@property
-	def _atoms_group_coord_cryst(self):
-		return {a:np.array(self.atoms_coord_cryst[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
-
-	@property
 	def _atoms_typ(self):
 		return list([a['name'] for a in self._atoms])
 
@@ -265,33 +257,6 @@ class structure(dfp, cell):
 	@store_property
 	def fft_dense_grid(self):
 		return np.array([self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']], dtype='int')
-
-	def pwin_read(self, parse="", inp=None):
-		if inp == None:
-			if parse:
-				from .pwin import pw_in
-				inp = pw_in(parse=parse)
-				inp.validate()
-			else:
-				raise error("Must give a file name or a pw_in instance as args")
-
-		name, x, y, z = inp.find("X", "x", "y", "z", up="ATOMIC_POSITIONS")
-		coord = [(a,b,c) for a,b,c in zip(x, y, z)]
-		self._atoms = [{'name':n, 'coord':c} for n,c in zip(name, coord)]
-
-		name, mass, pfile = inp.find("X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
-		self._atom_spec = [{'name':n, 'mass':m, 'pseudo_file':p} for n,m,p in zip(name, mass, pfile)]
-
-		a1, a2, a3 = inp.find("v1", "v2", "v3")
-		self._cell = [{'a1':a1, 'a2':a2, 'a3':a3}]
-
-		self.celldm  = inp.find("celldm")
-		self.alat    = inp.find("celldm(1)")
-		self.ibrav   = inp.find("ibrav")
-		self._atom_p = inp.find("ATOMIC_POSITIONS")
-		self._cell_p = inp.find("CELL_PARAMETERS")
-		self.n_atoms = inp.find("nat")
-		self.n_types = inp.find("ntyp")
 
 	def validate(self):
 		ret = True
