@@ -1,7 +1,7 @@
 {
   "H": {
-    "color": "k",
-    "radius": 1.001511716
+    "color": "cyan",
+    "radius": 0.754001024
   },
   "He": {
     "color": "k",
@@ -21,7 +21,7 @@
   },
   "C": {
     "color": "k",
-    "radius": 1.26606198
+    "radius": 1.528355387
   },
   "N": {
     "color": "green",

@@ -56,7 +56,7 @@ data={
 		'res_type':float,
 		'outfile_regex':r'lattice parameter \(alat\)\s*='
 		},
-	'cell_p':{
+	'_cell_p':{
 		'res_type':str,
 		'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
 		},
@@ -80,7 +80,7 @@ data={
 			r'\s*b\(2\) = \((?P<b2>[\s\d.\-]*)\)\s*\n' + 
 			r'\s*b\(3\) = \((?P<b3>[\s\d.\-]*)\)\s*\n'
 		},
-	'atom_p':{
+	'_atom_p':{
 		'res_type':str,
 		'outfile_regex':r'positions \((?P<flag>.*) units\)'
 		},
@@ -122,8 +122,8 @@ data={
 class structure(dfp, cell):
 	__name__ = "structure";
 	def __init__(self, d={}, **kwargs):
-		self.atom_p = 'bohr'
-		self.cell_p = 'bohr'
+		self._atom_p = 'bohr'
+		self._cell_p = 'bohr'
 
 		d.update(data)
 		super().__init__(d=d, **kwargs)
@@ -168,24 +168,24 @@ class structure(dfp, cell):
 
 	@property
 	def _atoms_coord_cart(self):
-		fact = self.alat if self.atom_p == 'alat' else 1
-		res = np.array([a['coord'] for a in self._atoms]) * fact
+		# fact = self.alat if self.atom_p == 'alat' else 1
+		res = np.array([a['coord'] for a in self._atoms]) * self.atom_p
 		n = self.n_atoms
 		if n and len(res) == n*2:
 			res = res[0:n,:]
-		if self.atom_p == 'crystal':
+		if self._atom_p == 'crystal':
 			res = np.dot(self.direct.T, res.T).T
 		return res
 
 	@property
 	def _atoms_coord_cryst(self):
-		fact = self.alat if self.atom_p == 'alat' else 1
-		res = np.array([a['coord'] for a in self._atoms]) * fact
+		# fact = self.alat if self.atom_p == 'alat' else 1
+		res = np.array([a['coord'] for a in self._atoms]) * self.atom_p
 		n = self.n_atoms
 		if len(res) == n*2:
 				res = res[n:n*2,:]
 		else:
-			if self.atom_p != 'crystal':
+			if self._atom_p != 'crystal':
 				res = np.dot(self.direct.T.I, res.T).T
 		return res
 
@@ -215,12 +215,28 @@ class structure(dfp, cell):
 		return res
 
 	@property
+	def atom_p(self):
+		if self._atom_p == 'alat':
+			return self.alat
+		if self._atom_p == 'angstrom':
+			return 1/0.529177
+		return 1
+
+	@property
+	def cell_p(self):
+		if self._cell_p == 'alat':
+			return self.alat
+		if self._cell_p == 'angstrom':
+			return 1/0.529177
+		return 1
+
+	@property
 	def _direct(self):
 		res =  np.array(list(self._cell[0].values()))
 		if res.size != 9:
 			return self._ibrav_to_cell_()
-		fact = self.alat if self.cell_p == 'alat' else 1
-		res *= fact
+		# fact = self.alat if self.cell_p == 'alat' else 1
+		res *= self.cell_p
 		return res
 
 	@property
@@ -272,8 +288,8 @@ class structure(dfp, cell):
 		self.celldm  = inp.find("celldm")
 		self.alat    = inp.find("celldm(1)")
 		self.ibrav   = inp.find("ibrav")
-		self.atom_p  = inp.find("ATOMIC_POSITIONS")
-		self.cell_p  = inp.find("CELL_PARAMETERS")
+		self._atom_p = inp.find("ATOMIC_POSITIONS")
+		self._cell_p = inp.find("CELL_PARAMETERS")
 		self.n_atoms = inp.find("nat")
 		self.n_types = inp.find("ntyp")
 
