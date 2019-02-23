@@ -163,7 +163,7 @@ class fortran_namelist(OrderedDict):
 		if tof_nl is None or tof_nl == self.name:
 			res =  self[tof_param]
 			for i in n:
-				res = res[i]
+				res = res[int(i)-1]
 			return res
 
 		raise

@@ -43,7 +43,14 @@ class pw_in(inp_f, structure):
 
 	@property
 	def _cell_p(self):
-		return self.find("CELL_PARAMETERS")
+		try:
+			return self.__cell_p
+		except:
+			return self.find("CELL_PARAMETERS")
+
+	@_cell_p.setter
+	def _cell_p(self, value):
+		self.__cell_p = value
 
 	@property
 	def n_atoms(self):

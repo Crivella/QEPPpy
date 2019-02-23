@@ -1,6 +1,7 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..logger import logger, warning, error
+from ..errors import ValidateError
 from .._decorators import store_property
 from .._cell import _cell as cell
 
@@ -259,27 +260,22 @@ class structure(dfp, cell):
 		return np.array([self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']], dtype='int')
 
 	def validate(self):
-		ret = True
 		if self.ibrav == None:
-			warning.print("ibrav is not set.")
-			ret = False
+			raise ValidateError("ibrav is not set.")
 		if self._atom_spec == None:
-			warning.print("List of atom types is not set.")
-			ret = False
+			raise ValidateError("List of atom types is not set.")
 		if self._atoms == None:
-			warning.print("List of atomic positions is not set.")
-			ret = False
+			raise ValidateError("List of atomic positions is not set.")
 
 		for typ in self.atoms_typ:
 			if not typ in self.all_atoms_typ:
-				warning.print("Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
-				ret = False
+				raise ValidateError("Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
 
 		if self.ibrav == 0:
 			if self.direct is None:
-				warning.print("Cell structure is not set with 'ibrav = 0'.")
-				ret = False
-		return ret and super().validate()
+				raise ValidateError("Cell structure is not set with 'ibrav = 0'.")
+
+		super().validate()
 
 
 	def _ibrav_to_cell_(self):
@@ -288,6 +284,10 @@ class structure(dfp, cell):
 
 		lp = self.alat
 
+		if len(self.celldm) > 1:
+			b = self.celldm[1]
+		if len(self.celldm) > 2:
+			c = self.celldm[2]
 		if   self.ibrav ==  1:
 			v1 = np.array([1,0,0]) * lp
 			v2 = np.array([0,1,0]) * lp
@@ -327,86 +327,62 @@ class structure(dfp, cell):
 			v2 = np.array([v,u,v]) * lp/np.sqrt(3)
 			v3 = np.array([v,v,u]) * lp/np.sqrt(3)
 		elif self.ibrav ==  6:
-			c = self.celldm[2]
 			v1 = np.array([1,0,0]) * lp
 			v2 = np.array([0,1,0]) * lp
 			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav ==  7:
-			c = self.celldm[2]
 			v1 = np.array([1,-1,c]) * lp/2
 			v2 = np.array([1,1,c]) * lp/2
 			v3 = np.array([-1,-1,c]) * lp/2
 		elif self.ibrav ==  8:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			v1 = np.array([1,0,0]) * lp
 			v2 = np.array([0,b,0]) * lp
 			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav ==  9:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			v1 = np.array([1,b,0]) * lp/2
 			v2 = np.array([-1,b,0]) * lp/2
 			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav == -9:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			v1 = np.array([1,-b,0]) * lp/2
 			v2 = np.array([1,b,0]) * lp/2
 			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav == 91:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			v1 = np.array([1,0,0]) * lp
 			v2 = np.array([0,b,-c]) * lp/2
 			v3 = np.array([0,b,c]) * lp/2
 		elif self.ibrav ==  10:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			v1 = np.array([1,0,c]) * lp/2
 			v2 = np.array([1,b,0]) * lp/2
 			v3 = np.array([0,b,c]) * lp/2
 		elif self.ibrav ==  11:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			v1 = np.array([1,b,c]) * lp/2
 			v2 = np.array([-1,b,b]) * lp/2
 			v3 = np.array([-1,-b,c]) * lp/2
 		elif self.ibrav ==  12:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			cab = self.celldm[3]
 			sab = np.sqrt(1 - cab**2)
 			v1 = np.array([1,0,0]) * lp
 			v2 = np.array([b*cab,b*sab,0]) * lp
 			v3 = np.array([0,0,c]) * lp
 		elif self.ibrav == -12:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			cac = self.celldm[4]
 			sac = np.sqrt(1 - cac**2)
 			v1 = np.array([1,0,0]) * lp
 			v2 = np.array([0,b,0]) * lp
 			v3 = np.array([c*cac,0,c*sac]) * lp
 		elif self.ibrav ==  13:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			cg = self.celldm[3]
 			sg = np.sqrt(1 - cg**2)
 			v1 = np.array([1,0,-c]) * lp/2
 			v2 = np.array([b*cg,b*sg,0]) * lp/2
 			v3 = np.array([1,0,c]) * lp
 		elif self.ibrav ==  -13:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			cb = self.celldm[4]
 			sb = np.sqrt(1 - cb**2)
 			v1 = np.array([1,-b,0]) * lp/2
 			v2 = np.array([1,b,0]) * lp/2
 			v3 = np.array([c*cb,0,c*sb]) * lp
 		elif self.ibrav ==  14:
-			b = self.celldm[1]
-			c = self.celldm[2]
 			cbc = self.celldm[3]
 			cac = self.celldm[4]
 			cab = self.celldm[5]
@@ -418,7 +394,7 @@ class structure(dfp, cell):
 				c*(cbc-cac*cg)/sg,
 				c*np.sqrt(1+2*cbc*cac*cg-cbc**2-cac**2-cg**2)/sg]) * lp
 
-		self.cell_p = 'bohr'
+		self._cell_p = 'bohr'
 		return np.array([v1,v2,v3])
 
 

@@ -119,7 +119,7 @@ class qe_card(OrderedDict):
 			res = self._deep_find_cards_(tof_card, tof_param)
 
 			for i in n:
-				res = res[i]
+				res = res[int(i)-1]
 			return res
 
 	def _deep_find_cards_(self, tof_card, tof_param):
@@ -161,7 +161,7 @@ class qe_card(OrderedDict):
 			if not value is None:
 				value = value.replace('{', '').replace('}', '')
 
-			self[name] = (value, list(filter(None, body.replace('\t', ' ').split('\n'))))
+			self[name] = (value, body.replace('\t', ' ').rstrip().split('\n'))
 
 	def validate(self):
 		# from io import StringIO
@@ -187,9 +187,16 @@ class qe_card(OrderedDict):
 				f.write('\n'.join(body))
 			with open("tmp-card.123") as f:
 				try:
-					self._validate_syntax_(synt, f)
+					n = self._validate_syntax_(synt, f)
 				except ValidateError as e:
 					raise ValidateError("{}: ".format(name) + str(e))
+
+				remain = f.read()
+				if remain:
+					print("Ignoring:\n'''\n{}\n'''".format(remain))
+					n = remain.count('\n') + 1
+					for i in range(n):
+						self[name][1].pop()
 
 			os.remove("tmp-card.123")
 
@@ -205,45 +212,33 @@ class qe_card(OrderedDict):
 			if isinstance(elem, list):
 				self._validate_syntax_(elem, data)
 			if isinstance(elem, tuple):
-				lines    =  list(filter(None, data.readlines()))
-				line_tok = [list(filter(None, l.replace("\n", " ").split(" "))) for l in lines]
+				try:
+					max_lines = int(elem[2])
+				except:
+					max_lines = self.deep_find(elem[2])
+				lines_tok = []
+				for i in range(max_lines):
+					r = data.readline()
+					if not r:
+						raise ValidateError("Too few lines.")
+					lines_tok.append(list(filter(None, r.rstrip().split(" "))))
 
-				"""
-				TOFIX:
-				this operations is ran before checking against the max number of lines toa void cutting data.
-				The problem is, if there is an uneven line right after the datait will force the array to be
-				[list(), list(), ...] instead of a standard 2D array failing the transpose.
 
-				Example:
-				CELL_PARAMETERS {angstrom}
-				2.46    0.00    10.00
-				0.00    54.00   0.00
-				0.00    0.00    10.00
-				1
-
-				The final 1 will cause the transpose to fail and the final result will be:
-				v1:[2.46, 0.0, 0], v2:..., v3:[10.0, 0.0, 10.0] instead of v1:[2.46, 0.0, 10.0], v2:..., v3:[10.0, 0.0, 0.0]
-				"""
-				extract = np.array(line_tok)
+				extract = np.array(lines_tok)
 				if elem[3] == 'cols':
 					extract = extract.T
-
-				extract, max_line = self._validate_shape_(extract, elem)
-				remain = lines[max_line:]
-				if len(remain) > 0:
-					print("Ignoring:\n'''\n{}\n'''".format('\n'.join(remain)))
+					if extract.shape[0] > max_lines:
+						raise ValidateError("Too many elements on line. Expected {}".format(max_lines))
+				self._validate_shape_(extract, elem)
 				self._assign_tuple_(extract, elem)
 
-	def _assign_tuple_(self, extract, elem):
-		for n1,e1 in enumerate(elem[0]):
-			if isinstance(e1, dict):
-				e1['v'] = extract[:,n1].astype(tf90_to_np[e1['t']])
-			if isinstance(e1, list):
-				if n1 == extract.shape[1]:
-					return
-				for n2,e2 in enumerate(e1):
-					e2['v'] = extract[:,n1+n2].astype(tf90_to_np[e2['t']])
 
+	def _validate_shape_(self, extract, elem):
+		types, opt_types = self._get_tuple_types_(elem)
+		if extract.shape[1] > len(types):
+			types += opt_types
+			if extract.shape[1] > len(types):
+				raise ValidateError("Too many elements on line. Expected {}".format(len(types)))
 
 	@staticmethod
 	def _get_tuple_types_(elem):
@@ -255,23 +250,15 @@ class qe_card(OrderedDict):
 
 		return types, opt_types
 
-	def _validate_shape_(self, extract, elem):
-		try:
-			max_lines = int(elem[2])
-		except:
-			max_lines = self.deep_find(elem[2])
-		if extract.shape[0] < max_lines:
-			raise ValidateError("Too few lines.")
-		extract = np.array([*extract[:max_lines]])
-		
-		types, opt_types = self._get_tuple_types_(elem)
-		if extract.shape[1] > len(types):
-			types += opt_types
-			if extract.shape[1] > len(types):
-				raise ValidateError("Wrong line length.")
-
-
-		return extract, max_lines
+	def _assign_tuple_(self, extract, elem):
+		for n1,e1 in enumerate(elem[0]):
+			if isinstance(e1, dict):
+				e1['v'] = extract[:,n1].astype(tf90_to_np[e1['t']])
+			if isinstance(e1, list):
+				if n1 == extract.shape[1]:
+					return
+				for n2,e2 in enumerate(e1):
+					e2['v'] = extract[:,n1+n2].astype(tf90_to_np[e2['t']])
 
 
 	def _get_syntax_(self, card, val=None):
