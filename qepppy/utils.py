@@ -27,6 +27,8 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
 			base.T,
 			[x.flatten(),y.flatten(),z.flatten()],
 			)
+	else:
+		XYZ = [x,y,z]
 
 	return np.array(XYZ).reshape(3,*x.shape)
 
@@ -38,3 +40,28 @@ def recipr_base(base):
 	a3 = np.cross(b1,b2) / vol
 
 	return np.mat([a1,a2,a3]) * 2 * np.pi
+
+def lowdin_ortho(base):
+	"""
+	O = (M . M^T)^{-1/2} . M
+	Params:
+	 - base: np.array with states along axis=0. If the states are 
+	         multidimensional (eg: FFT grids), flatten them before and after the
+	         orthonormalization, restore the shape
+	"""
+	from scipy.linalg import sqrtm, inv
+
+	shape   = base[0].shape
+	base    = np.array([a.flatten() for a in base])
+	overlap = np.dot(base.conj(), base.T)
+
+	base = np.dot(
+		inv(sqrtm(overlap)).conj(),
+		base
+		)
+
+	return base.reshape(-1,*shape)
+
+
+
+

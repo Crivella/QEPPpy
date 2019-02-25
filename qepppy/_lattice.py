@@ -8,7 +8,7 @@ class _lattice():
 	@store_property
 	def direct(self):
 		try:
-			return np.mat(self._direct)
+			return np.array(self._direct)
 		except:
 			return utils.recipr_base(self._recipr)
 
@@ -16,7 +16,7 @@ class _lattice():
 	@store_property
 	def recipr(self):
 		try:
-			return np.mat(self._recipr)
+			return np.array(self._recipr)
 		except:
 			return utils.recipr_base(self._direct)
 
