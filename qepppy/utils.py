@@ -58,11 +58,15 @@ def lowdin_ortho(base):
 	shape   = base[0].shape
 	base    = np.array([a.flatten() for a in base])
 	overlap = np.dot(base.conj(), base.T)
+	print("OVERLAP: \n", overlap)
 
 	base = np.dot(
 		inv(sqrtm(overlap)).conj(),
 		base
 		)
+	
+	overlap = np.dot(base.conj(), base.T)
+	print("OVERLAP: \n", overlap)
 
 	return base.reshape(-1,*shape)
 
