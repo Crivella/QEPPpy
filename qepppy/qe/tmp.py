@@ -26,7 +26,7 @@ class tmp():
 	def __getitem__(self,key):
 		if not isinstance(key, int):
 			raise NotImplementedError()
-		return self._get_wfc_num_(key)
+		return self._get_wfc_num_(key+1)
 
 	def _get_wfc_num_(self, n):
 		file = os.path.join(self.data_path, "wfc{}.dat".format(n))

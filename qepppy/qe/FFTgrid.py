@@ -67,7 +67,7 @@ class FFTgrid():
 
 			rec = np.round(
 					np.dot(
-					self.direct.T.I,
+					self.recipr/(2*np.pi), # self.direct.T.I,
 					[x.flatten(),y.flatten(),z.flatten()]
 					),
 					decimals=8
@@ -78,7 +78,7 @@ class FFTgrid():
 
 			ax1.contourf(
 				x, y, rho[tuple((i,j,k))].reshape(x.shape),
-				100,cmap=cmap
+				100, cmap=cmap
 				)
 
 			ax1.set_title('Slice {}'.format(zs))

@@ -30,7 +30,7 @@ class _atoms():
 	@property
 	@store_property
 	def atoms_coord_cryst(self):
-		return self._atoms_coord_cart
+		return self._atoms_coord_cryst
 
 	@property
 	@store_property

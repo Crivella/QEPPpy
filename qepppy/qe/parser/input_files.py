@@ -21,6 +21,11 @@ tf90_to_np = {
 	}
 
 class qe_namelist(f90nml.fortran_namelist):
+	def __init__(self, tpl=None, **kwargs):
+		if tpl:
+			self.load_templ(tpl)
+		super().__init__(**kwargs)
+
 	def load_templ(self, tpl=""):
 		"""
 		Load a QE template from a specified file (tpl) or the internal data
@@ -295,10 +300,9 @@ class input_files():
 		return str(self.namelist) + str(self.card)
 
 	def parse_input(self, src):
-		nl   = qe_namelist()
+		nl   = qe_namelist(tpl=self.templ_file)
 		with open(src) as f:
 			nl.parse(f)
-			nl.load_templ(self.templ_file)
 		nl.validate()
 		self.namelist = nl
 		

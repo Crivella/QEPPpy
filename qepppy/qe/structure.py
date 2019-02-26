@@ -4,6 +4,7 @@ from ..logger import logger, warning, error
 from ..errors import ValidateError
 from .._decorators import store_property
 from .._cell import _cell as cell
+from .. import utils
 
 bravais_index={	
 	'0':'free',
@@ -187,7 +188,7 @@ class structure(dfp, cell):
 				res = res[n:n*2,:]
 		else:
 			if self._atom_p != 'crystal':
-				res = np.dot(self.direct.T.I, res.T).T
+				res = np.dot(self.recipr/(2*np.pi), res.T).T
 		return res
 
 	@property
@@ -234,7 +235,7 @@ class structure(dfp, cell):
 
 	@property
 	def _recipr(self):
-		return np.array(list(self._recip[0].values()))
+		return utils.recipr_base(self._direct)
 	
 	@property
 	@store_property

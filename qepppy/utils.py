@@ -2,9 +2,13 @@ import numpy as np
 
 def xyz_mesh(shape, base=None, rep=1, reverse=False):
 	n1,n2,n3 = shape
-	a = np.linspace(0, rep, n1*rep + 1)[:-1] + .5/n1
-	b = np.linspace(0, rep, n2*rep + 1)[:-1] + .5/n2
-	c = np.linspace(0, rep, n3*rep + 1)[:-1] + .5/n3
+	try:
+		r1,r2,r3 = rep
+	except:
+		r1 = r2 = r3 = rep
+	a = np.linspace(0, r1, n1*r1 + 1)[1:] #[:-1] #+ .5/n1
+	b = np.linspace(0, r2, n2*r2 + 1)[1:] #[:-1] #+ .5/n2
+	c = np.linspace(0, r3, n3*r3 + 1)[1:] #[:-1] #+ .5/n3
 
 	if reverse:
 		a,b,c = c,b,a
@@ -39,7 +43,7 @@ def recipr_base(base):
 	a2 = np.cross(b3,b1) / vol
 	a3 = np.cross(b1,b2) / vol
 
-	return np.mat([a1,a2,a3]) * 2 * np.pi
+	return np.array([a1,a2,a3]) * 2 * np.pi
 
 def lowdin_ortho(base):
 	"""
