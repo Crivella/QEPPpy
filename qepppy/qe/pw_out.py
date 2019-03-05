@@ -60,12 +60,20 @@ class pw_out(bands, structure):
 		and than roll the grid to move the center on the atom position
 		"""
 		center = np.array(np.dot(self.direct.T, np.array([.5,.5,.5])*nn))
-		s = tuple((slice(None),*(start_shape//2-1)))
+		s = tuple((slice(None),*((nn*start_shape)//2-1)))
 		print("CENTER: calc {}    fromXYZ {}".format(center, XYZ[s]))
 		grid_shape = XYZ[0].shape
 		print(grid_shape)
 		# print(XYZ.shape)
 		# exit()
+
+		from itertools import product
+		ll = product(*(range(-np.ceil((nr-1)/2).astype('int'),np.ceil((nr-1)/2).astype(int)+1) for nr in nn))
+		print(list(ll))
+		# exit()
+		# for nr in nn:
+		# 	ll = np.ceil((nn-1)/2)
+		# 	for lr in range(-ll,ll+1):
 
 		cXYZ  = XYZ - center.reshape(3,1,1,1)
 		norm  = np.linalg.norm(cXYZ, axis=0) + 1E-16
@@ -75,7 +83,11 @@ class pw_out(bands, structure):
 			norm[:,:,0],
 			norm[:,0,:],
 			))
-			)*0.98
+			)*10.98
+
+		# test_harm = np.zeros(((lmax+1)**2, *norm.shape), dtype=complex)
+		# for rx,ry,rz in ll:
+		# cXYZ  = XYZ - center.reshape(3,1,1,1) + np.dot(self.direct.T,[rx,ry,rz])
 		theta = np.arctan2(cXYZ[1],cXYZ[0])
 		theta[theta<0] += 2*np.pi
 		phi   = np.arccos(cXYZ[2]/norm)
@@ -83,19 +95,20 @@ class pw_out(bands, structure):
 		test_harm = []
 		for l in range(lmax+1):
 			for m in range(-l,l+1):
+				# harm = test_harm[l**2 + m + l]
 				harm = scipy.special.sph_harm(m,l,theta,phi) # * 1j**l
 				harm[norm > max_norm] = 0
+				# print(harm[:20])
+				# test_harm[l**2 + m + l] = harm
 				harm /= np.linalg.norm(harm)
 				test_harm.append(harm)
 
+		# print(test_harm.shape)
+		test_harm = np.array([a/np.linalg.norm(a) for a in test_harm])
+
 		th = np.array([a.flatten() for a in test_harm])
-		np.set_printoptions(
-			linewidth=2000,
-			formatter={
-				'complex_kind':lambda x: "{:5.2f} {:+5.2f}i".format(x.real,x.imag) if np.abs(x) > 1E-2 else ":"*12
-				}
-			)
 		print("TEST sph_harm overlap: \n", np.dot(np.conj(th),th.T))
+		# exit()
 
 		na = 0
 		for nt,(name,pp) in enumerate(zip(self.atoms_typ, self.pseudo)):
@@ -121,7 +134,8 @@ class pw_out(bands, structure):
 
 
 				for nc,(l,chi) in enumerate(zip(pp.pswfc_l,pp.pswfc)):
-					f_val = scipy.interpolate.interp1d(pp.mesh[:chi.size], chi,
+					f_val = scipy.interpolate.interp1d(
+						pp.mesh[:chi.size], chi,
 						'cubic',
 						bounds_error=False,
 						fill_value=0
@@ -132,30 +146,43 @@ class pw_out(bands, structure):
 						harm = test_harm[l**2 + m + l]
 
 						app = val * harm
-						for d in range(3):
-							for i in range(nn[d]-1,-1,-1):
-								i *= (np.array(grid_shape)//nn)[d]
-								s = [slice(None)]*3
-								s[d] = i-1
-								app = np.insert(app,i,app[tuple(s)],axis=d)
+						# for d in range(3):
+						# 	for i in range(nn[d]-1,-1,-1):
+						# 		i *= (np.array(grid_shape)//nn)[d]
+						# 		s = [slice(None)]*3
+						# 		s[d] = i-1
+						# 		app = np.insert(app,i,app[tuple(s)],axis=d)
+						# # app = app.reshape(
+						# # 	nn[0],start_shape[0]+1,
+						# # 	nn[1],start_shape[1]+1,
+						# # 	nn[2],start_shape[2]+1,
+						# # 	).sum(axis=(0,2,4))
+						# # print(app.shape)
 						# app = app.reshape(
 						# 	nn[0],start_shape[0]+1,
 						# 	nn[1],start_shape[1]+1,
 						# 	nn[2],start_shape[2]+1,
-						# 	).sum(axis=(0,2,4))
-						# print(app.shape)
+						# 	)
 						app = app.reshape(
-							nn[0],start_shape[0]+1,
-							nn[1],start_shape[1]+1,
-							nn[2],start_shape[2]+1,
+							nn[0],start_shape[0],
+							nn[1],start_shape[1],
+							nn[2],start_shape[2],
 							)
 						# print(app.shape)
-						app = app.sum(axis=(0,2,4))[1:,1:,1:]
+						app = app.sum(axis=(0,2,4))#[1:,1:,1:]
 						# print(app.shape)
 						app2 = np.roll(app, delta, axis=(0,1,2))
 
 						###########################################################################
 						# Test plot sph_harm and states
+						# x, y, index = utils.remap_plane(
+						# 	self.recipr/ nn.reshape(3,1) / (2*np.pi),
+						# 	(XYZ[0].min(), XYZ[0].max()),
+						# 	(XYZ[1].min(), XYZ[1].max()),
+						# 	(XYZ[2].min(), XYZ[2].max()),
+						# 	XYZ.shape[1:], (1,)*3
+						# 	)
+
 						# rrrr = start_shape[2]//2
 						# import matplotlib.pyplot as plt
 						# aXYZ = utils.xyz_mesh(
@@ -164,17 +191,45 @@ class pw_out(bands, structure):
 						# 	base = self.direct
 						# 	)
 						# fig, ax = plt.subplots(2,2, figsize=(15,10))
-						# ax[0,0].contourf(XYZ[0,:,:,rrrr],XYZ[1,:,:,rrrr],harm[:,:,rrrr].real,100,cmap='seismic')
-						# ax[0,1].contourf(XYZ[0,:,:,rrrr],XYZ[1,:,:,rrrr],val[:,:,rrrr].real,cmap='seismic')
-						# ax[1,0].contourf(aXYZ[0,:,:,rrrr],aXYZ[1,:,:,rrrr],
-						# 	app[:,:,rrrr].real,
-						# 	cmap='seismic'
+						# ax[0,0].contourf(x,y,harm[index].real.reshape(x.shape),100,cmap='seismic')
+						# ax[0,0].scatter(x,y,
+						# 	color='k', s=1
+						# 	)
+						# ax[0,1].contourf(x,y,val[index].real.reshape(x.shape),cmap='seismic')
+						# ax[0,1].scatter(x,y,
+						# 	color='k', s=1
 						# 	)
 
-						# toplot = app2[:,:,(rrrr+delta[2])%app.shape[2]].real
-						# p = ax[1,1].contourf(aXYZ[0,:,:,0],aXYZ[1,:,:,0],toplot,
+						# x, y, index = utils.remap_plane(
+						# 	self.recipr/ nn.reshape(3,1) / (2*np.pi),
+						# 	(aXYZ[0].min(), aXYZ[0].max()),
+						# 	(aXYZ[1].min(), aXYZ[1].max()),
+						# 	(aXYZ[2].min(), aXYZ[2].max()),
+						# 	aXYZ.shape[1:], (1,)*3
+						# 	)
+						# ax[1,0].contourf(x,y,
+						# 	app[index].real.reshape(x.shape),
+						# 	cmap='seismic'
+						# 	)
+						# ax[1,0].scatter(x,y,
+						# 	color='k', s=.5
+						# 	)
+						# z = c[2]
+						# x, y, index = utils.remap_plane(
+						# 	self.recipr/ nn.reshape(3,1) / (2*np.pi),
+						# 	(aXYZ[0].min(), aXYZ[0].max()),
+						# 	(aXYZ[1].min(), aXYZ[1].max()),
+						# 	(z,z),
+						# 	aXYZ.shape[1:], (1,)*3
+						# 	)
+
+						# toplot = app2[index].real.reshape(x.shape)
+						# p = ax[1,1].contourf(x,y,toplot,
 						# 	cmap='seismic',
 						# 	vmin=-np.abs(toplot).max(),vmax=np.abs(toplot).max()
+						# 	)
+						# ax[1,1].scatter(x,y,
+						# 	color='k', s=.5
 						# 	)
 						# ax[1,1].scatter(c[0],c[1],color='r')
 						# # for ii in range(4):

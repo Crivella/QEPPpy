@@ -70,6 +70,38 @@ def lowdin_ortho(base):
 
 	return base.reshape(-1,*shape)
 
+def remap_plane(
+	invT, 
+	Xlim, Ylim, Zlim, 
+	shape, rep, fixaxis=2
+	):
+	# Xlim, Ylim, Zlim = lim
+	lim = (Xlim, Ylim, Zlim)
+	shape = np.array(shape)
+	print(lim,shape,rep,sep='\n')
+	# if lim[fixaxis][0] != lim[fixaxis][2]:
+	# 	raise ValueError("Rmin Rmax must be equal for fixed axis direction")
+	xmin, xmax = Xlim
+	ymin, ymax = Ylim
+	zmin, zmax = Zlim
 
+	m1 = np.linspace(*lim[(fixaxis+1)%3], shape[0] * rep[0])
+	m2 = np.linspace(*lim[(fixaxis+2)%3], shape[1] * rep[1])
+	a,b = np.meshgrid(m1,m2)
+
+	fix = np.ones(a.shape) * (zmax + zmin)/2
+	rec = np.round(
+			np.dot(
+			invT, # self.direct.T.I,
+			[a.flatten(),b.flatten(),fix.flatten()]
+			),
+			decimals=8
+		) % 1
+
+	rec = np.array(rec) * shape.reshape(3,1)
+	rec = rec.astype(dtype='int')
+	i,j,k = rec
+	
+	return a, b, tuple((i,j,k))
 
 

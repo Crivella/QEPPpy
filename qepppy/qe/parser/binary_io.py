@@ -56,5 +56,5 @@ class binary_io():
 			return val
 		elif isinstance(val, str):
 			return int(self.__dict__[val])
-		raise NotImplementedError("{} must be either int or str... Correct your code!!!".format(val))
+		raise ValueError("{} must be either int or str... Correct your code!!!".format(val))
 

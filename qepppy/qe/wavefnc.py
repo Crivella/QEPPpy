@@ -1,4 +1,3 @@
-import numpy as np
 from .FFTgrid import FFTgrid
 from .parser.binary_io import binary_io as bin_io
 from .._decorators import store_property

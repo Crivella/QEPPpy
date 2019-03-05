@@ -4,12 +4,9 @@ from .. import utils
 
 class FFTgrid():
 	def make_density_grid(self, bnd_list=[1]):
-		rho = None
+		rho = 0
 		for bnd in bnd_list:
-			if rho is None:
-				rho = np.abs(self.make_psi_grid(bnd))**2
-			else:
-				rho += np.abs(self.make_psi_grid(bnd))**2
+			rho += np.abs(self.make_psi_grid(bnd))**2
 
 		return rho
 
@@ -58,26 +55,35 @@ class FFTgrid():
 			fig = plt.figure()
 			ax1 = fig.add_subplot(111)
 
-			s1, s2, _ = rho.shape
-			a = np.linspace(X.min(),X.max(), s1 * rep)
-			b = np.linspace(Y.min(),Y.max(), s2 * rep)
+			# s1, s2, _ = rho.shape
+			# a = np.linspace(X.min(),X.max(), s1 * rep)
+			# b = np.linspace(Y.min(),Y.max(), s2 * rep)
 
-			y,x = np.meshgrid(b,a)
-			z   = np.ones(x.shape) * zs
+			# y,x = np.meshgrid(b,a)
+			# z   = np.ones(x.shape) * zs
 
-			rec = np.round(
-					np.dot(
-					self.recipr/(2*np.pi), # self.direct.T.I,
-					[x.flatten(),y.flatten(),z.flatten()]
-					),
-					decimals=8
-				) % 1
-			rec = np.array(rec) * np.array(rho.shape).reshape(3,1)
-			rec = rec.astype(dtype='int')
-			i,j,k = rec
+			# rec = np.round(
+			# 		np.dot(
+			# 		self.recipr/(2*np.pi), # self.direct.T.I,
+			# 		[x.flatten(),y.flatten(),z.flatten()]
+			# 		),
+			# 		decimals=8
+			# 	) % 1
+			# rec = np.array(rec) * np.array(rho.shape).reshape(3,1)
+			# rec = rec.astype(dtype='int')
+			# i,j,k = rec
+
+			x,y, index = utils.remap_plane(
+				self.recipr/(2*np.pi),
+				(X.min(),X.max()),
+				(Y.min(),Y.max()),
+				(zs,zs),
+				np.array(rho.shape),
+				(rep,)*3
+				)
 
 			ax1.contourf(
-				x, y, rho[tuple((i,j,k))].reshape(x.shape),
+				x, y, rho[index].reshape(x.shape),
 				100, cmap=cmap
 				)
 
