@@ -39,12 +39,12 @@ class pw_out(bands, structure):
 			pseudo.append(UPF(xml=file))
 		return pseudo
 
-	def test_pdos_states(self, lmax=1, nn=(1,1,1)):
+	def test_pdos_states(self, lmax=1, nn=(1,1,1), grid_expand=(1,1,1)):
 		states_mesh = []
 		states_name = []
 		print(self.direct)
 
-		start_shape = self.fft_dense_grid//2
+		start_shape = self.fft_dense_grid * grid_expand #//2
 		print(start_shape)
 		# nn = (1,1,1)#(3,3,1)
 		nn = np.array(nn)
@@ -67,13 +67,10 @@ class pw_out(bands, structure):
 		# print(XYZ.shape)
 		# exit()
 
-		from itertools import product
-		ll = product(*(range(-np.ceil((nr-1)/2).astype('int'),np.ceil((nr-1)/2).astype(int)+1) for nr in nn))
-		print(list(ll))
+		# from itertools import product
+		# ll = product(*(range(-np.ceil((nr-1)/2).astype('int'),np.ceil((nr-1)/2).astype(int)+1) for nr in nn))
+		# print(list(ll))
 		# exit()
-		# for nr in nn:
-		# 	ll = np.ceil((nn-1)/2)
-		# 	for lr in range(-ll,ll+1):
 
 		cXYZ  = XYZ - center.reshape(3,1,1,1)
 		norm  = np.linalg.norm(cXYZ, axis=0) + 1E-16
@@ -83,7 +80,7 @@ class pw_out(bands, structure):
 			norm[:,:,0],
 			norm[:,0,:],
 			))
-			)*10.98
+			)*0.98
 
 		# test_harm = np.zeros(((lmax+1)**2, *norm.shape), dtype=complex)
 		# for rx,ry,rz in ll:
@@ -104,10 +101,10 @@ class pw_out(bands, structure):
 				test_harm.append(harm)
 
 		# print(test_harm.shape)
-		test_harm = np.array([a/np.linalg.norm(a) for a in test_harm])
+		# test_harm = np.array([a/np.linalg.norm(a) for a in test_harm])
 
-		th = np.array([a.flatten() for a in test_harm])
-		print("TEST sph_harm overlap: \n", np.dot(np.conj(th),th.T))
+		# th = np.array([a.flatten() for a in test_harm])
+		# print("TEST sph_harm overlap: \n", np.dot(np.conj(th),th.T))
 		# exit()
 
 		na = 0
@@ -146,31 +143,23 @@ class pw_out(bands, structure):
 						harm = test_harm[l**2 + m + l]
 
 						app = val * harm
-						# for d in range(3):
-						# 	for i in range(nn[d]-1,-1,-1):
-						# 		i *= (np.array(grid_shape)//nn)[d]
-						# 		s = [slice(None)]*3
-						# 		s[d] = i-1
-						# 		app = np.insert(app,i,app[tuple(s)],axis=d)
-						# # app = app.reshape(
-						# # 	nn[0],start_shape[0]+1,
-						# # 	nn[1],start_shape[1]+1,
-						# # 	nn[2],start_shape[2]+1,
-						# # 	).sum(axis=(0,2,4))
-						# # print(app.shape)
-						# app = app.reshape(
-						# 	nn[0],start_shape[0]+1,
-						# 	nn[1],start_shape[1]+1,
-						# 	nn[2],start_shape[2]+1,
-						# 	)
+
 						app = app.reshape(
 							nn[0],start_shape[0],
 							nn[1],start_shape[1],
 							nn[2],start_shape[2],
-							)
+							).sum(axis=(0,2,4))
 						# print(app.shape)
-						app = app.sum(axis=(0,2,4))#[1:,1:,1:]
+						# app = app.sum(axis=(0,2,4))#[1:,1:,1:]
 						# print(app.shape)
+
+						# app = app.reshape(
+						# 	start_shape[0]//2, grid_expand[0],
+						# 	start_shape[1]//2, grid_expand[1],
+						# 	start_shape[2]//2, grid_expand[2],
+						# 	)
+						# app = np.average(app, axis=(1,3,5))
+
 						app2 = np.roll(app, delta, axis=(0,1,2))
 
 						###########################################################################
@@ -183,7 +172,7 @@ class pw_out(bands, structure):
 						# 	XYZ.shape[1:], (1,)*3
 						# 	)
 
-						# rrrr = start_shape[2]//2
+						# # rrrr = start_shape[2]//2
 						# import matplotlib.pyplot as plt
 						# aXYZ = utils.xyz_mesh(
 						# 	start_shape,
@@ -236,7 +225,7 @@ class pw_out(bands, structure):
 						# # 	for i in range(XYZ[0].shape[0]):
 						# # 		ax[ii//2,ii%2].plot([XYZ[0,i,0,0],XYZ[0,i,-1,0]], [XYZ[1,i,0,0],XYZ[1,i,-1,0]], color='k')
 						# # 		ax[ii//2,ii%2].plot([XYZ[0,0,i,0],XYZ[0,-1,i,0]], [XYZ[1,0,i,0],XYZ[1,-1,i,0]], color='k')
-						# ax[0,0].set_title("l={} m={}".format(l,m,rrrr))
+						# ax[0,0].set_title("l={} m={}".format(l,m,.5))
 						# ax[0,1].set_title("CHI")
 						# ax[1,0].set_title("CHI * sph_harm + reshape_sum")
 						# ax[1,1].set_title("After ROLL")
@@ -255,11 +244,12 @@ class pw_out(bands, structure):
 		nlist, slist = self.test_pdos_states(**kwargs)
 		slist = utils.lowdin_ortho(slist)
 		# print(slist.shape)
-		XYZ = utils.xyz_mesh(
-			self.fft_dense_grid//2,
-			base = self.direct
-			)
+		# XYZ = utils.xyz_mesh(
+		# 	self.fft_dense_grid,#//2,
+		# 	base = self.direct
+		# 	)
 		grid_shape = slist[0].shape
+		print("SHAPE:", grid_shape)
 		for nk,psi in enumerate(self.tmp):
 			print("KPT (#{:>4d}): {}".format(nk+1, self.kpt_cart[nk]))
 			for nb in range(self.n_bnd):	
@@ -271,6 +261,7 @@ class pw_out(bands, structure):
 
 				tot = 0
 				for name,val in zip(nlist, slist):
+					# print("Multiply:", dgrid.shape, val.shape)
 					comp = np.abs(np.vdot(dgrid.flat, val.flat) / (np.linalg.norm(dgrid) * np.linalg.norm(val)))**2
 					tot += comp
 					if comp < thr:
@@ -323,7 +314,7 @@ class pw_out(bands, structure):
 					# 	# ax[0].set_title(str(i))
 					# plt.show()
 					###########################################################################
-				print("{:37s}: {:6.3f}%".format("Total", tot*100))
+				print("{:37s}: {:6.3f}%".format("    Total", tot*100))
 			break
 
 

@@ -78,7 +78,7 @@ def remap_plane(
 	# Xlim, Ylim, Zlim = lim
 	lim = (Xlim, Ylim, Zlim)
 	shape = np.array(shape)
-	print(lim,shape,rep,sep='\n')
+	# print(lim,shape,rep,sep='\n')
 	# if lim[fixaxis][0] != lim[fixaxis][2]:
 	# 	raise ValueError("Rmin Rmax must be equal for fixed axis direction")
 	xmin, xmax = Xlim
