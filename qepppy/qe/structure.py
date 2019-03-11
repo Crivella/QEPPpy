@@ -193,8 +193,11 @@ class structure(dfp, cell):
 
 	@property
 	def _atoms_typ(self):
-		return list([a['name'] for a in self._atoms])
-
+		res = list([a['name'] for a in self._atoms])
+		n = self.n_atoms
+		if len(res) == n*2:
+			res = res[:n]
+		return res
 	@property
 	def _atoms_mass(self):
 		return np.array([a['mass'] for a in self._atom_spec])

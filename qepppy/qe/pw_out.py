@@ -1,13 +1,11 @@
 import os
 import scipy
-import scipy.interpolate
 import numpy as np
 from .bands        import bands     as bands
 from .structure    import structure as structure
 from .tmp          import tmp
 from .UPF          import UPF
 # from ..utils       import xyz_mesh
-from .. import utils
 from .._decorators import store_property
 # from ..logger import logger
 
@@ -17,7 +15,8 @@ class pw_out(bands, structure):
 	Instance used to handle QE outputs (by parsing the "data-file*.xml" file")
 	fname: name of the "data-file*.xml" to parse
 	kwargs:
-	 - schema = Name of the data-file*.xml to parse
+	 - outfile = Name of the *.out pw outfile to parse
+	 - schema  = Name of the data-file*.xml to parse
 	"""
 	__name__ = "pw_out"
 	def __init__( self, **kwargs):
