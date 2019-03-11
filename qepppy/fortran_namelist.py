@@ -88,6 +88,8 @@ class fortran_namelist(OrderedDict):
 		for k,v in self.items():
 			if isinstance(v, list):
 				for i,sv in enumerate(v):
+					if sv is None:
+						continue
 					res += '{0}{1:{4}{6}s} = {2:{5}{7}}{3}\n'.format(tabs, "{}({})".format(k,i+1), self._value_repr_(v[i]), 
 						comma, al_1, al_2, al_p, al_v)
 			else:
@@ -110,19 +112,7 @@ class fortran_namelist(OrderedDict):
 			return max(len(self._value_repr_(a)) for a in self.values())
 		return 0
 
-	@staticmethod
-	def _value_repr_(value):
-		if isinstance(value, str):
-			return "'{}'".format(value)
-		if isinstance(value, bool):
-			if value:
-				return '.TRUE.'
-			return '.FALSE.'
-		if isinstance(value, list):
-			return ', '.join(fortran_namelist._value_repr_(a) for a in value)
-		if value is None:
-			return '0'
-		return str(value)
+
 		
 	def parse(self, src):
 		if isinstance(src, str):
@@ -144,10 +134,8 @@ class fortran_namelist(OrderedDict):
 				if v is None:
 					continue
 				v = format_f90_to_py(v, not a['strip_single'] is None, not a['strip_double'] is None)
-				if not i is None:
-					self._set_vec_value_(new, p.lower(), v, i)
-				else:
-					new[p.lower()] = v
+				new.set_item(p.lower(), v, i)
+
 			self[elem['name'].lower()] = new
 
 	def deep_find(self, pattern, up=None):
@@ -160,33 +148,26 @@ class fortran_namelist(OrderedDict):
 			raise
 
 		tof_nl, tof_param, n  = self._tokenize_pattern_(pattern, up)
-		if tof_nl is None or tof_nl == self.name:
-			res =  self[tof_param]
+		if tof_nl is None or tof_nl.lower() == self.name:
+			res =  self[tof_param.lower()]
 			for i in n:
 				res = res[int(i)-1]
 			return res
 
 		raise
 
-	@staticmethod
-	def _tokenize_pattern_(pattern, up=None):
-		if not isinstance(pattern, list):
-			pattern = pattern.split("/")
-			pattern = [None]*2 + pattern
-			pattern = pattern[-2:]
-		tom_major, tof_minor  = pattern
-		if up:
-			tom_major = up
+	def set_item(self, key, value, i=None):
+		tof_nl, tof_param, n = self._tokenize_pattern_(key)
+		if not tof_nl is None:
+			app = self[tof_nl.lower()]
+		else:
+			app = self
 
-		n = []
-		if '(' in tof_minor:
-			n = tof_minor.split('(')[1].split(')')[0]
-			n = n.replace(" ", "").split(",")
-			tof_minor = tof_minor.split('(')[0]
+		if i is None:
+			app[tof_param.lower()] = value
+		else:
+			app._set_vec_value_(tof_param.lower(), value, i)
 
-		return tom_major, tof_minor, n
-
-	@staticmethod
 	def _set_vec_value_(nl, param, value, index):
 		index = re.findall(r'[\+\d]+', index)
 		if not param in nl or not isinstance(nl[param], list):
@@ -202,3 +183,33 @@ class fortran_namelist(OrderedDict):
 				if not isinstance(ptr[i], list):
 					ptr[i] = []
 				ptr = ptr[i]
+
+	@staticmethod
+	def _tokenize_pattern_(pattern, up=None):
+		if not isinstance(pattern, list):
+			pattern = ([None]*2 +  pattern.split("/"))[-2:]
+		tof_major, tof_minor  = pattern
+		if up:
+			tof_major = up
+
+		n = []
+		if '(' in tof_minor:
+			n = tof_minor.split('(')[1].split(')')[0]
+			n = n.replace(" ", "").split(",")
+			tof_minor = tof_minor.split('(')[0]
+
+		return tof_major, tof_minor, n
+
+	@staticmethod
+	def _value_repr_(value):
+		if isinstance(value, str):
+			return "'{}'".format(value)
+		if isinstance(value, bool):
+			if value:
+				return '.TRUE.'
+			return '.FALSE.'
+		if isinstance(value, list):
+			return ', '.join(fortran_namelist._value_repr_(a) for a in value)
+		if value is None:
+			return '0'
+		return str(value)

@@ -42,40 +42,62 @@ class qe_namelist(f90nml.fortran_namelist):
 		import ast
 		self._templ_ = ast.literal_eval(file)
 
+
+
 	def validate(self):
+		for nl in self.values():
+			name = nl.name.upper()
+			if not name in self._templ_:
+				raise ValidateError("Invalid namelist '{}'.".format(name))
+			for k,v in nl.items():
+				if not k in self._templ_[name]:
+					raise ValidateError("\n\tIn namelist '{}' invalid param '{}'.".format(name,k))
+				self._validate_tmpl_item(name, k, v)
+
+		self._validate_default_()
+
+	def _validate_default_(self):
 		for name in self._templ_['nl']:
 			for elem,v in self._templ_[name].items():
-				try:
-					comp = self.deep_find("{0}/{1}".format(name,elem))
-				except:
-					continue
-				typ    = v['t']
-				possib = v['c']
-				vec    = v['vec']
-
-				if not vec is None:
-					try:
-						v['v'] = self._validate_vec_(comp, typ, vec)
-					except Exception as e:
-						raise ValidateError("\n\t{}/{}:  invalid vec value '{}'. ".format(name,elem,comp) + str(e))
-				else:
-					comp = tf90_to_py[typ](comp)
-					if possib and all(not comp in a for a in possib) and comp != '':
-						raise ValidateError("\n\t{}/{}: '{}' not among possibilities {}".format(name,elem,comp,possib))
-					v['v'] = comp
+				if v['v'] == '***':
+					raise ValidateError("\n\tMandatory param '{}/{}' is not set.".format(name, elem))
 
 	def _validate_vec_(self, value, typ, lim):
 		inf = lim[0]
 		sup = lim[1]
-		if isinstance(lim, str):
+		if isinstance(sup, str):
 			sup = self.deep_find(sup)
 
 		if isinstance(value, (int,float)):
 			value = [value,]
 		if len(value) <= sup-inf+1:
-			return [tf90_to_py[typ](a) for a in value]
+			return [tf90_to_py[typ](a) if not a is None else None for a in value]
 		else:
 			raise ValidateError("Too many elements.")
+
+	def _validate_tmpl_item(self, namelist, param, value):
+		if namelist is None:
+			for n in self._templ_['namelist']:
+				if param in self._templ_[n]:
+					namelist = n
+					break
+
+		v = self._templ_[namelist][param]
+
+		typ    = v['t']
+		possib = v['c']
+		vec    = v['vec']
+
+		if not vec is None:
+			try:
+				v['v'] = self._validate_vec_(value, typ, vec)
+			except Exception as e:
+				raise ValidateError("\n\t{}/{}:  invalid vec value '{}'. ".format(namelist, param, value) + str(e))
+		else:
+			value = tf90_to_py[typ](value)
+			if possib and all(not value in a for a in possib) and value != '':
+				raise ValidateError("\n\t{}/{}: '{}' not among possibilities {}".format(namelist, param, value, possib))
+			v['v'] = value
 
 class qe_card(OrderedDict):
 	_namelist = qe_namelist()
@@ -283,36 +305,39 @@ class input_files():
 	Class to handle any QE input (after loading the proper template).
 	Supposed to be used as a parent class for child specific to the qe file.
 	kwargs:
-	 - parse      = Name of the file to parse
-	 - templ_file = Name of the template file to use
+	 - src        = Name of the file to parse
 	"""
 	templ_file = None
-	def __init__(self, src):
+	def __init__(self, src=None):
 		if not self.templ_file:
 			raise ParseInputError("Must give a template file.\n")
 	
-		self.parse_input(src)
+		self.namelist = qe_namelist(tpl=self.templ_file)
+		self.card     = qe_card(self.namelist)
+		if src:
+			self.parse_input(src)
 
 	def __getitem__(self, key):
 		return self.card.__getitem__(key)
+
+	def __setitem__(self, key, value):
+		nl, name = ([None]*2 + key.split('/'))[-2:]
+		key, i = (name.split('(') + [None]*2)[:2]
+		self.namelist[nl].set_item(key, value, i)
 
 	def __str__(self):
 		return str(self.namelist) + str(self.card)
 
 	def parse_input(self, src):
-		nl   = qe_namelist(tpl=self.templ_file)
 		with open(src) as f:
-			nl.parse(f)
-		nl.validate()
-		self.namelist = nl
+			self.namelist.parse(f)
+		self.namelist.validate()
 		
-		card = qe_card(nl)
 		with open(src) as f:
-			card.parse(f)
-		card.validate()
-		self.card = card
+			self.card.parse(f)
+		self.card.validate()
 
-	def find(self, *args, up=None):
+	def _find(self, *args, up=None):
 		res = []
 		for pattern in args:
 			res.append(self.card.deep_find(pattern, up))
