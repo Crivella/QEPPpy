@@ -40,20 +40,19 @@ class _cell(atm, latt):
 		   - 2: Use 3d spheres for atoms and bonds as in 1.
 		   - 3: Use 3d spheres for atoms and cylinders for bonds.
 		"""
-		from . import cell_graphic as cg
+		# from . import cell_graphic as cg
 		import matplotlib.pyplot as plt
 		from mpl_toolkits.mplot3d import Axes3D
 
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
 
-		typ = self.atoms_typ
 
 		if recipr:
 			ax.set_xlabel(r"$x (Bohr^{-1})$")
 			ax.set_ylabel(r"$y (Bohr^{-1})$")
 			ax.set_zlabel(r"$z (Bohr^{-1})$")
-			cg.draw_Wigner_Seitz(ax, self.recipr)
+			self.draw_Wigner_Seitz(ax)
 			plt.show()
 			return
 		else:

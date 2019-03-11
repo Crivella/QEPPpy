@@ -18,7 +18,7 @@ DESCRIPTION = 'Python post-processing and input-output handling library for Quan
 URL = 'https://github.com/Crivella/QEPPpy'
 EMAIL = 'davide.grassano@roma2.infn.it'
 AUTHOR = 'Davide Grassano'
-REQUIRES_PYTHON = '>=3.5.2'
+REQUIRES_PYTHON = '>=3.6'
 VERSION = None
 
 # What packages are required for this module to be executed?
@@ -26,6 +26,7 @@ REQUIRED = [
 	'numpy',
 	'matplotlib',
     'scipy',
+    'decorator',
 ]
 
 # What packages are optional?
