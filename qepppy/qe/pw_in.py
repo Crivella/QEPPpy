@@ -59,6 +59,12 @@ class pw_in(inp_f, structure):
 	def n_types(self):
 		return self._find("ntyp")
 
+	def __getattr__(self, attr):
+		try:
+			return self._find(attr)
+		except:
+			return object.__getattribute__(self, attr)
+
 	def __str__(self):
 		msg = inp_f.__str__(self)
 		if not 'ATOMIC_POSITIONS' in self.card:

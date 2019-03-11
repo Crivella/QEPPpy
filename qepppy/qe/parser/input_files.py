@@ -20,7 +20,7 @@ tf90_to_np = {
 	'CHARACTER': 'U64'
 	}
 
-class qe_namelist(f90nml.fortran_namelist):
+class qe_namelist(f90nml.fortran_namelist_collection):
 	def __init__(self, tpl=None, **kwargs):
 		if tpl:
 			self.load_templ(tpl)
@@ -45,8 +45,8 @@ class qe_namelist(f90nml.fortran_namelist):
 
 
 	def validate(self):
-		for nl in self.values():
-			name = nl.name.upper()
+		for name,nl in self.items():
+			name = name.upper()
 			if not name in self._templ_:
 				raise ValidateError("Invalid namelist '{}'.".format(name))
 			for k,v in nl.items():
@@ -138,7 +138,7 @@ class qe_card(OrderedDict):
 		try:
 			return self.namelist.deep_find(pattern, up)
 		except:
-			tof_card, tof_param, n  = self.namelist._tokenize_pattern_(pattern, up)
+			tof_card, tof_param, n  = f90nml._tokenize_pattern_(pattern, up)
 
 			if tof_param in self._templ_['card']:
 				return self._templ_[tof_param]['v']
