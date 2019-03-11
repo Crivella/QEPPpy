@@ -3,16 +3,26 @@ from .parser.input_files import input_files as inp_f
 
 class pw_in(inp_f, structure):
 	"""
-	Instance used to handle QE pw.x input files
+	Instance used to handle QE pw.x input files.
+	Provides an interface for the 'structure' output file methods, in order to 
+	call methods related to the atomic structure.
 	kwargs:
 	 - src = Name of the file to parse
+
+	Parse paramenters can be accessed using the following syntax:
+	 - obj.param_name
+	 - obj['param_name']
+
+	Namelist parameters can be set using the syntax:
+	 - obj['NAMELIST/param_name']    = value
+	 - obj['NAMELIST/param_name(n)'] = value   (For vector values)
 	"""
 	templ_file = "INPUT_PW.templ"
 
 	@property
 	def _atoms(self):
 		name, x, y, z = self._find("X", "x", "y", "z", up="ATOMIC_POSITIONS")
-		coord = [(a,b,c) for a,b,c in zip(x, y, z)]
+		coord = list(zip(x, y, z))
 		return [{'name':n, 'coord':c} for n,c in zip(name, coord)]
 
 	@property
@@ -61,7 +71,7 @@ class pw_in(inp_f, structure):
 
 	def __getattr__(self, attr):
 		try:
-			return self._find(attr)
+			return super().__getitem__(attr)
 		except:
 			return object.__getattribute__(self, attr)
 
