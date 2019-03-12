@@ -1,5 +1,6 @@
 import re
 import os
+import itertools
 import numpy as np
 from collections import OrderedDict
 
@@ -20,7 +21,7 @@ tf90_to_np = {
 	'CHARACTER': 'U64'
 	}
 
-class qe_namelist(f90nml.fortran_namelist_collection):
+class qe_namelist_collection(f90nml.fortran_namelist_collection):
 	def __init__(self, tpl=None, **kwargs):
 		if tpl:
 			self.load_templ(tpl)
@@ -99,14 +100,171 @@ class qe_namelist(f90nml.fortran_namelist_collection):
 				raise ValidateError("\n\t{}/{}: '{}' not among possibilities {}".format(namelist, param, value, possib))
 			v['v'] = value
 
-class qe_card(OrderedDict):
-	_namelist = qe_namelist()
-	def __init__(self, nl, **kwargs):
+class qe_card_syntax():
+	data  = []
+	ptr   = None
+
+	low_lim    = 0
+	hgh_lim    = 0
+	mode       = 'rows'
+	def_el     = []
+	opt_el     = []
+	def_el_num = 0
+	opt_el_num = 0
+
+	def __init__(self, nl, synt):
 		self.namelist = nl
+		self.initialize(synt)
+
+	def convert_text_block(self, body):
+		res = OrderedDict()
+
+		body = list(body)
+		data = list(self.data)
+
+		while data:
+			l_s = data.pop(0)
+			l_e = body.pop(0)
+			l_e = list(filter(None,l_e.split(' ')))
+			for (name,typ), value in itertools.zip_longest(l_s, l_e):
+				res[name] = typ(value)
+
+		el = self.def_el + self.opt_el
+		res.update({a[0]:[] for a in el})
+		if 'row' in self.mode:
+			for i in range(self.max_lines(res)):
+				line = body.pop(0)
+				line = list(filter(None,line.split(' ')))
+				for app,value in itertools.zip_longest(el, line):
+					if app is None:
+						res[None] = 0
+						continue
+					name, typ = app
+					try:
+						res[name].append(typ(value))
+					except TypeError:
+						res[name].append(None)
+		else:
+			for (name,typ) in el:
+				line = body.pop(0)
+				line = list(filter(None,line.split(' ')))
+				res[name] = [typ(a) for a in line]
+
+		if body:
+			print("WARNING: Ignoring lines:\n{}".format(body))
+
+		return res
+
+	def convert_item(self, key, value):
+		for d in self.data:
+			for name,typ in d:
+				if name == key:
+					try:
+						return typ(value)
+					except:
+						return []
+
+		for name,typ in self.def_el + self.opt_el:
+			if name == key:
+				try:
+					res = []
+					for a in value:
+						try:
+							app = typ(a)
+						except:
+							app = None
+						res.append(app)
+					return res
+				except:
+					return []
+
+
+	def max_lines(self, dic):
+		lim = self.hgh_lim
+		try:
+			return int(lim)
+		except:
+			try:
+				return dic[lim]
+			except:
+				return self.namelist.deep_find(lim)
+
+
+
+	def initialize(self, synt):
+		self.data  = []
+		for elem in synt:
+			if isinstance(elem, list):
+				self.data.append([])
+				self.ptr = self.data[-1]
+				for v in elem:
+					self.ptr.append((
+						v['n'],
+						tf90_to_py[v['t']],
+						))
+
+			if isinstance(elem, tuple):
+				self.low_lim, self.hgh_lim, self.mode = elem[1:]
+
+				self.def_el     = [
+					(a['n'], tf90_to_py[a['t']])
+					for a in elem[0] if isinstance(a, dict)
+					]
+				self.def_el_num = len(self.def_el)
+				for v in elem[0]:
+					if isinstance(v, list):
+						self.opt_el = [
+							(a['n'], tf90_to_py[a['t']])
+							for a in v if isinstance(a, dict)
+							]
+						self.opt_el_num = len(self.opt_el)
+
+		self.ptr = None
+
+	def validate(self, dic):
+		if None in dic:
+			raise ValidateError("Too many element in line.")
+
+		if None in dic.values():
+			raise ValidateError("Too few elements in line.")
+
+		len_old = None
+		for (name,typ) in self.def_el:
+			app = len(dic[name])
+			if not len_old is None and app != len_old:
+				raise ValidateError("Lenght mismatch of card parameters '{}'.".format(name))
+			len_old = app
+			ml = self.max_lines(dic)
+			if app != ml:
+				raise ValidateError("Mismatch between number of params '{}': '{}' vs required '{}={}'".format(
+					name, app, self.hgh_lim, ml))
+
+			if None in dic[name]:
+				raise ValidateError("Missing element in param '{}'.".format(name))
+
+		app = []
+		len_old = None
+		for (name,typ) in self.opt_el:
+			if not len_old is None and len(dic[name]) != len_old:
+				raise ValidateError("Lenght mismatch of card parameters.")
+
+			len_old = len(dic[name])
+			app += dic[name]
+			# if None in dic[name] and all(a is None for a in dic[name]):
+			# 	raise ValidateError("Missing element in optional param '{}'.".format(name))
+
+		if None in app and any(not a is None for a in app):
+			raise ValidateError("Some optional parameters are set, but not all of them.")
+
+
+
+class qe_card_collection(OrderedDict):
+	def __init__(self, nl, **kwargs):
+		self._namelist = nl
 		super().__init__(**kwargs)
 
 	def __str__(self):
-		return self.format_output()
+		return '\n\n'.join(str(a) for a in self.values())
 
 	def __getitem__(self, value):
 		try:
@@ -114,121 +272,35 @@ class qe_card(OrderedDict):
 		except KeyError:
 			return self.deep_find(value)
 
-	def set_item(self, key, value, i=None):
-		tof_nl, tof_param, n = _tokenize_pattern_(key)
-		if not tof_nl is None:
-			app = self[tof_nl.lower()]
-		else:
-			app = self
-
-		if i is None:
-			app[tof_param.lower()] = value
-		else:
-			app._set_vec_value_(tof_param.lower(), value, i)
-
-
 	@property
 	def namelist(self):
 		return self._namelist
 
 	@namelist.setter
 	def namelist(self, value):
-		if not isinstance(value, qe_namelist):
-			raise ValueError("Namelist element must be instance of qe_namelist.")
+		if not isinstance(value, qe_namelist_collection):
+			raise ValueError("Namelist element must be instance of qe_namelist_collection.")
 		self._namelist = value
-
-	@property
-	def _templ_(self):
-		return self.namelist._templ_
-
-	def format_output(self):
-		res = ""
-		for card in self._templ_['card']:
-			ptr = self._templ_[card]
-			if not ptr['u']:
-				continue
-
-			res += card
-			if ptr['v']:
-				res += " {{{}}}".format(ptr['v'])
-			res += '\n'
-
-			synt = self._get_syntax_(card)
-			res += self._format_output_syntax_(synt) + '\n\n'
-
-		return res
-
-	def _format_output_syntax_(self, synt, mode='row', extra_pv=[]):
-		res = ""
-		print_vec = []
-		extra_pv = list(filter(lambda x: not x is None, extra_pv))
-
-		for elem in synt:
-			if isinstance(elem, dict):
-				if not isinstance(elem['v'], (list, np.ndarray)):
-					res += '  {}'.format(elem['v'])
-				else:
-					print_vec.append(elem['v'])
-			if isinstance(elem, list):
-				res = self._format_output_syntax_(elem, mode, print_vec)
-				print_vec = []
-			if isinstance(elem, tuple):
-				res += self._format_output_syntax_(elem[0], mode=elem[3])
-
-		print_vec = list(filter(lambda x: not x is None, print_vec))
-		if not print_vec:
-			return res
-		print_vec = extra_pv + print_vec
-
-		if 'col' in mode:
-			print_vec = np.array(print_vec).T
-		maximums = [max(len(str(a)) for a in v) for v in print_vec]
-		fmt = ' ' + ("  {{:{}s}}"*len(maximums)).format(*maximums)
-		res += '\n'.join(fmt.format(*[str(a) for a in v]) for v in list(zip(*print_vec)))
-
-		return res
-
-	# def format_output(self):
-	# 	return '\n\n'.join(
-	# 		card + " " +( "{{{}}}".format(value) if not value is None else '') + '\n  ' + '\n  '.join(body) 
-	# 		for card,(value,body) in self.items()
-	# 		)
 
 	def deep_find(self, pattern, up=None):
 		try:
 			return self.namelist.deep_find(pattern, up)
 		except:
 			tof_card, tof_param, n  = f90nml._tokenize_pattern_(pattern, up)
-
-			if tof_param in self._templ_['card']:
-				return self._templ_[tof_param]['v']
-			
-			res = self._deep_find_cards_(tof_card, tof_param)
+			if tof_param in self:
+				return self[tof_param].value
+			if tof_card:
+				res = self[tof_card][tof_param]
+			else:
+				for card in self.values():
+					if pattern in card:
+						res = card[tof_param]
 
 			for i in n:
-				res = res[int(i)-1]
+				res = res[int(i) - 1]
+
 			return res
 
-	def _deep_find_cards_(self, tof_card, tof_param):
-		for card in self._templ_['card']:
-			if tof_card and tof_card != card:
-				continue
-			synt = self._get_syntax_(card)
-			try:
-				return self._deep_find_syntax_(synt, tof_param)
-			except:
-				pass
-		raise
-
-	def _deep_find_syntax_(self, synt, tof_param):
-		for e in synt:
-			if isinstance(e, dict):
-				if tof_param == e['n']:
-					return e['v']
-			if isinstance(e, list):
-				return self._deep_find_syntax_(e, tof_param)
-			if isinstance(e, tuple):
-				return self._deep_find_syntax_(e[0], tof_param)
 		raise
 
 	def parse(self, src):
@@ -238,126 +310,117 @@ class qe_card(OrderedDict):
 		else:
 			content = src.read()
 
-		card_split_re = '|'.join([r'({}.*\n)'.format(a) for a in self._templ_['card']])
+		card_split_re = '|'.join([r'({}.*\n)'.format(a) for a in self.namelist._templ_['card']])
 		mid = list(filter(None,re.split(card_split_re,content)))[1:]
 
 		for name,body in zip(mid[::2],mid[1::2]):
 			app   = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict()
 			name  = app['name']
 			value = app['value']
-			# name,value = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict().values()
 			if not value is None:
 				value = value.replace('{', '').replace('}', '')
+				
+			new       = qe_card(self)
+			new.name  = name.lower()
+			new.value = value
+			new.body  = body.replace('\t', ' ').rstrip().split('\n')
+			new.assimilate()
 
-			self[name] = (value, body.replace('\t', ' ').rstrip().split('\n'))
+			self[name] = new
 
 	def validate(self):
-		# from io import StringIO
-		for name in self._templ_['card']:
-			ptr = self._templ_[name]
-			if not name in self:
-				if ptr['r']:
-					raise ValidateError("Mandatory CARD '{}' not set.".format(name))
+		for card in self.values():
+			card.validate()
+
+
+
+class qe_card(OrderedDict):
+	_parent = None
+	def __init__(self, parent=None, **kwargs):
+		self._parent = parent
+		super().__init__(**kwargs)
+
+	def __str__(self):
+		return self.format_output()
+
+	def __setitem__(self, key, value):
+		value = self.syntax.convert_item(key, value)
+		super().__setitem__(key, value)
+
+	@property
+	def namelist(self):
+		return self._parent.namelist
+
+	@namelist.setter
+	def namelist(self, value):
+		self.parent.namelist = value
+
+	@property
+	def _templ_(self):
+		return self.namelist._templ_
+
+	@property
+	def syntax(self):
+		if not hasattr(self, '_syntax'):
+			card = self._templ_[self.name.upper()]
+			val  = self.value
+			if not val:
+				val = card['d']
+
+			for k,v in card.items():
+				if not 'syntax' in k:
+					continue
+				if isinstance(v['cond'], str) and not val in v['cond']:
+					continue
+				self._syntax = qe_card_syntax(self.namelist, v['l'])
+				break
+
+		return self._syntax
+
+	def assimilate(self):
+		synt = self.syntax
+		self.update(synt.convert_text_block(self.body))
+
+	def format_output(self):
+		res = ""
+		res += self.name.upper() + (" {{{}}}".format(self.value) if not self.value is None  else '')
+		res += '\n'
+		check = True
+		to_print = []
+		for k,v in self.items():
+			if isinstance(v, list):
+				if not check:
+					check = True
+					res += '\n'
+				if all(a == None for a in v):
+					continue
+				to_print.append(v)
 				continue
-			val, body = self[name]
 
-			ptr['u'] = True
-			possib = ptr['c']
-			if possib and all(not val in a for a in possib) and val != '':
-				raise ValidateError("\n\t{}: '{}' not among possibilities {}".format(name,val,possib))
-			ptr['v'] = val
+			check = False
+			res += ' {}'.format(v)
 
-			synt = self._get_syntax_(ptr, val)
-			if synt is None:
-				continue
+		if 'row' in self.syntax.mode:
+			app1 = to_print
+			app2 = zip(*to_print)
+			fmt = "  {{:{}s}}" * len(to_print)
+		else:
+			app1 = zip(*to_print)
+			app2 = to_print
+			fmt = "  {{:{}s}}" * len(to_print[0])
 
-			with open("tmp-card.123", "w") as f:
-				f.write('\n'.join(body))
-			with open("tmp-card.123") as f:
-				try:
-					n = self._validate_syntax_(synt, f)
-				except ValidateError as e:
-					raise ValidateError("{}: ".format(name) + str(e))
+		max_l = [max(len(str(a)) for a in v) for v in app1]
+		for v in app2:
+			res += fmt.format(*max_l).format(*[str(a) for a in v]) + '\n'
 
-				remain = f.read()
-				if remain:
-					print("Ignoring:\n'''\n{}\n'''".format(remain))
-					n = remain.count('\n') + 1
-					for i in range(n):
-						self[name][1].pop()
-
-			os.remove("tmp-card.123")
-
-	def _validate_syntax_(self, synt, data):
-		for elem in synt:
-			if isinstance(elem, dict):
-				typ = tf90_to_np[elem['t']]
-				extract = np.fromfile(data, dtype=typ, count=1, sep=' ')[0]
-				if isinstance(elem['v'], list):
-					elem['v'].append(extract)
-				else:
-					elem['v']=extract
-			if isinstance(elem, list):
-				self._validate_syntax_(elem, data)
-			if isinstance(elem, tuple):
-				try:
-					max_lines = int(elem[2])
-				except:
-					max_lines = self.deep_find(elem[2])
-				lines_tok = []
-				for i in range(max_lines):
-					r = data.readline()
-					if not r:
-						raise ValidateError("Too few lines.")
-					lines_tok.append(list(filter(None, r.rstrip().split(" "))))
+		return res
 
 
-				extract = np.array(lines_tok)
-				if elem[3] == 'cols':
-					extract = extract.T
-					if extract.shape[0] > max_lines:
-						raise ValidateError("Too many elements on line. Expected {}".format(max_lines))
-				self._validate_shape_(extract, elem)
-				self._assign_tuple_(extract, elem)
-
-	def _validate_shape_(self, extract, elem):
-		types, opt_types = self._get_tuple_types_(elem)
-		if extract.shape[1] > len(types):
-			types += opt_types
-			if extract.shape[1] > len(types):
-				raise ValidateError("Too many elements on line. Expected {}".format(len(types)))
-
-	def _assign_tuple_(self, extract, elem):
-		for n1,e1 in enumerate(elem[0]):
-			if isinstance(e1, dict):
-				e1['v'] = extract[:,n1].astype(tf90_to_np[e1['t']])
-			if isinstance(e1, list):
-				if n1 == extract.shape[1]:
-					return
-				for n2,e2 in enumerate(e1):
-					e2['v'] = extract[:,n1+n2].astype(tf90_to_np[e2['t']])
-
-	def _get_syntax_(self, card, val=None):
-		if isinstance(card, str):
-			card = self._templ_[card]
-		if not val:
-			val = card['v']
-		for k,v in card.items():
-			if not 'syntax' in k:
-				continue
-			if isinstance(v['cond'], str) and not val in v['cond']:
-				continue
-			return v['l']
-
-	@staticmethod
-	def _get_tuple_types_(elem):
-		types = [tf90_to_py[a['t']] for a in elem[0] if isinstance(a, dict)]
-		opt_types = []
-		for e in elem[0]:
-			if isinstance(e, list):
-				opt_types = [tf90_to_py[a['t']] for a in e]
-
-		return types, opt_types
+	def validate(self):
+		try:
+			self.syntax.validate(self)
+		except ValidateError as e:
+			raise ValidateError("ERROR in card '{}':\n".format(self.name.upper()), str(e))
 
 class input_files():
 	"""
@@ -371,35 +434,43 @@ class input_files():
 		if not self.templ_file:
 			raise ParseInputError("Must give a template file.\n")
 	
-		self.namelist = qe_namelist(tpl=self.templ_file)
-		self.card     = qe_card(self.namelist)
+		self.namelist_c = qe_namelist_collection(tpl=self.templ_file)
+		self.card_c     = qe_card_collection(self.namelist_c)
 		if src:
 			self.parse_input(src)
 
 	def __getitem__(self, key):
-		return self.card.__getitem__(key)
+		return self.card_c.__getitem__(key)
 
 	def __setitem__(self, key, value):
 		nl, name = ([None]*2 + key.split('/'))[-2:]
 		key, i = (name.split('(') + [None]*2)[:2]
-		self.namelist[nl].set_item(key, value, i)
+		if isinstance(i, str):
+			i = int(i.replace(')', '')) - 1
+		try:
+			if not i is None:
+				self.card_c[nl][key][i] = value
+			else:
+				self.card_c[nl][key] = value
+		except:
+			self.namelist_c[nl].set_item(key, value, i)
 
 	def __str__(self):
-		return str(self.namelist) + str(self.card)
+		return str(self.namelist_c) + str(self.card_c)
 
 	def parse_input(self, src):
 		with open(src) as f:
-			self.namelist.parse(f)
-		self.namelist.validate()
+			self.namelist_c.parse(f)
+		self.namelist_c.validate()
 		
 		with open(src) as f:
-			self.card.parse(f)
-		self.card.validate()
+			self.card_c.parse(f)
+		self.card_c.validate()
 
 	def _find(self, *args, up=None):
 		res = []
 		for pattern in args:
-			res.append(self.card.deep_find(pattern, up))
+			res.append(self.card_c.deep_find(pattern, up))
 		if len(res) == 1:
 			res = res[0]
 		return res

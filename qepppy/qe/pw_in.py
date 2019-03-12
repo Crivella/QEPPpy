@@ -77,14 +77,14 @@ class pw_in(inp_f, structure):
 
 	def __str__(self):
 		msg = inp_f.__str__(self)
-		if not 'ATOMIC_POSITIONS' in self.card:
+		if not 'ATOMIC_POSITIONS' in self.card_c:
 			msg += structure.__str__(self)
 		return msg
 
 	def validate(self):
 		structure.validate(self)
-		self.namelist.validate()
-		self.card.validate()
+		self.namelist_c.validate()
+		self.card_c.validate()
 
 
 
