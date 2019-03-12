@@ -114,6 +114,19 @@ class qe_card(OrderedDict):
 		except KeyError:
 			return self.deep_find(value)
 
+	def set_item(self, key, value, i=None):
+		tof_nl, tof_param, n = _tokenize_pattern_(key)
+		if not tof_nl is None:
+			app = self[tof_nl.lower()]
+		else:
+			app = self
+
+		if i is None:
+			app[tof_param.lower()] = value
+		else:
+			app._set_vec_value_(tof_param.lower(), value, i)
+
+
 	@property
 	def namelist(self):
 		return self._namelist
@@ -129,10 +142,57 @@ class qe_card(OrderedDict):
 		return self.namelist._templ_
 
 	def format_output(self):
-		return '\n\n'.join(
-			card + " " +( "{{{}}}".format(value) if not value is None else '') + '\n  ' + '\n  '.join(body) 
-			for card,(value,body) in self.items()
-			)
+		res = ""
+		for card in self._templ_['card']:
+			ptr = self._templ_[card]
+			if not ptr['u']:
+				continue
+
+			res += card
+			if ptr['v']:
+				res += " {{{}}}".format(ptr['v'])
+			res += '\n'
+
+			synt = self._get_syntax_(card)
+			res += self._format_output_syntax_(synt) + '\n\n'
+
+		return res
+
+	def _format_output_syntax_(self, synt, mode='row', extra_pv=[]):
+		res = ""
+		print_vec = []
+		extra_pv = list(filter(lambda x: not x is None, extra_pv))
+
+		for elem in synt:
+			if isinstance(elem, dict):
+				if not isinstance(elem['v'], (list, np.ndarray)):
+					res += '  {}'.format(elem['v'])
+				else:
+					print_vec.append(elem['v'])
+			if isinstance(elem, list):
+				res = self._format_output_syntax_(elem, mode, print_vec)
+				print_vec = []
+			if isinstance(elem, tuple):
+				res += self._format_output_syntax_(elem[0], mode=elem[3])
+
+		print_vec = list(filter(lambda x: not x is None, print_vec))
+		if not print_vec:
+			return res
+		print_vec = extra_pv + print_vec
+
+		if 'col' in mode:
+			print_vec = np.array(print_vec).T
+		maximums = [max(len(str(a)) for a in v) for v in print_vec]
+		fmt = ' ' + ("  {{:{}s}}"*len(maximums)).format(*maximums)
+		res += '\n'.join(fmt.format(*[str(a) for a in v]) for v in list(zip(*print_vec)))
+
+		return res
+
+	# def format_output(self):
+	# 	return '\n\n'.join(
+	# 		card + " " +( "{{{}}}".format(value) if not value is None else '') + '\n  ' + '\n  '.join(body) 
+	# 		for card,(value,body) in self.items()
+	# 		)
 
 	def deep_find(self, pattern, up=None):
 		try:
@@ -160,7 +220,6 @@ class qe_card(OrderedDict):
 				pass
 		raise
 
-
 	def _deep_find_syntax_(self, synt, tof_param):
 		for e in synt:
 			if isinstance(e, dict):
@@ -171,7 +230,6 @@ class qe_card(OrderedDict):
 			if isinstance(e, tuple):
 				return self._deep_find_syntax_(e[0], tof_param)
 		raise
-
 
 	def parse(self, src):
 		if isinstance(src, str):
@@ -184,7 +242,7 @@ class qe_card(OrderedDict):
 		mid = list(filter(None,re.split(card_split_re,content)))[1:]
 
 		for name,body in zip(mid[::2],mid[1::2]):
-			app = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict()
+			app   = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict()
 			name  = app['name']
 			value = app['value']
 			# name,value = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict().values()
@@ -262,23 +320,12 @@ class qe_card(OrderedDict):
 				self._validate_shape_(extract, elem)
 				self._assign_tuple_(extract, elem)
 
-
 	def _validate_shape_(self, extract, elem):
 		types, opt_types = self._get_tuple_types_(elem)
 		if extract.shape[1] > len(types):
 			types += opt_types
 			if extract.shape[1] > len(types):
 				raise ValidateError("Too many elements on line. Expected {}".format(len(types)))
-
-	@staticmethod
-	def _get_tuple_types_(elem):
-		types = [tf90_to_py[a['t']] for a in elem[0] if isinstance(a, dict)]
-		opt_types = []
-		for e in elem[0]:
-			if isinstance(e, list):
-				opt_types = [tf90_to_py[a['t']] for a in e]
-
-		return types, opt_types
 
 	def _assign_tuple_(self, extract, elem):
 		for n1,e1 in enumerate(elem[0]):
@@ -289,7 +336,6 @@ class qe_card(OrderedDict):
 					return
 				for n2,e2 in enumerate(e1):
 					e2['v'] = extract[:,n1+n2].astype(tf90_to_np[e2['t']])
-
 
 	def _get_syntax_(self, card, val=None):
 		if isinstance(card, str):
@@ -302,6 +348,16 @@ class qe_card(OrderedDict):
 			if isinstance(v['cond'], str) and not val in v['cond']:
 				continue
 			return v['l']
+
+	@staticmethod
+	def _get_tuple_types_(elem):
+		types = [tf90_to_py[a['t']] for a in elem[0] if isinstance(a, dict)]
+		opt_types = []
+		for e in elem[0]:
+			if isinstance(e, list):
+				opt_types = [tf90_to_py[a['t']] for a in e]
+
+		return types, opt_types
 
 class input_files():
 	"""
