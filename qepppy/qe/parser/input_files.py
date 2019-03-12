@@ -184,7 +184,10 @@ class qe_card(OrderedDict):
 		mid = list(filter(None,re.split(card_split_re,content)))[1:]
 
 		for name,body in zip(mid[::2],mid[1::2]):
-			name,value = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict().values()
+			app = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict()
+			name  = app['name']
+			value = app['value']
+			# name,value = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict().values()
 			if not value is None:
 				value = value.replace('{', '').replace('}', '')
 
