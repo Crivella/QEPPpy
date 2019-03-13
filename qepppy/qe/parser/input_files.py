@@ -1,7 +1,5 @@
 import re
-import os
 import itertools
-import numpy as np
 from collections import OrderedDict
 
 from ...errors import ParseInputError, ValidateError
@@ -100,87 +98,116 @@ class qe_namelist_collection(f90nml.fortran_namelist_collection):
 				raise ValidateError("\n\t{}/{}: '{}' not among possibilities {}".format(namelist, param, value, possib))
 			v['v'] = value
 
+def conv_typ(typ, value):
+	try:
+		return typ(value)
+	except:
+		return None
+
 class qe_card_syntax():
 	data  = []
-	ptr   = None
+	nameless = False
 
-	low_lim    = 0
-	hgh_lim    = 0
-	mode       = 'rows'
-	def_el     = []
-	opt_el     = []
-	def_el_num = 0
-	opt_el_num = 0
-
-	def __init__(self, nl, synt):
+	def __init__(self, nl, synt, nameless=False):
 		self.namelist = nl
+		self.nameless = nameless
 		self.initialize(synt)
 
 	def convert_text_block(self, body):
 		res = OrderedDict()
 
-		body = list(body)
+		if not self.nameless:
+			body = list(body)
 		data = list(self.data)
 
 		while data:
 			l_s = data.pop(0)
-			l_e = body.pop(0)
-			l_e = list(filter(None,l_e.split(' ')))
-			for (name,typ), value in itertools.zip_longest(l_s, l_e):
-				res[name] = typ(value)
+			ml = 1
+			mode = ''
+			if isinstance(l_s[0], dict):
+				mode    = l_s[0]['mode']
+				hgh_lim = l_s[0]['hgh_lim']
+				l_s     = l_s[0]['def_el'] + l_s[0]['opt_el']
+				ml      = self.max_lines(res, hgh_lim)
 
-		el = self.def_el + self.opt_el
-		res.update({a[0]:[] for a in el})
-		if 'row' in self.mode:
-			for i in range(self.max_lines(res)):
-				line = body.pop(0)
-				line = list(filter(None,line.split(' ')))
-				for app,value in itertools.zip_longest(el, line):
-					if app is None:
-						res[None] = 0
-						continue
-					name, typ = app
-					try:
-						res[name].append(typ(value))
-					except TypeError:
-						res[name].append(None)
-		else:
-			for (name,typ) in el:
-				line = body.pop(0)
-				line = list(filter(None,line.split(' ')))
-				res[name] = [typ(a) for a in line]
+			if 'row' in mode:
+				# print(res,l_s,ml)
+				for i in range(ml):
+					l_e = body.pop(0) if body else ''
+					l_e = list(filter(None,l_e.split(' ')))
+					for app,value in itertools.zip_longest(l_s, l_e):
+						if app is None:
+							res[None] = 0
+							continue
+						name, typ = app
+						if not name in res:
+							res[name] = []
+						res[name].append(conv_typ(typ, value))
 
-		if body:
+			elif 'col' in mode:
+				for (name,typ) in l_s:
+					l_e = body.pop(0) if body else ''
+					l_e = list(filter(None,l_e.split(' ')))
+					if not name in res:
+						res[name] = []
+					res[name] = [conv_typ(typ, a) for a in l_e]
+			else:
+				l_e = body.pop(0) if body else ''
+				l_e = list(filter(None,l_e.split(' ')))
+				for (name,typ), value in itertools.zip_longest(l_s, l_e):
+					res[name] = conv_typ(typ, value)
+				
+		if body and not self.nameless:
 			print("WARNING: Ignoring lines:\n{}".format(body))
+
+		print(res)
+		return res
+
+	def convert_dict(self, dic):
+		res = ""
+
+		for d in self.data:
+			if isinstance(d[0], dict):
+				tpl = d[0]
+				v = tpl['def_el'] + tpl['opt_el']
+				to_print = [dic[a[0]] for a in v if not all(b is None for b in dic[a[0]])]
+				mode = tpl['mode']
+				if 'row' in mode:
+					app1 = to_print
+					app2 = zip(*to_print)
+					fmt = "  {{:{}s}}" * len(to_print)
+				else:
+					app1 = zip(*to_print)
+					app2 = to_print
+					fmt = "  {{:{}s}}" * len(to_print[0])
+
+				max_l = [max(len(str(a)) for a in v) for v in app1]
+				for v in app2:
+					res += fmt.format(*max_l).format(*[str(a) for a in v]) + '\n'
+			else:
+				for name,typ in d:
+					res += ' {}'.format(dic[name])
+				res += '\n'
 
 		return res
 
+
 	def convert_item(self, key, value):
 		for d in self.data:
-			for name,typ in d:
-				if name == key:
-					try:
-						return typ(value)
-					except:
-						return []
-
-		for name,typ in self.def_el + self.opt_el:
-			if name == key:
-				try:
-					res = []
-					for a in value:
+			if isinstance(d[0], dict):
+				for name,typ in d[0]['def_el'] + d[0]['opt_el']:
+					if name == key:
+						return [conv_typ(typ, a) for a in value]
+			else:
+				for name,typ in d:
+					if name == key:
 						try:
-							app = typ(a)
+							return conv_typ(typ, value)
 						except:
-							app = None
-						res.append(app)
-					return res
-				except:
-					return []
+							return []
 
-
-	def max_lines(self, dic):
-		lim = self.hgh_lim
+	def max_lines(self, dic, hgh_lim):
+		lim = hgh_lim
 		try:
 			return int(lim)
 		except:
@@ -196,30 +223,38 @@ class qe_card_syntax():
 		for elem in synt:
 			if isinstance(elem, list):
 				self.data.append([])
-				self.ptr = self.data[-1]
+				ptr = self.data[-1]
 				for v in elem:
-					self.ptr.append((
+					ptr.append((
 						v['n'],
 						tf90_to_py[v['t']],
 						))
 
 			if isinstance(elem, tuple):
-				self.low_lim, self.hgh_lim, self.mode = elem[1:]
+				self.data.append([])
+				ptr = self.data[-1]
+				low_lim, hgh_lim, mode = elem[1:]
 
-				self.def_el     = [
+				def_el     = [
 					(a['n'], tf90_to_py[a['t']])
 					for a in elem[0] if isinstance(a, dict)
 					]
-				self.def_el_num = len(self.def_el)
+				# def_el_num = len(self.def_el)
+				opt_el = []
 				for v in elem[0]:
 					if isinstance(v, list):
-						self.opt_el = [
+						opt_el = [
 							(a['n'], tf90_to_py[a['t']])
 							for a in v if isinstance(a, dict)
 							]
-						self.opt_el_num = len(self.opt_el)
-
-		self.ptr = None
+						# self.opt_el_num = len(self.opt_el)
+				ptr.append({
+					'low_lim':low_lim,
+					'hgh_lim':hgh_lim,
+					'def_el':def_el,
+					'opt_el':opt_el,
+					'mode':mode,
+					})
 
 	def validate(self, dic):
 		if None in dic:
@@ -228,33 +263,38 @@ class qe_card_syntax():
 		if None in dic.values():
 			raise ValidateError("Too few elements in line.")
 
-		len_old = None
-		for (name,typ) in self.def_el:
-			app = len(dic[name])
-			if not len_old is None and app != len_old:
-				raise ValidateError("Lenght mismatch of card parameters '{}'.".format(name))
-			len_old = app
-			ml = self.max_lines(dic)
-			if app != ml:
-				raise ValidateError("Mismatch between number of params '{}': '{}' vs required '{}={}'".format(
-					name, app, self.hgh_lim, ml))
+		for d in self.data:
+			if isinstance(d[0], dict):
+				tpl = d[0]
+				hgh_lim = tpl['hgh_lim']
 
-			if None in dic[name]:
-				raise ValidateError("Missing element in param '{}'.".format(name))
+				len_old = None
+				for (name,typ) in tpl['def_el']:
+					app = len(dic[name])
+					if not len_old is None and app != len_old:
+						raise ValidateError("Lenght mismatch of card parameters '{}'.".format(name))
+					len_old = app
+					ml = self.max_lines(dic, hgh_lim)
+					if app != ml:
+						raise ValidateError("Mismatch between number of params '{}': '{}' vs required '{}={}'".format(
+							name, app, hgh_lim, ml))
 
-		app = []
-		len_old = None
-		for (name,typ) in self.opt_el:
-			if not len_old is None and len(dic[name]) != len_old:
-				raise ValidateError("Lenght mismatch of card parameters.")
+					if None in dic[name]:
+						raise ValidateError("Missing element in param '{}'.".format(name))
 
-			len_old = len(dic[name])
-			app += dic[name]
-			# if None in dic[name] and all(a is None for a in dic[name]):
-			# 	raise ValidateError("Missing element in optional param '{}'.".format(name))
+				app = []
+				len_old = None
+				for (name,typ) in tpl['opt_el']:
+					if not len_old is None and len(dic[name]) != len_old:
+						raise ValidateError("Lenght mismatch of card parameters.")
 
-		if None in app and any(not a is None for a in app):
-			raise ValidateError("Some optional parameters are set, but not all of them.")
+					len_old = len(dic[name])
+					app += dic[name]
+
+				if None in app and any(not a is None for a in app):
+					raise ValidateError("Some optional parameters are set, but not all of them.")
+
+				break
 
 
 
@@ -310,23 +350,38 @@ class qe_card_collection(OrderedDict):
 		else:
 			content = src.read()
 
-		card_split_re = '|'.join([r'({}.*\n)'.format(a) for a in self.namelist._templ_['card']])
-		mid = list(filter(None,re.split(card_split_re,content)))[1:]
+		if any('nameless' in self.namelist._templ_[c] for c in self.namelist._templ_['card']):
+			app  = content.split('\n')
+			app  = [a.split("#")[0] for a in app]
+			app  = '\n'.join(app)
+			body = app.split('/')[-1].strip().split('\n')
+			for name in self.namelist._templ_['card']:
+				new      = qe_card(self,nameless=True)
+				new.name = name
+				new.body = body
+				new.assimilate()
 
-		for name,body in zip(mid[::2],mid[1::2]):
-			app   = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict()
-			name  = app['name']
-			value = app['value']
-			if not value is None:
-				value = value.replace('{', '').replace('}', '')
-				
-			new       = qe_card(self)
-			new.name  = name.lower()
-			new.value = value
-			new.body  = body.replace('\t', ' ').rstrip().split('\n')
-			new.assimilate()
+				self[name] = new
+				if not body:
+					break
+		else:
+			card_split_re = '|'.join([r'({}.*\n)'.format(a) for a in self.namelist._templ_['card']])
+			mid = list(filter(None,re.split(card_split_re,content)))[1:]
 
-			self[name] = new
+			for name,body in zip(mid[::2],mid[1::2]):
+				app   = re.match(r'(?P<name>\S+)[ \t]*(?P<value>((\{[\w_]+\})|([\w_]+)))?', name).groupdict()
+				name  = app['name']
+				value = app['value']
+				if not value is None:
+					value = value.replace('{', '').replace('}', '')
+					
+				new       = qe_card(self)
+				new.name  = name #.lower()
+				new.value = value
+				new.body  = body.replace('\t', ' ').rstrip().split('\n')
+				new.assimilate()
+
+				self[name] = new
 
 	def validate(self):
 		for card in self.values():
@@ -335,9 +390,13 @@ class qe_card_collection(OrderedDict):
 
 
 class qe_card(OrderedDict):
-	_parent = None
-	def __init__(self, parent=None, **kwargs):
+	_parent  = None
+	nameless = False
+	value    = None
+
+	def __init__(self, parent=None, nameless=False, **kwargs):
 		self._parent = parent
+		self.nameless = nameless
 		super().__init__(**kwargs)
 
 	def __str__(self):
@@ -362,7 +421,8 @@ class qe_card(OrderedDict):
 	@property
 	def syntax(self):
 		if not hasattr(self, '_syntax'):
-			card = self._templ_[self.name.upper()]
+			# card = self._templ_[self.name.upper()]
+			card = self._templ_[self.name]
 			val  = self.value
 			if not val:
 				val = card['d']
@@ -372,7 +432,7 @@ class qe_card(OrderedDict):
 					continue
 				if isinstance(v['cond'], str) and not val in v['cond']:
 					continue
-				self._syntax = qe_card_syntax(self.namelist, v['l'])
+				self._syntax = qe_card_syntax(self.namelist, v['l'], nameless=self.nameless)
 				break
 
 		return self._syntax
@@ -383,44 +443,15 @@ class qe_card(OrderedDict):
 
 	def format_output(self):
 		res = ""
-		res += self.name.upper() + (" {{{}}}".format(self.value) if not self.value is None  else '')
-		res += '\n'
-		check = True
-		to_print = []
-		for k,v in self.items():
-			if isinstance(v, list):
-				if not check:
-					check = True
-					res += '\n'
-				if all(a == None for a in v):
-					continue
-				to_print.append(v)
-				continue
-
-			check = False
-			res += ' {}'.format(v)
-
-		if 'row' in self.syntax.mode:
-			app1 = to_print
-			app2 = zip(*to_print)
-			fmt = "  {{:{}s}}" * len(to_print)
-		else:
-			app1 = zip(*to_print)
-			app2 = to_print
-			fmt = "  {{:{}s}}" * len(to_print[0])
-
-		max_l = [max(len(str(a)) for a in v) for v in app1]
-		for v in app2:
-			res += fmt.format(*max_l).format(*[str(a) for a in v]) + '\n'
-
-		return res
-
+		if not self.nameless:
+			res += self.name + (" {{{}}}".format(self.value) if not self.value is None  else '') + '\n'
+		return res + self.syntax.convert_dict(self)
 
 	def validate(self):
 		try:
 			self.syntax.validate(self)
 		except ValidateError as e:
-			raise ValidateError("ERROR in card '{}':\n".format(self.name.upper()), str(e))
+			raise ValidateError("ERROR in card '{}':\n".format(self.name), str(e))
 
 class input_files():
 	"""

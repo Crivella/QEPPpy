@@ -2,7 +2,7 @@ import numpy as np
 
 def generate_repetition_grid(r1,r2,r3, vect_matrix):
 	from itertools import product
-	res = np.array(list(product(r3,r2,r1)))
+	res = np.array(list(product(r1,r2,r3)))
 	res = np.dot(vect_matrix.T, res.T).T
 
 	return res
