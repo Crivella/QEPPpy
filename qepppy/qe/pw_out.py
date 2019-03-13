@@ -26,11 +26,16 @@ class pw_out(bands, structure):
 	@property
 	@store_property
 	def tmp(self):
+		"""Iterable. Every element is of type <class wavefnc> and contains the 
+		data from the wafeunction binaries."""
 		return tmp(self.prefix, path=self.data_path)
 
 	@property
 	@store_property
 	def pseudo(self):
+		"""Iterable. Every element is of type <class UPF> and contains the data
+		of the atoms pseudopotentials.
+		"""
 		pseudo = []
 		path = os.path.dirname(self.xml)
 		for pp in self.atoms_pseudo:

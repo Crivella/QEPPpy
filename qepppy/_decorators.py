@@ -7,6 +7,12 @@ def join_doc(func, add):
 	tabs='\t'
 	if not func.__doc__:
 		func.__doc__ = ""
+
+	app = func.__doc__
+	func.__doc__ = ""
+	for line in app.split('\n'):
+		func.__doc__ += tabs + re.sub(r"^\t*", "", line) + "\n"
+
 	for line in add.split("\n"):
 		func.__doc__ += tabs + re.sub(r"^\t*", "", line) + "\n"
 

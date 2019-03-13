@@ -160,7 +160,7 @@ class qe_card_syntax():
 		if body and not self.nameless:
 			print("WARNING: Ignoring lines:\n{}".format(body))
 
-		print(res)
+		# print(res)
 		return res
 
 	def convert_dict(self, dic):

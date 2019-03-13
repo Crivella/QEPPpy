@@ -1,6 +1,7 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 # from ..logger import logger, warning
+from ..errors import ValidateError
 from .._decorators import numpy_save_opt, numpy_plot_opt, store_property, IO_stdout_redirect
 
 HA_to_eV = 27.21138602
@@ -125,6 +126,10 @@ class bands(dfp):
 	@property
 	@store_property
 	def kpt_cart(self):
+		"""
+		np.ndarray of shape(nkpt, 3).
+		Contains the coordinates in cartesian units of all k-points.
+		"""
 		kpt = np.array([a['kpt'] for a in self._kpt])
 		kpt = kpt[:self.n_kpt,:]
 		return kpt
@@ -132,6 +137,10 @@ class bands(dfp):
 	@property
 	@store_property
 	def kpt_cryst(self):
+		"""
+		np.ndarray of shape(nkpt, 3).
+		Contains the coordinates in crystal units of all k-points.
+		"""
 		n = self.n_kpt
 		kpt = np.array([a['kpt'] for a in self._kpt])
 		if kpt.shape[0] > n:
@@ -143,6 +152,10 @@ class bands(dfp):
 	@property
 	@store_property
 	def weight(self):
+		"""
+		np.ndarray of shape (nkpt,)
+		Contains the weights for all k-points.
+		"""
 		n = self.n_kpt
 		occ = np.array([a['weight'] for a in self._kpt])
 		if occ.shape[0] > n:
@@ -152,11 +165,19 @@ class bands(dfp):
 	@property
 	@store_property
 	def egv(self):
+		"""
+		np.ndarray of shape (nkpt,nbnd).
+		Contains all the eigenvalues for the bands.
+		"""
 		return np.array([a['egv'] for a in self._egv]) * self.e_units
 
 	@property
 	@store_property
 	def occ(self):
+		"""
+		np.ndarray of shape (nkpt,nbnd).
+		Contains the occupation number of all the bands.
+		"""
 		return np.array([a['occ'] for a in self._occ])
 
 	@numpy_save_opt(_fname='kpt.dat', _fmt="%14.6f")
@@ -202,8 +223,10 @@ class bands(dfp):
 		  -
 		Return:
 		  numpy array with shape(n_kpt,n_bnd+1).
-		  The first column is the coordinates of |dK| to be used as X axis for a band plot.
-		  The other column are the ordered band eigenvalue for the corresponding kpt.
+		  The first column is the coordinates of |dK| to be used as X axis for 
+		  a band plot.
+		  The other column are the ordered band eigenvalue for the 
+		  corresponding kpt.
 		"""
 		kpt = self.kpt_cart
 		# kpt = kpt[:self.n_kpt,:]
@@ -273,13 +296,10 @@ class bands(dfp):
 		if(cp.shape != (3,)):
 			raise ValueError("'comp_point' should be an [x,y,z] vector {}".format(cp))
 
-		# kpt   = np.array([a['kpt'] for a in self.kpt])
 		kpt   = self.kpt_cart
-		# egv   = np.array([ a['egv'] for a in self.egv])*self.e_units
 		egv   = self.egv
 		n_el  = self.n_el
 		ef    = self.fermi
-		# kpt   = kpt[:self.n_kpt,:]
 
 		if ef == None: 
 			ef = np.nan
@@ -358,25 +378,18 @@ class bands(dfp):
 		print("\t{} -> {}   Ef: {} eV".format(egv[res,cb], egv[res,cb+1], ef))
 
 	def validate(self):
-		ret = True
 		if self.n_kpt <= 0:
-			warning.print("Failed to read nkpt from file '{}'.".format(self.xml))
-			ret = False
-			#raise Exception("No kpt read from file '{}'.".format(self.fname))
+			raise ValidateError("Failed to read nkpt from file '{}'.".format(self.xml))
 		if self.n_bnd <= 0:
-			warning.print("Failed to read nbnd from file '{}'.".format(self.xml))
-			ret = False
-			#raise Exception("No band read from file '{}'.".format(self.fname))
+			raise ValidateError("Failed to read nbnd from file '{}'.".format(self.xml))
 		legv = self.egv.shape[0]
 		if self.occ.size:
 			locc = self.occ.shape[0]
 		else:
 			locc = legv
 		if not self.n_kpt == legv == locc:
-			warning.print("Corrupted file. Number of kpoints does not match number egv or occ")
-			ret = False
-			#raise Exception("Corrupted file. Number of kpoints does not match number egv or occ")
-		return ret and super().validate()
+			raise ValidateError("Corrupted file. Number of k-points does not match number egv or occ")
+		super().validate()
 
 
 
