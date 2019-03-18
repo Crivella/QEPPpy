@@ -264,8 +264,8 @@ class structure(dfp, cell):
 		return np.array([self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']], dtype='int')
 
 	def validate(self):
-		if self.ibrav == None:
-			raise ValidateError("ibrav is not set.")
+		# if self.ibrav == None:
+		# 	raise ValidateError("ibrav is not set.")
 		if self._atom_spec == None:
 			raise ValidateError("List of atom types is not set.")
 		if self._atoms == None:
