@@ -184,6 +184,8 @@ class data_file_parser(object):
 				raise FileNotFoundError(file)
 			self.data_path = self.xml
 			self.xml    = file
+		else:
+			raise FileNotFoundError("The file/folder {} does not exist".format(self.xml))
 		if "data-file-schema.xml" in self.xml:
 			self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
 			self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))

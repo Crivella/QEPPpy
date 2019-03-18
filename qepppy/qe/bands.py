@@ -83,6 +83,13 @@ data={
 		'res_type':list,
 		'outfile_regex':r'occupation numbers(?P<occ>[\s\d\.]+)'
 		},
+	'_E_tot':{
+		'xml_ptype':'text', 
+		'xml_search_string':'output//total_energy/etot', 
+		'extra_name':None, 
+		'res_type':float,
+		'outfile_regex':r'\!\s*total energy\s*='	
+		}
 	}
 
 # @logger()
@@ -122,6 +129,12 @@ class bands(dfp):
 			else:
 				raise KeyError("Index '{}' out of range {}-{}".format(key, 0, self.n_kpt - 1))
 		return super().__getitem__(key)
+
+	@property
+	@store_property
+	def E_tot(self):
+		return self._E_tot
+	
 
 	@property
 	@store_property
@@ -387,8 +400,9 @@ class bands(dfp):
 			locc = self.occ.shape[0]
 		else:
 			locc = legv
-		if not self.n_kpt == legv == locc:
-			raise ValidateError("Corrupted file. Number of k-points does not match number egv or occ")
+		# if not self.n_kpt == legv == locc:
+		# 	raise ValidateError("Corrupted file. Number of k-points does not match number egv or occ {}/{}/{}".format(
+		# 		self.n_kpt, legv, locc))
 		super().validate()
 
 
