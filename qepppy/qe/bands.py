@@ -182,7 +182,13 @@ class bands(dfp):
 		np.ndarray of shape (nkpt,nbnd).
 		Contains all the eigenvalues for the bands.
 		"""
-		return np.array([a['egv'] for a in self._egv]) * self.e_units
+		app = np.array([a['egv'] for a in self._egv]) * self.e_units
+		num = app.shape[0]
+		if num > self.n_kpt:
+			if num % self.n_kpt != 0:
+				raise NotImplemented("Read egv #{} is not a multiple of n_kpt #{}".format(num, self.n_kpt))
+			app = app[-self.n_kpt:]
+		return app
 
 	@property
 	@store_property
@@ -191,7 +197,13 @@ class bands(dfp):
 		np.ndarray of shape (nkpt,nbnd).
 		Contains the occupation number of all the bands.
 		"""
-		return np.array([a['occ'] for a in self._occ])
+		app = np.array([a['occ'] for a in self._occ])
+		num = app.shape[0]
+		if num > self.n_kpt:
+			if num % self.n_kpt != 0:
+				raise NotImplemented("Read occ #{} is not a multiple of n_kpt #{}".format(num, self.n_kpt))
+			app = app[-self.n_kpt:]
+		return app
 
 	@numpy_save_opt(_fname='kpt.dat', _fmt="%14.6f")
 	def kpt_crop(self, center, radius, mode='cart'):
@@ -242,10 +254,13 @@ class bands(dfp):
 		  corresponding kpt.
 		"""
 		kpt = self.kpt_cart
-		# kpt = kpt[:self.n_kpt,:]
+		kpt[1:] -= kpt[:-1]
+		kpt[0]  -= kpt[0]
+		norm = np.linalg.norm(kpt, axis=1)
+		
+		x = [norm[:i+1].sum() for i in range(len(norm))]
 		egv = self.egv
 
-		x = np.linalg.norm(kpt, axis=1)
 		res = np.column_stack((x, egv))
 
 		return res
