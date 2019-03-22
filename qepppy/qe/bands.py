@@ -343,7 +343,7 @@ class bands(dfp):
 		  The other column are the ordered band eigenvalue for the 
 		  corresponding kpt.
 		"""
-		kpt = self.kpt_cart
+		kpt = np.array(self.kpt_cart)
 		kpt[1:] -= kpt[:-1]
 		kpt[0]  -= kpt[0]
 		norm = np.linalg.norm(kpt, axis=1)
