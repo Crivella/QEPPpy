@@ -131,7 +131,6 @@ class qe_card_syntax():
 				ml      = self.max_lines(res, hgh_lim)
 
 			if 'row' in mode:
-				# print(res,l_s,ml)
 				for i in range(ml):
 					l_e = body.pop(0) if body else ''
 					l_e = list(filter(None,l_e.split(' ')))
@@ -160,7 +159,6 @@ class qe_card_syntax():
 		if body and not self.nameless:
 			print("WARNING: Ignoring lines:\n{}".format(body))
 
-		# print(res)
 		return res
 
 	def convert_dict(self, dic):
@@ -169,8 +167,11 @@ class qe_card_syntax():
 		for d in self.data:
 			if isinstance(d[0], dict):
 				tpl = d[0]
-				v = tpl['def_el'] + tpl['opt_el']
+				v = tpl['def_el'] #+ tpl['opt_el']
 				to_print = [dic[a[0]] for a in v if not all(b is None for b in dic[a[0]])]
+				v = tpl['opt_el']
+				if any(a[0] in dic for a in v):
+					to_print += [dic[a[0]] for a in v if not all(b is None for b in dic[a[0]])]
 				mode = tpl['mode']
 				if 'row' in mode:
 					app1 = to_print
@@ -284,33 +285,56 @@ class qe_card_syntax():
 
 				app = []
 				len_old = None
-				for (name,typ) in tpl['opt_el']:
-					if not len_old is None and len(dic[name]) != len_old:
-						raise ValidateError("Lenght mismatch of card parameters.")
+				if any(a[0] in dic for a in tpl['opt_el']):
+					for (name,typ) in tpl['opt_el']:
+						if not name in dic or (not len_old is None and len(dic[name]) != len_old):
+							raise ValidateError("Lenght mismatch of card parameters.")
 
-					len_old = len(dic[name])
-					app += dic[name]
+						len_old = len(dic[name])
+						app += dic[name]
 
-				if None in app and any(not a is None for a in app):
-					raise ValidateError("Some optional parameters are set, but not all of them.")
+					if None in app and any(not a is None for a in app):
+						raise ValidateError("Some optional parameters are set, but not all of them.")
 
 				break
-
 
 
 class qe_card_collection(OrderedDict):
 	def __init__(self, nl, **kwargs):
 		self._namelist = nl
-		super().__init__(**kwargs)
+		# super().__init__(**kwargs)
+		for k,v in kwargs.items():
+			if not k in self._templ_['card']:
+				continue
+			new = qe_card(self,v)
+			new.name = k
+			self[k]  = new
 
 	def __str__(self):
 		return '\n\n'.join(str(a) for a in self.values())
 
-	def __getitem__(self, value):
+	def __getitem__(self, key):
+		if not isinstance(key, str):
+			raise ValueError("Key for {} must be of string type.".format(self))
+		key = key.lower()
 		try:
-			return super().__getitem__(value)
+			return super().__getitem__(key)
 		except KeyError:
-			return self.deep_find(value)
+			return self.deep_find(key)
+
+	def __setitem__(self, key, value):
+		if not isinstance(key, str):
+			raise ValueError("Key for {} must be of string type.".format(self))
+		super().__setitem__(key.lower(), value)
+
+	def __contains__(self, key):
+		if not isinstance(key, str):
+			raise ValueError("Key for {} must be of string type.".format(self))
+		return super().__contains__(key.lower())
+
+	@property
+	def _templ_(self):
+		return self.namelist._templ_
 
 	@property
 	def namelist(self):
@@ -332,6 +356,7 @@ class qe_card_collection(OrderedDict):
 			if tof_card:
 				res = self[tof_card][tof_param]
 			else:
+				res = None
 				for card in self.values():
 					if pattern in card:
 						res = card[tof_param]
@@ -350,12 +375,12 @@ class qe_card_collection(OrderedDict):
 		else:
 			content = src.read()
 
-		if any('nameless' in self.namelist._templ_[c] for c in self.namelist._templ_['card']):
+		if any('nameless' in self._templ_[c] for c in self._templ_['card']):
 			app  = content.split('\n')
 			app  = [a.split("#")[0] for a in app]
 			app  = '\n'.join(app)
 			body = app.split('/')[-1].strip().split('\n')
-			for name in self.namelist._templ_['card']:
+			for name in self._templ_['card']:
 				new      = qe_card(self,nameless=True)
 				new.name = name
 				new.body = body
@@ -365,7 +390,7 @@ class qe_card_collection(OrderedDict):
 				if not body:
 					break
 		else:
-			card_split_re = '|'.join([r'({}.*\n)'.format(a) for a in self.namelist._templ_['card']])
+			card_split_re = '|'.join([r'({}.*\n)'.format(a) for a in self._templ_['card']])
 			mid = list(filter(None,re.split(card_split_re,content)))[1:]
 
 			for name,body in zip(mid[::2],mid[1::2]):
@@ -461,12 +486,12 @@ class input_files():
 	 - src        = Name of the file to parse
 	"""
 	templ_file = None
-	def __init__(self, src=None):
+	def __init__(self, src=None, **kwargs):
 		if not self.templ_file:
 			raise ParseInputError("Must give a template file.\n")
 	
-		self.namelist_c = qe_namelist_collection(tpl=self.templ_file)
-		self.card_c     = qe_card_collection(self.namelist_c)
+		self.namelist_c = qe_namelist_collection(tpl=self.templ_file, **kwargs)
+		self.card_c     = qe_card_collection(self.namelist_c, **kwargs)
 		if src:
 			self.parse_input(src)
 
@@ -477,13 +502,24 @@ class input_files():
 		nl, name = ([None]*2 + key.split('/'))[-2:]
 		key, i = (name.split('(') + [None]*2)[:2]
 		if isinstance(i, str):
-			i = int(i.replace(')', '')) - 1
+			i = int(i.replace(')', ''))
 		try:
+			if not nl in self.card_c:
+				if nl.upper() in self.namelist_c._templ_['card']:
+					new = qe_card(self.card_c)
+					new.name = nl
+					self.card_c[nl] = new
 			if not i is None:
-				self.card_c[nl][key][i] = value
+				# self.card_c[nl][key][i] = value
+				self.card_c[nl][key+'({})'.format(i)] = value
 			else:
 				self.card_c[nl][key] = value
 		except:
+			if not nl in self.namelist_c:
+				if nl in self.namelist_c._templ_['nl']:
+					new = f90nml.fortran_namelist()
+					new.name = nl
+					self.namelist_c[nl.lower()] = new
 			self.namelist_c[nl].set_item(key, value, i)
 
 	def __str__(self):
@@ -492,11 +528,9 @@ class input_files():
 	def parse_input(self, src):
 		with open(src) as f:
 			self.namelist_c.parse(f)
-		self.namelist_c.validate()
 		
 		with open(src) as f:
 			self.card_c.parse(f)
-		self.card_c.validate()
 
 	def _find(self, *args, up=None):
 		res = []

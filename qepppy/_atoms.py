@@ -23,54 +23,78 @@ def split_atom_list_by_name(atom_coord, atom_names):
 
 class _atoms():
 	@property
-	@store_property
+	# @store_property
 	def atoms_coord_cart(self):
 		"""List of atomic coordinate in cartesian basis."""
 		return self._atoms_coord_cart
 
+	@atoms_coord_cart.setter
+	def atoms_coord_cart(self, value):
+		self._atoms_coord_cart = value
+
 	@property
-	@store_property
+	# @store_property
 	def atoms_coord_cryst(self):
 		"""List of atomic coordinate in crystal basis."""
 		return self._atoms_coord_cryst
 
+	@atoms_coord_cryst.setter
+	def atoms_coord_cryst(self, value):
+		self._atoms_coord_cryst = value
+
 	@property
-	@store_property
+	# @store_property
 	def atoms_group_coord_cart(self):
 		"""List of atomic coordinate in cartesian basis grouped by atom name
 		in a dictionary."""
 		return {a:np.array(self.atoms_coord_cart[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
 
 	@property
-	@store_property
+	# @store_property
 	def atoms_group_coord_cryst(self):
 		"""List of atomic coordinate in crystal basis grouped by atom name
 		in a dictionary."""
 		return {a:np.array(self.atoms_coord_cryst[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
 
 	@property
-	@store_property
+	# @store_property
 	def atoms_typ(self):
 		"""List of atom names (same order as the list of coordinates)"""
 		return self._atoms_typ
 
+	@atoms_typ.setter
+	def atoms_typ(self, value):
+		self._atoms_typ = value
+
 	@property
-	@store_property
+	# @store_property
 	def atoms_mass(self):
 		"""List of atomic masses"""
 		return self._atoms_mass
 
+	@atoms_mass.setter
+	def atoms_mass(self, value):
+		self._atoms_mass = value
+
 	@property
-	@store_property
+	# @store_property
 	def atoms_pseudo(self):
 		"""List of atomic pseudopotential files"""
 		return self._atoms_pseudo
 
+	@atoms_pseudo.setter
+	def atoms_pseudo(self, value):
+		self._atoms_pseudo = value
+
 	@property
-	@store_property
+	# @store_property
 	def all_atoms_typ(self):
 		"""List of atom names (same order as list of masses)"""
 		return self._all_atoms_typ
+
+	@all_atoms_typ.setter
+	def all_atoms_typ(self, value):
+		self._all_atoms_typ = value
 
 
 	def draw_atoms(self, ax, atom_coord, atom_names, **kwargs):

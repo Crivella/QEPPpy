@@ -1,3 +1,4 @@
+import numpy as np
 from .structure import structure
 from .parser.input_files import input_files as inp_f
 
@@ -9,15 +10,34 @@ class pw_in(inp_f, structure):
 	kwargs:
 	 - src = Name of the file to parse
 
-	Parse paramenters can be accessed using the following syntax:
+	Parse parameters can be accessed using the following syntax:
 	 - obj.param_name
 	 - obj['param_name']
 
 	Namelist parameters can be set using the syntax:
 	 - obj['NAMELIST/param_name']    = value
 	 - obj['NAMELIST/param_name(n)'] = value   (For vector values)
+	   param_name are the same as in the QE documentation (online or *.def)
+
+	Card parameters can be set using the syntax:
+	 - obj['CARD/param_name']    = value
+	   param_name are the same as in the QE documentation (online or *.def)
+
 	"""
 	templ_file = "INPUT_PW.templ"
+
+	def _set_atoms_coord(self, value):
+		value = np.array(value)
+		if value.shape[1] != 3:
+			raise ValueError("Coordinates must be a 3 element list/array.")
+		self['ATOMIC_POSITIONS/x'] = value[:,0]
+		self['ATOMIC_POSITIONS/y'] = value[:,1]
+		self['ATOMIC_POSITIONS/z'] = value[:,2]
+
+	def _check_atoms_len(self, value):
+		if len(value) != self.n_atoms:
+			raise ValueError("Number of assigned atoms does not match n_atoms ({} != {}).".format(
+				len(value), self.n_atoms))
 
 	@property
 	def _atoms(self):
@@ -25,15 +45,77 @@ class pw_in(inp_f, structure):
 		coord = list(zip(x, y, z))
 		return [{'name':n, 'coord':c} for n,c in zip(name, coord)]
 
+	@structure._atoms_coord_cart.setter
+	def _atoms_coord_cart(self, value):
+		value = np.array(value)
+
+		self._check_atoms_len(value)
+		self._set_atoms_coord(value)
+
+		self._atom_p = 'alat'
+
+	@structure._atoms_coord_cryst.setter
+	def _atoms_coord_cryst(self, value):
+		value = np.array(value)
+
+		self._check_atoms_len(value)
+		self._set_atoms_coord(value)
+		
+		self._atom_p = 'crystal'
+
+	@structure._atoms_typ.setter
+	def _atoms_typ(self, value):
+		self._check_atoms_len(value)
+		self['ATOMIC_POSITIONS/X'] = value
+
+	def _check_atoms_spec_len(self, value):
+		if len(value) != self.n_types:
+			raise ValueError("Number of assigned atoms does not match n_types ({} != {}).".format(
+				len(value), self.n_types))
+
+	def _check_atoms_spec_type(self, value, t, msg="..."):
+		if any(not isinstance(a, t) for a in value):
+			raise TypeError("{} types must all be of type {}.".format(msg, t))
+
 	@property
 	def _atom_spec(self):
 		name, mass, pfile = self._find("X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
 		return [{'name':n, 'mass':m, 'pseudo_file':p} for n,m,p in zip(name, mass, pfile)]
 
+	@structure._all_atoms_typ.setter
+	def _all_atoms_typ(self, value):
+		self._check_atoms_spec_len(value)
+		self._check_atoms_spec_type(value, str, 'Atoms')
+
+		self['ATOMIC_SPECIES/X'] = value
+
+	@structure._atoms_mass.setter
+	def _atoms_mass(self, value):
+		self._check_atoms_spec_len(value)
+		self._check_atoms_spec_type(value, (int, float), 'Mass')
+
+		self['ATOMIC_SPECIES/Mass_X'] = value
+
+	@structure._atoms_pseudo.setter
+	def _atoms_pseudo(self, value):
+		self._check_atoms_spec_len(value)
+		self._check_atoms_spec_type(value, str, 'Pseudo')
+
+		self['ATOMIC_SPECIES/PseudoPot_X'] = value
+
 	@property
 	def _cell(self):
 		a1, a2, a3 = self._find("v1", "v2", "v3")
 		return [{'a1':a1, 'a2':a2, 'a3':a3}]
+
+	@_cell.setter
+	def _cell(self, value):
+		if self.ibrav != 0:
+			raise ValueError("CELL can be set only if ibrav != 0.")
+		a1, a2, a3 = np.array(value)
+		self['CELL/v1'] = a1
+		self['CELL/v2'] = a2
+		self['CELL/v3'] = a3
 
 	@property
 	def celldm(self):
@@ -43,31 +125,67 @@ class pw_in(inp_f, structure):
 	def alat(self):
 		return self._find("celldm(1)")
 
+	@alat.setter
+	def alat(self, value):
+		if not isinstance(value, (int,float)):
+			raise TypeError("Value for alat must be of type {} not {}".format(
+				float, type(value)))
+		self['SYSTEM/celldm(1)'] = float(value)
+
 	@property
 	def ibrav(self):
 		return self._find("ibrav")
+
+	@ibrav.setter
+	def ibrav(self, value):
+		self['SYSTEM/ibrav'] = value
 
 	@property
 	def _atom_p(self):
 		return self._find("ATOMIC_POSITIONS")
 
+	@_atom_p.setter
+	def _atom_p(self, value):
+		possib = self.namelist_c._templ_['ATOMIC_POSITIONS']['c']
+		if possib and not value in possib:
+			raise ValueError("ATOMIC_POSITIONS card value must be one of {} not '{}'.".format(
+				possib, value))
+		self["ATOMIC_POSITIONS"].value = value
+
 	@property
 	def _cell_p(self):
-		if hasattr(self, '__cell_p'):
-			return self.__cell_p
 		return self._find("CELL_PARAMETERS")
 
 	@_cell_p.setter
 	def _cell_p(self, value):
-		self.__cell_p = value
+		possib = self.namelist_c._templ_['CELL_PARAMETERS']['c']
+		if possib and not value in possib:
+			raise ValueError("CELL_PARAMETERS card value must be one of {} not '{}'.".format(
+				possib, value))
+		self['CELL_PARAMETERS'].value = value
 
 	@property
 	def n_atoms(self):
 		return self._find("nat")
 
+	@n_atoms.setter
+	def n_atoms(self, value):
+		if not isinstance(value, int):
+			raise TypeError("Number of atoms must be integer.")
+
+		self['SYSTEM/nat'] = value
+
 	@property
 	def n_types(self):
 		return self._find("ntyp")
+
+	@n_types.setter
+	def n_types(self, value):
+		if not isinstance(value, int):
+			raise TypeError("Number of types must be integer.")
+
+		self['SYSTEM/ntyp'] = value
+
 
 	def __getattr__(self, attr):
 		try:
@@ -77,8 +195,8 @@ class pw_in(inp_f, structure):
 
 	def __str__(self):
 		msg = inp_f.__str__(self)
-		if not 'ATOMIC_POSITIONS' in self.card_c:
-			msg += structure.__str__(self)
+		# if not 'ATOMIC_POSITIONS' in self.card_c:
+		# 	msg += structure.__str__(self)
 		return msg
 
 	def validate(self):

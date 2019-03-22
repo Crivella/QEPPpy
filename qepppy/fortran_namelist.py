@@ -61,10 +61,22 @@ def _tokenize_pattern_(pattern, up=None):
 	return tof_major, tof_minor, n
 
 class fortran_namelist(OrderedDict):
+	def __init__(self, d=None):
+		if not d is None and not isinstance(d, dict):
+			raise TypeError("Must initialize fortran_namelist using a dictionary")
+
+		for k,v in d.items():
+			self.set_item(k,v)
+
 	def __getitem__(self, key):
-		if isinstance(key, str):
-			key = key.lower()
-		return super().__getitem__(key)
+		if not isinstance(key, str):
+			raise ValueError("Key for {} must be of string type.".format(self))
+		return super().__getitem__(key.lower())
+
+	def __setitem__(self, key, value):
+		if not isinstance(key, str):
+			raise ValueError("Key for {} must be of string type.".format(self))
+		return super().__setitem__(key.lower(), value)
 
 	def __str__(self):
 		return self.format_output()
@@ -138,13 +150,13 @@ class fortran_namelist(OrderedDict):
 			if v is None:
 				continue
 			v = format_f90_to_py(v, not a['strip_single'] is None, not a['strip_double'] is None)
-			self.set_item(p.lower(), v, i)
+			self.set_item(p, v, i)
 
 
 	def deep_find(self, pattern, up=None):
 		tof_nl, tof_param, n  = _tokenize_pattern_(pattern, up)
 		if tof_nl is None or tof_nl.lower() == self.name:
-			res =  self[tof_param.lower()]
+			res =  self[tof_param]
 			for i in n:
 				res = res[int(i)-1]
 			return res
@@ -154,17 +166,19 @@ class fortran_namelist(OrderedDict):
 	def set_item(self, key, value, i=None):
 		tof_nl, tof_param, n = _tokenize_pattern_(key)
 		if not tof_nl is None:
-			app = self[tof_nl.lower()]
+			app = self[tof_nl]
 		else:
 			app = self
 
 		if i is None:
-			app[tof_param.lower()] = value
+			app[tof_param] = value
 		else:
 			app._set_vec_value_(tof_param.lower(), value, i)
 
 	def _set_vec_value_(nl, param, value, index):
+		index = str(index)
 		index = re.findall(r'[\+\d]+', index)
+
 		if not param in nl or not isinstance(nl[param], list):
 			nl[param] = []
 		ptr = nl[param]
@@ -198,17 +212,26 @@ class fortran_namelist_collection(OrderedDict):
 	def __init__(self, src=None, **kwargs):
 		if isinstance(src, str):
 			self.parse(src)
-		super().__init__(**kwargs)
+		# super().__init__(**kwargs)
+		for k,v in kwargs.items():
+			new = fortran_namelist(v)
+			new.name = k
+			self[k] = new
 
 	def __getitem__(self, key):
-		if isinstance(key, str):
-			key = key.lower()
-		return super().__getitem__(key)
+		if not isinstance(key, str):
+			raise ValueError("Key for {} must be of string type.".format(self))
+		return super().__getitem__(key.lower())
 
 	def __setitem__(self, key, value):
 		if not isinstance(value, fortran_namelist):
 			raise ValueError("Value in {} must be of type {}.".format(type(self), type(fortran_namelist)))
-		super().__setitem__(key, value)
+		super().__setitem__(key.lower(), value)
+
+	def __contains__(self, key):
+		if not isinstance(key, str):
+			raise ValueError("Key for {} must be of string type.".format(self))
+		return super().__contains__(key.lower())
 
 	def __str__(self):
 		return self.format_output()
@@ -253,7 +276,7 @@ class fortran_namelist_collection(OrderedDict):
 			new =  fortran_namelist()
 			new.parse(elem)
 
-			self[elem['name'].lower()] = new
+			self[elem['name']] = new
 
 	def deep_find(self, pattern, up=None):
 		for elem in self.values():

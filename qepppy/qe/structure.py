@@ -129,7 +129,6 @@ class structure(dfp, cell):
 
 		d.update(data)
 		super().__init__(d=d, **kwargs)
-		return
 
 	def _format_cell_(self, info):
 		if self.ibrav and info == 0:
@@ -170,7 +169,6 @@ class structure(dfp, cell):
 
 	@property
 	def _atoms_coord_cart(self):
-		# fact = self.alat if self.atom_p == 'alat' else 1
 		res = np.array([a['coord'] for a in self._atoms]) * self.atom_p
 		n = self.n_atoms
 		if n and len(res) == n*2:
@@ -181,7 +179,6 @@ class structure(dfp, cell):
 
 	@property
 	def _atoms_coord_cryst(self):
-		# fact = self.alat if self.atom_p == 'alat' else 1
 		res = np.array([a['coord'] for a in self._atoms]) * self.atom_p
 		n = self.n_atoms
 		if len(res) == n*2:
@@ -195,9 +192,12 @@ class structure(dfp, cell):
 	def _atoms_typ(self):
 		res = list([a['name'] for a in self._atoms])
 		n = self.n_atoms
+
+		# Cut the crystal coordinates that are taken using regex on output files
 		if len(res) == n*2:
 			res = res[:n]
 		return res
+
 	@property
 	def _atoms_mass(self):
 		return np.array([a['mass'] for a in self._atom_spec])
@@ -208,11 +208,11 @@ class structure(dfp, cell):
 
 	@property
 	def _all_atoms_typ(self):
-		res = list([a['name'] for a in self._atom_spec])
-		return res
+		return list([a['name'] for a in self._atom_spec])
 
 	@property
 	def atom_p(self):
+		"""Conversion factor for atom coordinates to atomic units"""
 		if self._atom_p == 'alat':
 			return self.alat
 		if self._atom_p == 'angstrom':
@@ -221,18 +221,22 @@ class structure(dfp, cell):
 
 	@property
 	def cell_p(self):
+		"""Conversion factor for cell vetors to atomic units"""
 		if self._cell_p == 'alat':
 			return self.alat
 		if self._cell_p == 'angstrom':
 			return 1/0.529177
 		return 1
 
+	@cell_p.setter
+	def cell_p(self, value):
+		self._cell_p = value
+
 	@property
 	def _direct(self):
 		res =  np.array(list(self._cell[0].values()))
 		if res.size != 9:
 			return self._ibrav_to_cell_()
-		# fact = self.alat if self.cell_p == 'alat' else 1
 		res *= self.cell_p
 		return res
 
@@ -243,6 +247,7 @@ class structure(dfp, cell):
 	@property
 	@store_property
 	def symm_matrix(self):
+		"""List of symmetry operation matrices"""
 		t = type(self._symm[0]['rotation'])
 		if t == np.ndarray:
 			res = np.array([a['rotation'].reshape(3,3) for a in self._symm])
@@ -256,11 +261,13 @@ class structure(dfp, cell):
 	@property
 	@store_property
 	def symm_name(self):
+		"""List of symmetry operation names"""
 		return list([a['name'] for a in self._symm])
 
 	@property
 	@store_property
 	def fft_dense_grid(self):
+		"""FFT Grid shape: np.ndarray of shape (3,)"""
 		return np.array([self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']], dtype='int')
 
 	def validate(self):
