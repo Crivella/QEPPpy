@@ -15,8 +15,8 @@ class pw_out(bands, structure):
 	Instance used to handle QE outputs (by parsing the "data-file*.xml" file")
 	fname: name of the "data-file*.xml" to parse
 	kwargs:
-	 - outfile = Name of the *.out pw outfile to parse
-	 - schema  = Name of the data-file*.xml to parse
+	 - outfile = Name of the pw outfile to parse
+	 - xml     = Name of the data-file*.xml to parse
 	"""
 	__name__ = "pw_out"
 	def __init__( self, **kwargs):
