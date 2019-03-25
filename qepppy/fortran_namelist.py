@@ -62,7 +62,10 @@ def _tokenize_pattern_(pattern, up=None):
 
 class fortran_namelist(OrderedDict):
 	def __init__(self, d=None):
-		if not d is None and not isinstance(d, dict):
+		if d is None:
+			return
+			
+		if not isinstance(d, dict):
 			raise TypeError("Must initialize fortran_namelist using a dictionary")
 
 		for k,v in d.items():
