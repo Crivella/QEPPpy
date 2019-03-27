@@ -1,6 +1,5 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
-from ..logger import logger, warning, error
 from ..errors import ValidateError
 from .._decorators import store_property
 from .._cell import _cell as cell

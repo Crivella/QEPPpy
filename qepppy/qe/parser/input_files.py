@@ -483,17 +483,17 @@ class input_files():
 	Class to handle any QE input (after loading the proper template).
 	Supposed to be used as a parent class for child specific to the qe file.
 	kwargs:
-	 - src        = Name of the file to parse
+	 - input_file        = Name of the file to parse
 	"""
 	templ_file = None
-	def __init__(self, src=None, **kwargs):
+	def __init__(self, input_file=None, **kwargs):
 		if not self.templ_file:
 			raise ParseInputError("Must give a template file.\n")
 	
 		self.namelist_c = qe_namelist_collection(tpl=self.templ_file, **kwargs)
 		self.card_c     = qe_card_collection(self.namelist_c, **kwargs)
-		if src:
-			self.parse_input(src)
+		if input_file:
+			self.parse_input(input_file)
 
 	def __getitem__(self, key):
 		return self.card_c.__getitem__(key)
@@ -525,11 +525,11 @@ class input_files():
 	def __str__(self):
 		return str(self.namelist_c) + str(self.card_c)
 
-	def parse_input(self, src):
-		with open(src) as f:
+	def parse_input(self, input_file):
+		with open(input_file) as f:
 			self.namelist_c.parse(f)
 		
-		with open(src) as f:
+		with open(input_file) as f:
 			self.card_c.parse(f)
 
 	def _find(self, *args, up=None):

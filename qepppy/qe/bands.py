@@ -99,7 +99,8 @@ class bands(dfp):
 	Uses the internal "data_file_parser" to read from a "data-file-schema.xml"
 	or from a pw.x output file.
 	Can be printed as a string.
-	Each k-point and its info can be called as a dictionary value using its number as the key.
+	Each k-point and its info can be called as a dictionary value using its
+	 number as the key.
 	Provide the following PostProcessing methods:
 	- band_structure(): Plot/print_to_file the band structure.
 	- smallest_gap(): Print an analysis of the band gap.
@@ -372,7 +373,8 @@ class bands(dfp):
 
 		Return:
 		  numpy array of shape ((Emax-Emin)/(deltaE)+1,2)
-		  The first column is the value of the energies generated using np.linspace(Emin,Emax,(Emax-Emin)/(deltaE)+1)
+		  The first column is the value of the energies generated using 
+		   np.linspace(Emin,Emax,(Emax-Emin)/(deltaE)+1)
 		  The second column is the value of the DOS
 		"""
 		res = np.linspace(Emin, Emax, (Emax-Emin)/deltaE+1).reshape(1,-1)

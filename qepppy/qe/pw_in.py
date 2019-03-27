@@ -8,7 +8,8 @@ class pw_in(inp_f, structure):
 	Provides an interface for the 'structure' output file methods, in order to 
 	call methods related to the atomic structure.
 	kwargs:
-	 - src = Name of the file to parse
+	 - input_file = Name of the file to parse
+	 - input_data = Dictionary used to initialize namelists of the input.
 
 	Parse parameters can be accessed using the following syntax:
 	 - obj.param_name

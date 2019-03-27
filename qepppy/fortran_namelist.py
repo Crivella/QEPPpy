@@ -61,7 +61,8 @@ def _tokenize_pattern_(pattern, up=None):
 	return tof_major, tof_minor, n
 
 class fortran_namelist(OrderedDict):
-	def __init__(self, d=None):
+	def __init__(self, d=None, name=''):
+		self.name = name.lower()
 		if d is None:
 			return
 			
@@ -212,13 +213,12 @@ class fortran_namelist(OrderedDict):
 
 
 class fortran_namelist_collection(OrderedDict):
-	def __init__(self, src=None, **kwargs):
+	def __init__(self, src=None, input_data={}):
 		if isinstance(src, str):
 			self.parse(src)
 		# super().__init__(**kwargs)
-		for k,v in kwargs.items():
-			new = fortran_namelist(v)
-			new.name = k
+		for k,v in input_data.items():
+			new = fortran_namelist(v, name=k)
 			self[k] = new
 
 	def __getitem__(self, key):
