@@ -36,9 +36,9 @@ class pw_in(inp_f, structure):
 		self['ATOMIC_POSITIONS/z'] = value[:,2]
 
 	def _check_atoms_len(self, value):
-		if len(value) != self.n_atoms:
+		if len(value) != self._n_atoms:
 			raise ValueError("Number of assigned atoms does not match n_atoms ({} != {}).".format(
-				len(value), self.n_atoms))
+				len(value), self._n_atoms))
 
 	@property
 	def _atoms(self):
@@ -166,11 +166,11 @@ class pw_in(inp_f, structure):
 		self['CELL_PARAMETERS'].value = value
 
 	@property
-	def n_atoms(self):
+	def _n_atoms(self):
 		return self._find("nat")
 
-	@n_atoms.setter
-	def n_atoms(self, value):
+	@_n_atoms.setter
+	def _n_atoms(self, value):
 		if not isinstance(value, int):
 			raise TypeError("Number of atoms must be integer.")
 

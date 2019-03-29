@@ -23,33 +23,54 @@ def split_atom_list_by_name(atom_coord, atom_names):
 	return trees, np.array(names), rad
 
 class _atoms(metaclass=PropertyCreator):
+	n_atoms={
+		'typ':(int,),
+		'doc':"""Number of atoms."""
+		}
+		
+	n_types={
+		'typ':(int,),
+		'doc':"""Number of atomic types."""
+		}
+
 	atoms_coord_cart={
 		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'size':'n_atoms * 3',
 		'doc':"""List of atomic coordinate in cartesian basis."""
 		}
 
 	atoms_coord_cryst={
-		'typ':list,
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'size':'n_atoms * 3',
 		'doc':"""List of atomic coordinate in crystal basis."""
 		}
 
 	atoms_typ={
-		'typ':list,
+		'typ':(list,),
+		'sub_typ':(str,np.ndarray,),
+		'size':'n_atoms',
 		'doc':"""List of atom names (same order as the list of coordinates)."""
 		}
 
 	atoms_mass={
-		'typ':list,
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'size':'n_types',
 		'doc':"""List of atomic masses."""
 		}
 
 	atoms_pseudo={
-		'typ':list,
+		'typ':(list,np.ndarray,),
+		'size':'n_types',
 		'doc':"""List of atomic pseudopotential files."""
 		}
 
 	all_atoms_typ={
-		'typ':list,
+		'typ':(list,np.ndarray,),
+		'sub_typ':(str,),
+		'size':'n_types',
 		'doc':"""List of atom names (same order as list of masses)."""
 		}
 
@@ -109,3 +130,8 @@ class _atoms(metaclass=PropertyCreator):
 					start = tree1.data[i1]
 					end   = tree2.data[i2]
 					cg.draw_bond(ax, start, end, c1, c2, **kwargs)
+
+
+
+
+

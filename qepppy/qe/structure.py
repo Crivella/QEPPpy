@@ -29,7 +29,7 @@ bravais_index={
 	}
 
 data={
-	'n_atoms':{
+	'_n_atoms':{
 		'xml_ptype':'attr', 
 		'xml_search_string':'output//atomic_structure', 
 		'extra_name':'nat', 
