@@ -163,7 +163,7 @@ class pw_in(inp_f, structure):
 		if possib and not value in possib:
 			raise ValueError("CELL_PARAMETERS card value must be one of {} not '{}'.".format(
 				possib, value))
-		self['CELL_PARAMETERS'].value = value
+		self['CELL_PARAMETERS/'] = value
 
 	@property
 	def _n_atoms(self):

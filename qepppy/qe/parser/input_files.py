@@ -329,7 +329,7 @@ class qe_card_collection(OrderedDict):
 
 	def __contains__(self, key):
 		if not isinstance(key, str):
-			raise ValueError("Key for {} must be of string type.".format(self))
+			raise ValueError("Key for {} must be of string type.".format(repr(self)))
 		return super().__contains__(key.lower())
 
 	@property
