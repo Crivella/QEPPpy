@@ -332,11 +332,11 @@ class bands(dfp):
 
 	@numpy_plot_opt(_ylab="Energy (eV)")
 	@numpy_save_opt(_fname="plotted.dat",_fmt="")
-	def band_structure(self):
+	def band_structure(self, thr=np.inf):
 		"""
 		Compute the band structure.
 		Params:
-		  -
+		  - thr: Threshold of delta_K to be considered a cut in the band plot
 		Return:
 		  numpy array with shape(n_kpt,n_bnd+1).
 		  The first column is the coordinates of |dK| to be used as X axis for 
@@ -348,6 +348,8 @@ class bands(dfp):
 		kpt[1:] -= kpt[:-1]
 		kpt[0]  -= kpt[0]
 		norm = np.linalg.norm(kpt, axis=1)
+
+		norm[norm > thr] = 0
 		
 		x = [norm[:i+1].sum() for i in range(len(norm))]
 		egv = self.egv
