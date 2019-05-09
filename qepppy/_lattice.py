@@ -1,11 +1,27 @@
 import numpy as np
-from ._decorators import store_property
+# from ._decorators import store_property
+from .meta import PropertyCreator
 from . import utils
-from . import cell_graphic as cg
 
-class _lattice():
+class _lattice(metaclass=PropertyCreator):
+	# direct={
+	# 	'typ':(list, np.ndarray,),
+	# 	'subtyp':(float, np.float,),
+	# 	'func':np.array,
+	# 	'excp_val':'_recipr',
+	# 	'excp_func':utils.recipr_base,
+	# 	'doc':"""Matrix of direct lattice vectors as rows."""
+	# 	}
+	# recipr={
+	# 	'typ':(list, np.ndarray,),
+	# 	'subtyp':(float, np.float,),
+	# 	'func':np.array,
+	# 	'excp_val':'_direct',
+	# 	'excp_func':utils.recipr_base,
+	# 	'doc':"""Matrix of reciprocal lattice vectors as rows."""
+	# 	}
 	@property
-	@store_property
+	# @store_property
 	def direct(self):
 		try:
 			return np.array(self._direct)
@@ -13,7 +29,7 @@ class _lattice():
 			return utils.recipr_base(self._recipr)
 
 	@property
-	@store_property
+	# @store_property
 	def recipr(self):
 		try:
 			return np.array(self._recipr)
@@ -21,6 +37,12 @@ class _lattice():
 			return utils.recipr_base(self._direct)
 
 	def draw_direct_cell(self, ax, center=[0,0,0]):
+		"""
+		Draw a cell centered on 'center'.
+		Params:
+		 - ax: matplotlib 3D axis object
+		 - center: center for plotting the cell
+		"""
 		V = self.direct
 		for n1 in range(3):
 			orig = np.array(center)
@@ -35,8 +57,13 @@ class _lattice():
 			ax.plot(v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 
 	def draw_Wigner_Seitz(self, ax):
+		"""
+		Draw the Wigner Seitz cell for the lattice.
+		Params:
+		 - ax: matplotlib 3D axis object
+		"""
 		from scipy.spatial import Voronoi
-		L = cg.generate_repetition_grid([-1,0,1],[-1,0,1],[-1,0,1], self.recipr)
+		L = utils.generate_repetition_grid([-1,0,1],[-1,0,1],[-1,0,1], self.recipr)
 
 		vor = Voronoi(L)
 		P = vor.vertices

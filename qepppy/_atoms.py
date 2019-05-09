@@ -25,11 +25,13 @@ def split_atom_list_by_name(atom_coord, atom_names):
 class _atoms(metaclass=PropertyCreator):
 	n_atoms={
 		'typ':(int,),
+		'default':0,
 		'doc':"""Number of atoms."""
 		}
 		
 	n_types={
 		'typ':(int,),
+		'default':0,
 		'doc':"""Number of atomic types."""
 		}
 
@@ -37,6 +39,7 @@ class _atoms(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'size':'n_atoms * 3',
+		'usize':True,
 		'doc':"""List of atomic coordinate in cartesian basis."""
 		}
 
@@ -44,6 +47,7 @@ class _atoms(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'size':'n_atoms * 3',
+		'usize':True,
 		'doc':"""List of atomic coordinate in crystal basis."""
 		}
 
@@ -71,6 +75,7 @@ class _atoms(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray,),
 		'sub_typ':(str,),
 		'size':'n_types',
+		'usize':True,
 		'doc':"""List of atom names (same order as list of masses)."""
 		}
 

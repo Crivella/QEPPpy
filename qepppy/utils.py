@@ -1,5 +1,12 @@
 import numpy as np
 
+def generate_repetition_grid(r1,r2,r3, vect_matrix):
+	from itertools import product
+	res = np.array(list(product(r1,r2,r3)))
+	res = np.dot(vect_matrix.T, res.T).T
+
+	return res
+
 def xyz_mesh(shape, base=None, rep=1, reverse=False):
 	n1,n2,n3 = shape
 	try:
@@ -37,13 +44,7 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
 	return np.array(XYZ).reshape(3,*x.shape)
 
 def recipr_base(base):
-	b1,b2,b3 = base
-	vol = np.linalg.norm(np.dot(b1,np.cross(b2,b3)))
-	a1 = np.cross(b2,b3) / vol
-	a2 = np.cross(b3,b1) / vol
-	a3 = np.cross(b1,b2) / vol
-
-	return np.array([a1,a2,a3]) * 2 * np.pi
+	return np.linalg.inv(base).T * 2 * np.pi
 
 def lowdin_ortho(base):
 	"""

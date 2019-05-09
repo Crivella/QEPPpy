@@ -12,9 +12,21 @@ def flatten_iter(iterable):
 		res += flatten_iter(i)
 	return res
 
+# def key_getter(key, func=None, excp_val=None, excp_func=None):
 def key_getter(key):
 	def getter(self):
-		return getattr(self, key)
+		val = getattr(self, key)
+		# if val:
+		# 	if not func is None:
+		# 		val = func(val)
+		# else:
+		# 	# print(excp_val)
+		# 	if isinstance(excp_val, str):
+		# 		val = getattr(self, excp_val)
+		# 	# print(excp_func)
+		# 	if not excp_func is None :
+		# 		val = excp_func(val)
+		return val
 
 	return getter
 
@@ -34,24 +46,27 @@ def convert_var(self, value, typ=int):
 		return value
 
 
-def key_setter(key, typ=None, sub_typ=None, size=None):
-	def setter(self, value):
+def key_setter(key, typ=None, sub_typ=None, size=None, usize=None):
+	def setter(self, value, size=size):
 		if not check_type(typ, value):
 			raise TypeError("'{}' must be of type '{}'.".format(key[1:],typ))
 
 		if not check_sub_type(sub_typ, value):
 			raise TypeError("Elements of '{}' must be of type '{}'.".format(value,sub_typ))
 
-		if not size is None:
+		if size:
 			l = len(flatten_iter(value))
 			if isinstance(size, int):
 				s = size
 			if isinstance(size, str):
 				app = size.replace(' ', '')
 				name,mul = (app.split('*') + [1,])[:2]
-				name = convert_var(self, name)
-				mul  = convert_var(self, int(mul))
-				s = name * mul
+				name_v = convert_var(self, name)
+				mul_v  = convert_var(self, int(mul))
+				s = name_v * mul_v
+				if l != s and usize and l % mul_v == 0:
+					s = l
+					setattr(self, name, l // mul_v)
 			if l != s:
 				raise TypeError("'{}' must be of size {}.".format(value, s))
 		setattr(self, key, value)
@@ -74,6 +89,47 @@ def set_typ(typ, value):
 	return typ(value)
 
 class PropertyCreator(type):
+	"""
+	Metaclass to creaty property object following rules specified in a 
+	dictionary.
+	The name of the dict being transformed into a property object must be a
+	string and not begin with '_'.
+	Rules:
+	 - typ: 
+	    Instance or tuple of instances to be used for check with 
+	    'isinstance' for the property (used when calling the setter).
+	    If the property is not of any of the specified type, a 'TypeError' will
+	    be raised during assignment (cls.prop = var).
+	    Examples: 'typ':int,    'typ':(int,float,),
+	 - sub_type: 
+	    Instance or tuple of instances to be used for check with 
+	    'isinstance' for all sub-elements of an iterable (used when calling the 
+	    setter).	    
+	    If the property is not of any of the specified type, a 'TypeError' will
+	    be raised during assignment (cls.prop = var).
+	    Examples: 'typ':int,    'typ':(int,float,),
+	 - size:
+	    Size specification for an iterable object.
+	    It can be an 'int' or a 'str' pointing to the name of another method of
+	    the object.
+	    The 'str' can be 'method_name' or 'method_name * multiplier', where
+	    multiplier can either be a number or another method_name.
+	    If the lenght of the flattened array is not equal to 'size'  and 'usize'
+	    is set to 'False', a 'TypeError' will be raised.
+	    Examples: 'size':9,  'size':'n_atoms * 3', 'size':'n_atoms * n_types'.
+	 - usize:
+	    For size specified using a method name, setting 'usize':True, allows for
+	    the change in value of 'method_name' if 'size % multiplier == 0'.
+	    For example it allows to set the atoms coordinate without having to
+	    manually set the number of atoms.
+	 - default:
+	    Set a default value for the property.
+	    If no value is given the default will be set as typ() where type is the
+	    property type (if only one is given), or the first type specified in the
+	    tuple.
+	 - doc:
+	 	String to be used as a docstring for the property.
+	"""
 	def __new__(cls, clsname, base, dct):
 		new_dct = {}
 		for k,v in dct.items():
@@ -81,12 +137,16 @@ class PropertyCreator(type):
 			if not isinstance(k, str) or k.startswith("_") or not isinstance(v, dict):
 				continue
 
-			hk      = "_" + k
-			typ     = v.get('typ', None)
-			sub_typ = v.get('sub_typ', None)
-			size    = v.get('size', None)
-			default = v.get('default', None)
-			doc     = v.get('doc','')
+			hk        = "_" + k
+			typ       = v.get('typ',       None)
+			sub_typ   = v.get('sub_typ',   None)
+			size      = v.get('size',      0 )
+			usize     = v.get('usize',     False)
+			default   = v.get('default',   None)
+			# func      = v.get('func',      None)
+			# excp_val  = v.get('excp_val',  None)
+			# excp_func = v.get('excp_func', None)
+			doc       = v.get('doc',       '')
 
 			doc = ('type          = {}.\n'
 				   'sub_type      = {}.\n'
@@ -95,8 +155,9 @@ class PropertyCreator(type):
 
 			new_dct[hk] = set_typ(typ, default)
 
+			# getter = key_getter(hk, func, excp_val, excp_func)
 			getter = key_getter(hk)
-			setter = key_setter(hk, typ, sub_typ, size)
+			setter = key_setter(hk, typ, sub_typ, size, usize)
 
 			getter.__doc__ = doc
 

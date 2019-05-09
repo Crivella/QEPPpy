@@ -1,12 +1,5 @@
 import numpy as np
 
-def generate_repetition_grid(r1,r2,r3, vect_matrix):
-	from itertools import product
-	res = np.array(list(product(r1,r2,r3)))
-	res = np.dot(vect_matrix.T, res.T).T
-
-	return res
-
 def draw_sphere(ax, radius=1, center=[0,0,0], color="b"):
 	x0, y0, z0 = center
 	u = np.linspace(0, 2 * np.pi, 10)

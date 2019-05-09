@@ -167,7 +167,10 @@ class pw_in(inp_f, structure):
 
 	@property
 	def _n_atoms(self):
-		return self._find("nat")
+		res = self._find("nat")
+		if res is None:
+			return 0
+		return res
 
 	@_n_atoms.setter
 	def _n_atoms(self, value):
@@ -177,11 +180,14 @@ class pw_in(inp_f, structure):
 		self['SYSTEM/nat'] = value
 
 	@property
-	def n_types(self):
-		return self._find("ntyp")
+	def _n_types(self):
+		res = self._find("ntyp")
+		if res is None:
+			return 0
+		return res
 
-	@n_types.setter
-	def n_types(self, value):
+	@_n_types.setter
+	def _n_types(self, value):
 		if not isinstance(value, int):
 			raise TypeError("Number of types must be integer.")
 

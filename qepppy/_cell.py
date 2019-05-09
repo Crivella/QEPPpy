@@ -1,13 +1,13 @@
 import numpy as np
 from ._atoms   import _atoms   as atm
 from ._lattice import _lattice as latt
-from . import cell_graphic as cg
+from . import utils
 
 
 class _cell(atm, latt):
 	def make_supercell(self,repX,repY,repZ):
 		rep = [range(a) for a in [repX,repY,repZ]]
-		shift = cg.generate_repetition_grid(*rep, self.direct)
+		shift = utils.generate_repetition_grid(*rep, self.direct)
 		typ = self.atoms_typ * (repX*repY*repZ)
 
 		res = np.empty(shape=(0,3))
