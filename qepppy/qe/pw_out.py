@@ -66,7 +66,11 @@ class pw_out(bands, structure):
 				c  = c[c>v]
 				dE = egv[c] - egv[v-bnd_low]
 
-				pp = np.sum(np.conj(psi.val[v]) * psi.val[c + bnd_low].reshape(len(c),1,psi.igwx) * kG, axis=-1)
+				pp = np.sum(
+					np.conj(psi.val[v]) * 
+					psi.val[c + bnd_low].reshape(len(c), 1, psi.nspin, psi.igwx) * 
+					kG.reshape(1,3,1,psi.igwx), 
+					axis=(2,3))
 				pp = np.real(np.conj(pp) * pp)
 
 				res = np.column_stack((c+1 + bnd_low, pp, dE, occ[v-bnd_low]-occ[c]))

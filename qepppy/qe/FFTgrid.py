@@ -26,18 +26,17 @@ class FFTgrid():
 				raise Exception("Wavefunction not normalized.")
 
 	def _generate_g_grid_(self,bnd,shape=None):
-		app = np.max(self.gvect, axis=0) - np.min(self.gvect, axis=0)+1
-		# print(app, shape)
 		if shape is None:
-			shape = app
+			shape = np.max(self.gvect, axis=0) - np.min(self.gvect, axis=0)+1
+			shape = [int(self.nspin)] + list(shape)
+			
 		GRID = np.zeros(
 			shape,
 			dtype=np.complex
 			)
-		GRID[tuple(self.gvect.T)] = self.val[bnd]
 
-		# print(GRID[3,0,0],GRID[-3,0,0])
-		# exit()
+		GRID[:,self.gvect[:,0],self.gvect[:,1],self.gvect[:,2]] = self.val[bnd]
+
 		return GRID
 
 	def plot_density_zslice(
@@ -65,12 +64,12 @@ class FFTgrid():
 				(X.min(),X.max()),
 				(Y.min(),Y.max()),
 				(zs,zs),
-				np.array(rho.shape),
+				np.array(rho.shape[1:]),
 				(rep,)*3
 				)
 
 			ax1.contourf(
-				x, y, rho[index].reshape(x.shape),
+				x, y, rho[(0,*index)].reshape(x.shape) + rho[(1,*index)].reshape(x.shape),
 				100, cmap=cmap
 				)
 

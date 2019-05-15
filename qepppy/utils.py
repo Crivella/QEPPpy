@@ -8,7 +8,7 @@ def generate_repetition_grid(r1,r2,r3, vect_matrix):
 	return res
 
 def xyz_mesh(shape, base=None, rep=1, reverse=False):
-	n1,n2,n3 = shape
+	nspin, n1,n2,n3 = shape
 	try:
 		r1,r2,r3 = rep
 	except:

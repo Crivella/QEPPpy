@@ -154,7 +154,7 @@ def _get_pw2gw_data(
 	mel    = data[(3,4,5),:]
 	en     = data[6]/HARTREE
 	fact   = data[7]
-	FAQ    = 4 * np.pi / vol
+	FAQ    = 2 * np.pi / vol
 	return mel, weight, en, fact, FAQ
 
 @numpy_plot_opt(
@@ -259,7 +259,7 @@ def calc_eps_pw2gw_light(
 			index = int((en-Emin)/deltaE + 0.5)
 			res[index,1:] +=  p* fact  *weight[int(k)-1] / en**2
 
-	res[:,1:] *= 4 * np.pi**2 * HARTREE**3 / vol / deltaE
+	res[:,1:] *= 2 * np.pi**2 * HARTREE**3 / vol / deltaE
 
 	res = (res[:-1] + res[1:])/2
 
