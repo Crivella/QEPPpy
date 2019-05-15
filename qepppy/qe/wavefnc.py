@@ -25,7 +25,7 @@ class wavefnc(bin_io, FFTgrid):
 			{'type':'i4', 'shape':('igwx',3,), 'name':'gvect'},
 		],
 		([
-			{'type':'c16', 'shape':('nspin','igwx',), 'name':'val'},
+			{'type':'c16', 'shape':('nspin','igwx',), 'name':'C_kn'},
 		], 'nbnd'),
 	]
 	def __init__(self, src=""):

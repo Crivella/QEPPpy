@@ -20,7 +20,7 @@ class FFTgrid():
 	def test_norm(self):
 		if not self.binary:
 			raise Exception("Must first read a wavefunction file.")
-		for val in self.val:
+		for val in self.C_kn:
 			norm = np.linalg.norm(val)
 			if np.abs(norm - 1) > 1.E-7:
 				raise Exception("Wavefunction not normalized.")
@@ -35,7 +35,7 @@ class FFTgrid():
 			dtype=np.complex
 			)
 
-		GRID[:,self.gvect[:,0],self.gvect[:,1],self.gvect[:,2]] = self.val[bnd]
+		GRID[:,self.gvect[:,0],self.gvect[:,1],self.gvect[:,2]] = self.C_kn[bnd]
 
 		return GRID
 

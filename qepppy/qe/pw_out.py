@@ -1,5 +1,4 @@
 import os
-import scipy
 import numpy as np
 from .bands        import bands     as bands
 from .structure    import structure as structure
@@ -8,7 +7,6 @@ from .UPF          import UPF
 # from ..utils       import xyz_mesh
 from .._decorators import store_property
 # from ..logger import logger
-
 # @logger()
 class pw_out(bands, structure):
 	"""
@@ -67,8 +65,8 @@ class pw_out(bands, structure):
 				dE = egv[c] - egv[v-bnd_low]
 
 				pp = np.sum(
-					np.conj(psi.val[v]) * 
-					psi.val[c + bnd_low].reshape(len(c), 1, psi.nspin, psi.igwx) * 
+					np.conj(psi.C_kn[v]) * 
+					psi.C_kn[c + bnd_low].reshape(len(c), 1, psi.nspin, psi.igwx) * 
 					kG.reshape(1,3,1,psi.igwx), 
 					axis=(2,3))
 				pp = np.real(np.conj(pp) * pp)
