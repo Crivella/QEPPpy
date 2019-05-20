@@ -1,5 +1,39 @@
 import numpy as np
 
+def recipr_base(base):
+	return np.linalg.inv(base).T * 2 * np.pi
+
+def _cart_to_cryst_(cls, cart):
+	"""
+	Convert np.array of cartesian coordinates to crystal coordinates.
+	The object cls must contain the attribute 'recipr' or 'direct'
+	for the reciprocal or direct lattice basis vectors.
+	"""
+	recipr = np.array(cls.recipr)
+	try:
+		assert(recipr.shape == (3,3))
+	except:
+		direct = np.array(cls.direct)
+		if direct.shape != (3,3):
+			raise ValueError("Must set valid reciprocal or direct base first!!!")
+
+		recipr = recipr_base(direct)
+
+	return cart.dot(np.linalg.inv(recipr))
+
+def _cryst_to_cart_(cls, cryst):
+	recipr = np.array(cls.recipr)
+	try:
+		assert(recipr.shape == (3,3))
+	except:
+		direct = np.array(cls.direct)
+		if direct.shape != (3,3):
+			raise ValueError("Must set valid reciprocal or direct base first!!!")
+
+		recipr = recipr_base(direct)
+
+	return cryst.dot(recipr)
+
 def generate_repetition_grid(r1,r2,r3, vect_matrix):
 	from itertools import product
 	res = np.array(list(product(r1,r2,r3)))
@@ -42,9 +76,6 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
 		XYZ = [x,y,z]
 
 	return np.array(XYZ).reshape(3,*x.shape)
-
-def recipr_base(base):
-	return np.linalg.inv(base).T * 2 * np.pi
 
 def lowdin_ortho(base):
 	"""

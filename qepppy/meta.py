@@ -46,8 +46,14 @@ def convert_var(self, value, typ=int):
 		return value
 
 
-def key_setter(key, typ=None, sub_typ=None, size=None, usize=None, conv_func=lambda x:x):
+def key_setter(key, 
+	typ=None, sub_typ=None, 
+	size=None, usize=None, 
+	conv_func=lambda x:x,
+	set_other_name=None, set_other_func=lambda x: x
+	):
 	def setter(self, value, size=size):
+		# print(f'Setting attribute {key} with value {value}')
 		err_header = f"While assigning '{key[1:]}':\n" + "*"*8
 		if not check_type(typ, value):
 			raise TypeError(
@@ -85,6 +91,8 @@ def key_setter(key, typ=None, sub_typ=None, size=None, usize=None, conv_func=lam
 				)
 			raise e
 		setattr(self, key, conv_func(value))
+		if not set_other_name is None:
+			setattr(self, set_other_name, set_other_func(self, value))
 
 	return setter
 
@@ -125,6 +133,15 @@ class PropertyCreator(type):
 	    Examples: 'typ':int,    'typ':(int,float,),
 	 - conv_func:
 	    Function to be applied to the input data before it is set.
+	 - set_other_name:
+	    When setting this property, will also set another property using the
+	    same value. (Look 'set_other_func' for more details).
+	 - set_other_func:
+	    Before assgning the value to 'set_other_name', pass the value through
+	    this functiond and assign the return value instead.
+	    The funcion must accept 2 positional parameters:
+	     - cls: instance of the method containing the property.
+	     - value: value over which to run the function.
 	 - size:
 	    Size specification for an iterable object.
 	    It can be an 'int' or a 'str' pointing to the name of another method of
@@ -164,6 +181,8 @@ class PropertyCreator(type):
 			# excp_val  = v.get('excp_val',  None)
 			# excp_func = v.get('excp_func', None)
 			conv_func = v.get('conv_func', lambda x: x)
+			set_other_name = v.get('set_other_name', None)
+			set_other_func = v.get('set_other_func', lambda x: x)
 			doc       = v.get('doc',       '')
 
 			doc = ('type          = {}.\n'
@@ -175,7 +194,8 @@ class PropertyCreator(type):
 
 			# getter = key_getter(hk, func, excp_val, excp_func)
 			getter = key_getter(hk)
-			setter = key_setter(hk, typ, sub_typ, size, usize, conv_func)
+			setter = key_setter(hk, typ, sub_typ, size, usize, conv_func,
+				set_other_name, set_other_func)
 
 			getter.__doc__ = doc
 
