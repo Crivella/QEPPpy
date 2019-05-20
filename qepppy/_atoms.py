@@ -24,13 +24,13 @@ def split_atom_list_by_name(atom_coord, atom_names):
 
 class _atoms(metaclass=PropertyCreator):
 	n_atoms={
-		'typ':(int,),
+		'typ':(int,np.int),
 		'default':0,
 		'doc':"""Number of atoms."""
 		}
 		
 	n_types={
-		'typ':(int,),
+		'typ':(int,np.int),
 		'default':0,
 		'doc':"""Number of atomic types."""
 		}
@@ -40,6 +40,7 @@ class _atoms(metaclass=PropertyCreator):
 		'sub_typ':(int,float,np.number),
 		'size':'n_atoms * 3',
 		'usize':True,
+		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'doc':"""List of atomic coordinate in cartesian basis."""
 		}
 
@@ -48,6 +49,7 @@ class _atoms(metaclass=PropertyCreator):
 		'sub_typ':(int,float,np.number),
 		'size':'n_atoms * 3',
 		'usize':True,
+		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'doc':"""List of atomic coordinate in crystal basis."""
 		}
 
@@ -62,6 +64,7 @@ class _atoms(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'size':'n_types',
+		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'doc':"""List of atomic masses."""
 		}
 

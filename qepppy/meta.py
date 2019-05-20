@@ -46,13 +46,20 @@ def convert_var(self, value, typ=int):
 		return value
 
 
-def key_setter(key, typ=None, sub_typ=None, size=None, usize=None):
+def key_setter(key, typ=None, sub_typ=None, size=None, usize=None, conv_func=lambda x:x):
 	def setter(self, value, size=size):
+		err_header = f"While assigning '{key[1:]}':\n" + "*"*8
 		if not check_type(typ, value):
-			raise TypeError("'{}' must be of type '{}'.".format(key[1:],typ))
+			raise TypeError(
+				err_header + 
+				f" value='{value}' must be of type '{typ}'."
+				)
 
 		if not check_sub_type(sub_typ, value):
-			raise TypeError("Elements of '{}' must be of type '{}'.".format(value,sub_typ))
+			raise TypeError(
+				err_header + 
+				f"elements of value='{value}' must be of type '{sub_typ}'."
+				)
 
 		if size:
 			l = len(flatten_iter(value))
@@ -68,8 +75,16 @@ def key_setter(key, typ=None, sub_typ=None, size=None, usize=None):
 					s = l
 					setattr(self, name, l // mul_v)
 			if l != s:
-				raise TypeError("'{}' must be of size {}.".format(value, s))
-		setattr(self, key, value)
+				raise TypeError(err_header + f"value='{value}' must be of size '{name}'={s}.")
+		try:
+			value = conv_func(value)
+		except Exception as e:
+			print(
+				err_header + 
+				f"Failed to run conversion function '{conv_func}' on value='{value}'"
+				)
+			raise e
+		setattr(self, key, conv_func(value))
 
 	return setter
 
@@ -108,6 +123,8 @@ class PropertyCreator(type):
 	    If the property is not of any of the specified type, a 'TypeError' will
 	    be raised during assignment (cls.prop = var).
 	    Examples: 'typ':int,    'typ':(int,float,),
+	 - conv_func:
+	    Function to be applied to the input data before it is set.
 	 - size:
 	    Size specification for an iterable object.
 	    It can be an 'int' or a 'str' pointing to the name of another method of
@@ -146,6 +163,7 @@ class PropertyCreator(type):
 			# func      = v.get('func',      None)
 			# excp_val  = v.get('excp_val',  None)
 			# excp_func = v.get('excp_func', None)
+			conv_func = v.get('conv_func', lambda x: x)
 			doc       = v.get('doc',       '')
 
 			doc = ('type          = {}.\n'
@@ -157,7 +175,7 @@ class PropertyCreator(type):
 
 			# getter = key_getter(hk, func, excp_val, excp_func)
 			getter = key_getter(hk)
-			setter = key_setter(hk, typ, sub_typ, size, usize)
+			setter = key_setter(hk, typ, sub_typ, size, usize, conv_func)
 
 			getter.__doc__ = doc
 
