@@ -2,7 +2,7 @@ import numpy as np
 # from ._decorators import store_property
 from .meta import PropertyCreator
 from . import cell_graphic as cg
-from .utils import _cart_to_cryst_, _cryst_to_cart_
+from .utils import _cart_to_cryst_, _cryst_to_cart_, get_num
 
 import json
 from pkg_resources import resource_string
@@ -39,51 +39,54 @@ class _atoms(metaclass=PropertyCreator):
 	atoms_coord_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'size':'n_atoms * 3',
-		'usize':True,
+		'shape': ('n_atoms',3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'set_other_name':'_atoms_coord_cryst',
-		'set_other_func':_cart_to_cryst_,
+		'pre_set_name':'_n_atoms',
+		'pre_set_func':get_num,
+		'post_set_name':'_atoms_coord_cryst',
+		'post_set_func':_cart_to_cryst_,
 		'doc':"""List of atomic coordinate in cartesian basis."""
 		}
 
 	atoms_coord_cryst={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'size':'n_atoms * 3',
-		'usize':True,
+		'shape': ('n_atoms',3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'set_other_name':'_atoms_coord_cart',
-		'set_other_func':_cryst_to_cart_,
+		'pre_set_name':'_n_atoms',
+		'pre_set_func':get_num,
+		'post_set_name':'_atoms_coord_cart',
+		'post_set_func':_cryst_to_cart_,
 		'doc':"""List of atomic coordinate in crystal basis."""
 		}
 
 	atoms_typ={
 		'typ':(list,),
 		'sub_typ':(str,np.ndarray,),
-		'size':'n_atoms',
+		'shape':('n_atoms',),
 		'doc':"""List of atom names (same order as the list of coordinates)."""
 		}
 
 	atoms_mass={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'size':'n_types',
+		'shape':('n_types',),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'doc':"""List of atomic masses."""
 		}
 
 	atoms_pseudo={
 		'typ':(list,np.ndarray,),
-		'size':'n_types',
+		'shape':('n_types',),
 		'doc':"""List of atomic pseudopotential files."""
 		}
 
 	all_atoms_typ={
 		'typ':(list,np.ndarray,),
 		'sub_typ':(str,),
-		'size':'n_types',
-		'usize':True,
+		'pre_set_name':'_n_types',
+		'pre_set_func':get_num,
+		'shape':('n_types',),
 		'doc':"""List of atom names (same order as list of masses)."""
 		}
 

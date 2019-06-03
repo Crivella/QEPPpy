@@ -1,5 +1,14 @@
 import numpy as np
 
+class TypedList(list):
+	def __init__(self, typ):
+		self.typ = typ
+
+	def append(self, value):
+		if not isinstance(value, self.typ):
+			raise TypeError(f"List '{repr(self)}', only accept type '{self.typ}'.")
+		super().append(value)
+
 def recipr_base(base):
 	return np.linalg.inv(base).T * 2 * np.pi
 
@@ -33,6 +42,9 @@ def _cryst_to_cart_(cls, cryst):
 		recipr = recipr_base(direct)
 
 	return cryst.dot(recipr)
+
+def get_num(cls, l):
+	return len(l)
 
 def generate_repetition_grid(r1,r2,r3, vect_matrix):
 	from itertools import product

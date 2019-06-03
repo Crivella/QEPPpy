@@ -1,6 +1,6 @@
 import numpy as np
 from .meta import PropertyCreator
-from .utils import _cart_to_cryst_, _cryst_to_cart_
+from .utils import _cart_to_cryst_, _cryst_to_cart_, get_num
 
 
 class _kpoints(metaclass=PropertyCreator):
@@ -12,21 +12,23 @@ class _kpoints(metaclass=PropertyCreator):
 	kpt_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'size':'n_kpt * 3',
-		'usize':True,
+		'shape': ('n_kpt',3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'set_other_name':'_kpt_cryst',
-		'set_other_func':_cart_to_cryst_,
+		'pre_set_name':'_n_kpt',
+		'pre_set_func':get_num,
+		'post_set_name':'_kpt_cryst',
+		'post_set_func':_cart_to_cryst_,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
 		}
 	kpt_cryst={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'size':'n_kpt * 3',
-		'usize':True,
+		'shape': ('n_kpt',3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'set_other_name':'_kpt_cart',
-		'set_other_func':_cryst_to_cart_,
+		'pre_set_name':'_n_kpt',
+		'pre_set_func':get_num,
+		'post_set_name':'_kpt_cart',
+		'post_set_func':_cryst_to_cart_,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
 		}
 	recipr={
@@ -39,8 +41,7 @@ class _kpoints(metaclass=PropertyCreator):
 	weight={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'size':'n_kpt',
-		'usize':True,
+		'shape':('n_kpt',),
 		'conv_func':lambda x: np.array(x, dtype=np.float)/np.array(x, dtype=np.float).sum(),
 		'doc':"""List of k-points weights."""
 		}
