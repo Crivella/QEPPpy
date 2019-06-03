@@ -6,15 +6,36 @@ from . import utils
 
 class _cell(atm, latt):
 	def make_supercell(self,repX,repY,repZ):
-		rep = [range(a) for a in [repX,repY,repZ]]
-		shift = utils.generate_repetition_grid(*rep, self.direct)
-		typ = self.atoms_typ * (repX*repY*repZ)
+		from functools import reduce
+		assert(isinstance(repX,(int,range,list,tuple)))
+		assert(isinstance(repY,(int,range,list,tuple)))
+		assert(isinstance(repZ,(int,range,list,tuple)))
 
-		res = np.empty(shape=(0,3))
-		for vec in shift:
-			res = np.vstack((res, self.atoms_coord_cart+vec))
+		rep    = [range(a) if isinstance(a,int) else a for a in [repX,repY,repZ]]
+		R_vec  = utils.generate_repetition_grid(*rep, self.direct)
+ 
+		n_cell = [max(a)-min(a) for a in rep]
+		typ    = self.atoms_typ * (reduce(lambda x,y: x*y, n_cell))
+ 
+		res    = np.empty(shape=(0,3))
+		coord  = self.atoms_coord_cart
+		for vec in R_vec:
+			res = np.vstack((res, coord+vec))
 
 		return res, typ
+
+	def nearest_neighbour(self, max_shell=5):
+		# from itertools import product
+		assert(isinstance(max_shell, int))
+
+		m        = max_shell
+		l        = range(-m, m+1)
+		coord, _ = self.make_supercell(l,l,l)
+		norm     = np.linalg.norm(coord, axis=1)
+
+		dist, index, counts = np.unique(norm, return_index=True, return_counts=True)
+
+		return dist[1:max_shell], index[1:max_shell], counts[1:max_shell]
 
 	def plot(
 		self, 
