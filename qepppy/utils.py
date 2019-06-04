@@ -43,9 +43,6 @@ def _cryst_to_cart_(cls, cryst):
 
 	return cryst.dot(recipr)
 
-def get_num(cls, l):
-	return len(l)
-
 def generate_repetition_grid(r1,r2,r3, vect_matrix):
 	from itertools import product
 	res = np.array(list(product(r1,r2,r3)))

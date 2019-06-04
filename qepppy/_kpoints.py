@@ -1,21 +1,14 @@
 import numpy as np
 from .meta import PropertyCreator
-from .utils import _cart_to_cryst_, _cryst_to_cart_, get_num
+from .utils import _cart_to_cryst_, _cryst_to_cart_
 
 
 class _kpoints(metaclass=PropertyCreator):
-	n_kpt={
-		'typ':(int,),
-		'default':0,
-		'doc':"""Number of k-points."""
-		}
 	kpt_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'shape': ('n_kpt',3),
+		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'pre_set_name':'_n_kpt',
-		'pre_set_func':get_num,
 		'post_set_name':'_kpt_cryst',
 		'post_set_func':_cart_to_cryst_,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
@@ -23,10 +16,8 @@ class _kpoints(metaclass=PropertyCreator):
 	kpt_cryst={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'shape': ('n_kpt',3),
+		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'pre_set_name':'_n_kpt',
-		'pre_set_func':get_num,
 		'post_set_name':'_kpt_cart',
 		'post_set_func':_cryst_to_cart_,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
@@ -48,6 +39,10 @@ class _kpoints(metaclass=PropertyCreator):
 
 	def __init__(self):
 		pass
+
+	@property
+	def n_kpt(self):
+		return len(self.kpt_cart)
 
 	def generate_kpath(self, edges, mode='crystal'):
 		"""

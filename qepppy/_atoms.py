@@ -1,12 +1,19 @@
 import numpy as np
-# from ._decorators import store_property
 from .meta import PropertyCreator
 from . import cell_graphic as cg
-from .utils import _cart_to_cryst_, _cryst_to_cart_, get_num
+from .utils import _cart_to_cryst_, _cryst_to_cart_
 
 import json
 from pkg_resources import resource_string
 periodic_table = json.loads(resource_string('qepppy.qe.parser.data', 'periodic_table.json').decode('utf-8'))
+
+def get_all_atoms_typ(cls, value):
+	res = []
+	for name in value:
+		if not name in res:
+			res.append(name)
+
+	return res
 
 def split_atom_list_by_name(atom_coord, atom_names):
 	from scipy.spatial import KDTree
@@ -24,46 +31,32 @@ def split_atom_list_by_name(atom_coord, atom_names):
 	return trees, np.array(names), rad
 
 class _atoms(metaclass=PropertyCreator):
-	n_atoms={
-		'typ':(int,np.int),
-		'default':0,
-		'doc':"""Number of atoms."""
-		}
-		
-	n_types={
-		'typ':(int,np.int),
-		'default':0,
-		'doc':"""Number of atomic types."""
-		}
-
 	atoms_coord_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'shape': ('n_atoms',3),
+		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'pre_set_name':'_n_atoms',
-		'pre_set_func':get_num,
 		'post_set_name':'_atoms_coord_cryst',
 		'post_set_func':_cart_to_cryst_,
-		'doc':"""List of atomic coordinate in cartesian basis."""
+		'doc':"""List of atomic coordinate in CARTESIAN basis."""
 		}
 
 	atoms_coord_cryst={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'shape': ('n_atoms',3),
+		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'pre_set_name':'_n_atoms',
-		'pre_set_func':get_num,
 		'post_set_name':'_atoms_coord_cart',
 		'post_set_func':_cryst_to_cart_,
-		'doc':"""List of atomic coordinate in crystal basis."""
+		'doc':"""List of atomic coordinate in CRYSTAL basis."""
 		}
 
 	atoms_typ={
 		'typ':(list,),
 		'sub_typ':(str,np.ndarray,),
 		'shape':('n_atoms',),
+		'post_set_name':'_all_atoms_typ',
+		'post_set_func':get_all_atoms_typ,
 		'doc':"""List of atom names (same order as the list of coordinates)."""
 		}
 
@@ -84,12 +77,16 @@ class _atoms(metaclass=PropertyCreator):
 	all_atoms_typ={
 		'typ':(list,np.ndarray,),
 		'sub_typ':(str,),
-		'pre_set_name':'_n_types',
-		'pre_set_func':get_num,
-		'shape':('n_types',),
 		'doc':"""List of atom names (same order as list of masses)."""
 		}
 
+	@property
+	def n_atoms(self):
+		return len(self.atoms_coord_cart)
+
+	@property
+	def n_types(self):
+		return len(self.all_atoms_typ)
 
 	@property
 	def atoms_group_coord_cart(self):

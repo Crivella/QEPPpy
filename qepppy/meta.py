@@ -1,5 +1,3 @@
-from itertools import zip_longest
-
 def flatten_iter(iterable):
 	try:
 		iter(iterable)
@@ -64,7 +62,6 @@ def set_other(cls, other_name, other_func, value):
 
 def key_setter(key, 
 	typ=None, sub_typ=None, 
-	# size=None, shape=None, usize=None, 
 	shape=None,
 	conv_func=lambda x:x,
 	pre_set_name=None, pre_set_func=None,
@@ -74,7 +71,7 @@ def key_setter(key,
 		# print(f'Setting attribute {key} with value {value}')
 		err_header = f"While assigning '{key[1:]}':\n" + "*"*8 + " "
 
-		set_other(cls, pre_set_name, pre_set_func ,value)
+		set_other(cls, pre_set_name, pre_set_func, value)
 
 		if not check_type(typ, value):
 			raise TypeError(
@@ -88,32 +85,17 @@ def key_setter(key,
 				f"elements of value='{value}' must be of type '{sub_typ}'."
 				)
 
-		# if size:
-		# 	l = len(flatten_iter(value))
-		# 	if isinstance(size, int):
-		# 		s = size
-		# 	if isinstance(size, str):
-		# 		app = size.replace(' ', '')
-		# 		name,mul = (app.split('*') + [1,])[:2]
-		# 		name_v = convert_var(cls, name)
-		# 		mul_v  = convert_var(cls, int(mul))
-		# 		s = name_v * mul_v
-		# 		if l != s and usize and l % mul_v == 0:
-		# 			s = l
-		# 			setattr(cls, name, l // mul_v)
-		# 	if l != s:
-		# 		raise TypeError(err_header + f"value='{value}' must be of size '{name}'={s}.")
 		if shape:
 			if hasattr(value, 'shape'):
 				v_shape = value.shape
 				if len(v_shape) != len(shape):
 					raise ValueError(err_header + f"Mismatch in number of dimension required value='{v_shape}' vs required='{shape}'.")
-				for ve, ce in zip_longest(v_shape, shape, fillvalue=None):
+				for ve, ce in zip(v_shape, shape):
 					app = convert_var(cls, ce)
-					if ve != app:
+					if ve != app and app != -1:
 						raise ValueError(err_header + f"Shape mismatch '{ce}'={app} not equal to '{v_shape}'")
 			else:
-				l = len(value)
+				l   = len(value)
 				if len(shape) > 1:
 					raise ValueError(err_header + f"Can't confront shape of value='{l}' with '{shape}'")
 				app = convert_var(cls, shape[0])
@@ -128,9 +110,9 @@ def key_setter(key,
 				f"Failed to run conversion function '{conv_func}' on value='{value}'"
 				)
 			raise e
-		setattr(cls, key, conv_func(value))
 
 		set_other(cls, post_set_name, post_set_func ,value)
+		setattr(cls, key, value)
 
 	return setter
 
