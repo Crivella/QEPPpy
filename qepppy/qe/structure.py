@@ -36,7 +36,7 @@ data={
 		'res_type':int,
 		'outfile_regex':r'number of atoms/cell\s*=\s*'
 		},
-	'n_types':{
+	'_n_types':{
 		'xml_ptype':'attr', 
 		'xml_search_string':'output//atomic_species', 
 		'extra_name':'ntyp', 
@@ -169,7 +169,7 @@ class structure(dfp, cell):
 	@property
 	def _atoms_coord_cart(self):
 		res = np.array([a['coord'] for a in self._atoms]) * self.atom_p
-		n = self.n_atoms
+		n = self._n_atoms
 		if n and len(res) == n*2:
 			res = res[0:n,:]
 		if self._atom_p == 'crystal':
@@ -179,7 +179,7 @@ class structure(dfp, cell):
 	@property
 	def _atoms_coord_cryst(self):
 		res = np.array([a['coord'] for a in self._atoms]) * self.atom_p
-		n = self.n_atoms
+		n = self._n_atoms
 		if len(res) == n*2:
 				res = res[n:n*2,:]
 		else:
