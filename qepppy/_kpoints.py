@@ -2,6 +2,8 @@ import numpy as np
 from .meta import PropertyCreator
 from .utils import _cart_to_cryst_, _cryst_to_cart_
 
+def u(r, q):
+	return (2.*r - q - 1.), (2. * q)
 
 class _kpoints(metaclass=PropertyCreator):
 	kpt_cart={
@@ -25,7 +27,8 @@ class _kpoints(metaclass=PropertyCreator):
 	recipr={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'size':9,
+		# 'size':9,
+		'shape':(3,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(3,3),
 		'doc':"""Matrix of reciprocal basis vector (as rows)."""
 		}
@@ -81,11 +84,34 @@ class _kpoints(metaclass=PropertyCreator):
 
 		return path
 
-	def generate_monkhorst_pack_grid(self, shape, shift=(0,0,0)):
+	def generate_monkhorst_pack_grid(self, shape, shift=(0,0,0), set_self=True):
 		"""
 		Generate a Monkhorst-Pack grid of k-point.
+		Params:
+		 -shape: tuple of 3 ints > 0
+		 -shift: tuple of 3 ints that can be either 0 or 1
+		 -set_self: If True set the resulting k_point to self.kpt_cryst
+		            If False return the generated kpt_list
 		"""
-		pass
+		from itertools import product
+
+		assert all(isinstance(a, int) for a in shape)
+		assert all(isinstance(a, int) for a in shift)
+		assert all(a == 0 or a == 1   for a in shift)
+		s1,s2,s3 = shift
+
+		l1,l2,l3 = [
+			(
+				(n+shift[i])/d for n,d in (
+					u(r+1,q) for r in range(q)
+					)
+				) for i,q in enumerate(shape)
+			]
+		res = np.array(list(product(l1,l2,l3)))
+		if not set_self:
+			return res
+		self.kpt_cryst = res
+
 
 	def reduce_by_space_symmetry(self):
 		pass

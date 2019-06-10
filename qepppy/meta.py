@@ -31,12 +31,14 @@ def key_getter(key):
 	return getter
 
 def check_type(typ, value):
-	if typ is None or any(isinstance(value,t) for t in flatten_iter(typ)):
+	# if typ is None or any(isinstance(value,t) for t in flatten_iter(typ)):
+	if typ is None or isinstance(value, typ):
 		return True
 
 
 def check_sub_type(sub_typ, value):
-	if sub_typ is None or all(any(isinstance(v,t) for t in sub_typ) for v in flatten_iter(value)):
+	# if sub_typ is None or all(any(isinstance(v,t) for t in sub_typ) for v in flatten_iter(value)):
+	if sub_typ is None or all(isinstance(v,sub_typ) for v in flatten_iter(value)):
 		return True
 
 def convert_var(self, value, typ=int):
@@ -95,7 +97,7 @@ def key_setter(key,
 					if ve != app and app != -1:
 						raise ValueError(err_header + f"Shape mismatch '{ce}'={app} not equal to '{v_shape}'")
 			else:
-				l   = len(value)
+				l = len(value)
 				if len(shape) > 1:
 					raise ValueError(err_header + f"Can't confront shape of value='{l}' with '{shape}'")
 				app = convert_var(cls, shape[0])
@@ -105,11 +107,10 @@ def key_setter(key,
 		try:
 			value = conv_func(value)
 		except Exception as e:
-			print(
+			raise Exception(
 				err_header + 
 				f"Failed to run conversion function '{conv_func}' on value='{value}'"
-				)
-			raise e
+				) from e
 
 		set_other(cls, post_set_name, post_set_func ,value)
 		setattr(cls, key, value)
