@@ -101,7 +101,7 @@ class UploadCommand(Command):
         
         sys.exit()
 
-class PyTest( TestCommand):
+class PyTest(TestCommand):
     user_options = [("pytest-args=", "a", "Arguments to pass to pytest")]
 
     def initialize_options(self):

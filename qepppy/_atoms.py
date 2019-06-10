@@ -1,7 +1,7 @@
 import numpy as np
 from .meta import PropertyCreator
 from . import cell_graphic as cg
-from .utils import _cart_to_cryst_, _cryst_to_cart_
+
 
 import json
 from pkg_resources import resource_string
@@ -36,8 +36,8 @@ class _atoms(metaclass=PropertyCreator):
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'post_set_name':'_atoms_coord_cryst',
-		'post_set_func':_cart_to_cryst_,
+		# 'post_set_name':'_atoms_coord_cryst',
+		# 'post_set_func':_cart_to_cryst_,
 		'doc':"""List of atomic coordinate in CARTESIAN basis."""
 		}
 
@@ -46,8 +46,8 @@ class _atoms(metaclass=PropertyCreator):
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'post_set_name':'_atoms_coord_cart',
-		'post_set_func':_cryst_to_cart_,
+		# 'post_set_name':'_atoms_coord_cart',
+		# 'post_set_func':_cryst_to_cart_,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
 		}
 

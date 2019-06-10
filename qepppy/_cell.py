@@ -3,8 +3,27 @@ from ._atoms   import _atoms   as atm
 from ._lattice import _lattice as latt
 from . import utils
 
-
 class _cell(atm, latt):
+	atoms_coord_cart={
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'shape': (-1,3),
+		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'post_set_name':'_atoms_coord_cryst',
+		'post_set_func':utils._cart_to_cryst_,
+		'doc':"""List of atomic coordinate in CARTESIAN basis."""
+		}
+
+	atoms_coord_cryst={
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'shape': (-1,3),
+		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'post_set_name':'_atoms_coord_cart',
+		'post_set_func':utils._cryst_to_cart_,
+		'doc':"""List of atomic coordinate in CRYSTAL basis."""
+		}
+
 	def make_supercell(self,repX,repY,repZ):
 		from functools import reduce
 		assert(isinstance(repX,(int,range,list,tuple)))

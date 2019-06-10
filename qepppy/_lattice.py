@@ -4,6 +4,24 @@ from .meta import PropertyCreator
 from . import utils
 
 class _lattice(metaclass=PropertyCreator):
+	direct={
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'shape':(3,3),
+		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(3,3),
+		'post_set_name':'_recipr',
+		'post_set_func':lambda x,y: utils.recipr_base(y),
+		'doc':"""Matrix of direct basis vector (as rows)."""
+		}
+	recipr={
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'shape':(3,3),
+		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(3,3),
+		'post_set_name':'_direct',
+		'post_set_func':lambda x,y: utils.recipr_base(y),
+		'doc':"""Matrix of reciprocal basis vector (as rows)."""
+		}
 	# direct={
 	# 	'typ':(list, np.ndarray,),
 	# 	'subtyp':(float, np.float,),
@@ -20,21 +38,21 @@ class _lattice(metaclass=PropertyCreator):
 	# 	'excp_func':utils.recipr_base,
 	# 	'doc':"""Matrix of reciprocal lattice vectors as rows."""
 	# 	}
-	@property
-	# @store_property
-	def direct(self):
-		try:
-			return np.array(self._direct)
-		except:
-			return utils.recipr_base(self._recipr)
+	# @property
+	# # @store_property
+	# def direct(self):
+	# 	try:
+	# 		return np.array(self._direct)
+	# 	except:
+	# 		return utils.recipr_base(self._recipr)
 
-	@property
-	# @store_property
-	def recipr(self):
-		try:
-			return np.array(self._recipr)
-		except:
-			return utils.recipr_base(self._direct)
+	# @property
+	# # @store_property
+	# def recipr(self):
+	# 	try:
+	# 		return np.array(self._recipr)
+	# 	except:
+	# 		return utils.recipr_base(self._direct)
 
 	def draw_direct_cell(self, ax, center=[0,0,0]):
 		"""
