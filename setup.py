@@ -134,6 +134,7 @@ setup(
         'qepppy':'src/qepppy',},
     package_data={
         'qepppy':[
+            'data/*.json',
             'qe/parser/data/*.templ',
             'qe/parser/data/*.json'
             ]

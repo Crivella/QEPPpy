@@ -1,7 +1,7 @@
 import os
 import numpy as np
-from .bands        import bands     as bands
-from .structure    import structure as structure
+from .bands        import bands        as bands
+from .structure    import qe_structure as structure
 from .tmp          import tmp
 from .UPF          import UPF
 # from ..utils       import xyz_mesh

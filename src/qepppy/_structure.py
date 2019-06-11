@@ -3,14 +3,20 @@ from ._atoms   import _atoms   as atm
 from ._lattice import _lattice as latt
 from . import utils
 
-class _cell(atm, latt):
+def cart_to_cryst(cls, coord):
+	return coord.dot(np.linalg.inv(cls.direct))
+
+def cryst_to_cart(cls, coord):
+	return coord.dot(cls.direct)
+
+class _structure(atm, latt):
 	atoms_coord_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'post_set_name':'_atoms_coord_cryst',
-		'post_set_func':utils._cart_to_cryst_,
+		'post_set_func':cart_to_cryst,
 		'doc':"""List of atomic coordinate in CARTESIAN basis."""
 		}
 
@@ -20,7 +26,7 @@ class _cell(atm, latt):
 		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'post_set_name':'_atoms_coord_cart',
-		'post_set_func':utils._cryst_to_cart_,
+		'post_set_func':cryst_to_cart,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
 		}
 
@@ -33,7 +39,7 @@ class _cell(atm, latt):
 		rep    = [range(a) if isinstance(a,int) else a for a in [repX,repY,repZ]]
 		R_vec  = utils.generate_repetition_grid(*rep, self.direct)
  
-		n_cell = [max(a)-min(a) for a in rep]
+		n_cell = [max(a)-min(a)+1 for a in rep]
 		typ    = self.atoms_typ * (reduce(lambda x,y: x*y, n_cell))
  
 		res    = np.empty(shape=(0,3))
@@ -56,13 +62,43 @@ class _cell(atm, latt):
 
 		return dist[1:max_shell], index[1:max_shell], counts[1:max_shell]
 
-	def plot(
-		self, 
+	def _plot(
+		self, ax,
 		repX=1, repY=1, repZ=1, 
 		cell=False, 
 		bonds=True,
 		recipr=False,
-		graph_lvl=1,
+		graph_lvl=1,):
+
+		if recipr:
+			ax.set_xlabel(r"$x (Bohr^{-1})$")
+			ax.set_ylabel(r"$y (Bohr^{-1})$")
+			ax.set_zlabel(r"$z (Bohr^{-1})$")
+			self.draw_Wigner_Seitz(ax)
+			# plt.show()
+			return
+		else:
+			ax.set_xlabel("x (Bohr)")
+			ax.set_ylabel("y (Bohr)")
+			ax.set_zlabel("z (Bohr)")
+
+		L, typ = self.make_supercell(repX,repY,repZ)
+
+		self.draw_atoms(ax, L, typ, graph_lvl=graph_lvl)
+		if cell:
+			self.draw_direct_cell(ax)
+		if bonds:
+			self.draw_bonds(ax, L, typ, graph_lvl=graph_lvl)
+		ax.legend()
+
+	def plot(
+		self, 
+		*args, **kwargs,
+		# repX=1, repY=1, repZ=1, 
+		# cell=False, 
+		# bonds=True,
+		# recipr=False,
+		# graph_lvl=1,
 		):
 		"""
 		Plot the crystal cell structure.
@@ -87,26 +123,7 @@ class _cell(atm, latt):
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
 
+		self._plot(ax, *args, **kwargs)
 
-		if recipr:
-			ax.set_xlabel(r"$x (Bohr^{-1})$")
-			ax.set_ylabel(r"$y (Bohr^{-1})$")
-			ax.set_zlabel(r"$z (Bohr^{-1})$")
-			self.draw_Wigner_Seitz(ax)
-			plt.show()
-			return
-		else:
-			ax.set_xlabel("x (Bohr)")
-			ax.set_ylabel("y (Bohr)")
-			ax.set_zlabel("z (Bohr)")
-
-		L, typ = self.make_supercell(repX,repY,repZ)
-
-		self.draw_atoms(ax, L, typ, graph_lvl=graph_lvl)
-		if cell:
-			self.draw_direct_cell(ax)
-		if bonds:
-			self.draw_bonds(ax, L, typ, graph_lvl=graph_lvl)
-		ax.legend()
 		plt.show()
 

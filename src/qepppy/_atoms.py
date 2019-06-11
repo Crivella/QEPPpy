@@ -5,7 +5,7 @@ from . import cell_graphic as cg
 
 import json
 from pkg_resources import resource_string
-periodic_table = json.loads(resource_string('qepppy.qe.parser.data', 'periodic_table.json').decode('utf-8'))
+periodic_table = json.loads(resource_string('qepppy.data', 'periodic_table.json').decode('utf-8'))
 
 def get_all_atoms_typ(cls, value):
 	res = []
@@ -100,7 +100,7 @@ class _atoms(metaclass=PropertyCreator):
 		in a dictionary."""
 		return {a:np.array(self.atoms_coord_cryst[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
 
-	def draw_atoms(self, ax, atom_coord, atom_names, **kwargs):
+	def draw_atoms(self, ax, atom_coord=None, atom_names=None, **kwargs):
 		"""
 		Draw atoms onto a matplotlib axis object.
 		Params:
@@ -110,6 +110,11 @@ class _atoms(metaclass=PropertyCreator):
 		 - atom_namse: List of atom names (same shape as atom_coord). Used to
 		               plot the proper color and atomic radius.
 		"""
+		if atom_coord is None:
+			atom_coord = self.atoms_coord_cart
+		if atom_names is None:
+			atom_names = self.atoms_typ
+
 		trees, names, rad = split_atom_list_by_name(atom_coord, atom_names)
 
 		for tree,n,r in zip(trees,names,rad):
@@ -118,7 +123,7 @@ class _atoms(metaclass=PropertyCreator):
 			cg.draw_atom(ax, X,Y,Z, color=color, name=n, radius=r, **kwargs)
 
 
-	def draw_bonds(self, ax, atom_coord, atom_names, **kwargs):
+	def draw_bonds(self, ax, atom_coord=None, atom_names=None, **kwargs):
 		"""
 		Draw atomic bonds onto a matplotlib axis object.
 		Params:
@@ -130,7 +135,12 @@ class _atoms(metaclass=PropertyCreator):
 		"""
 		from itertools import combinations_with_replacement as cwr
 
-		trees, names, rad = split_atom_list_by_name( atom_coord, atom_names)
+		if atom_coord is None:
+			atom_coord = self.atoms_coord_cart
+		if atom_names is None:
+			atom_names = self.atoms_typ
+
+		trees, names, rad = split_atom_list_by_name(atom_coord, atom_names)
 
 		for rad_t, (tree1,tree2), (name1,name2) in zip(cwr(rad,2), cwr(trees,2), cwr(names,2)):
 			bonds = tree1.query_ball_tree(tree2, sum(rad_t))

@@ -2,7 +2,7 @@ import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..errors import ValidateError
 from .._decorators import store_property
-from .._cell import _cell as cell
+from .._structure import _structure as structure
 from .. import utils
 
 bravais_index={	
@@ -120,8 +120,8 @@ data={
 	}
 
 # @logger()
-class structure(dfp, cell):
-	__name__ = "structure";
+class qe_structure(dfp, structure):
+	__name__ = "qe_structure";
 	def __init__(self, d={}, **kwargs):
 		self._atom_p = 'bohr'
 		self._cell_p = 'bohr'

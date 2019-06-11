@@ -1,5 +1,5 @@
 import numpy as np
-from .structure import structure
+from .structure import qe_structure as structure
 from .parser.input_files import input_files as inp_f
 
 class pw_in(inp_f, structure):
@@ -112,7 +112,7 @@ class pw_in(inp_f, structure):
 	@_cell.setter
 	def _cell(self, value):
 		if self.ibrav != 0:
-			raise ValueError("CELL can be set only if ibrav != 0.")
+			raise ValueError("CELL can be set only if ibrav == 0.")
 		a1, a2, a3 = np.array(value)
 		self['CELL/v1'] = a1
 		self['CELL/v2'] = a2
