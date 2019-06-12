@@ -1,6 +1,6 @@
 import numpy as np
-from ._atoms   import _atoms   as atm
-from ._lattice import _lattice as latt
+from .atoms_list  import atoms_list   as atm
+from ._lattice    import _lattice     as latt
 from . import utils
 
 def cart_to_cryst(cls, coord):
@@ -9,7 +9,7 @@ def cart_to_cryst(cls, coord):
 def cryst_to_cart(cls, coord):
 	return coord.dot(cls.direct)
 
-class _structure(atm, latt):
+class structure(atm, latt):
 	atoms_coord_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
@@ -31,6 +31,21 @@ class _structure(atm, latt):
 		}
 
 	def make_supercell(self,repX,repY,repZ):
+		"""
+		Build a supercell using the repJ repetitions of the primitive cell along
+		the J-th direction.
+
+		Params:
+		 - repX: repetitions along X
+		 - repY: repetitions along Y
+		 - repZ: repetitions along Z
+
+		Return:
+		 - res: np.array of shape (n_atoms*repX*repY*repZ) containing the 
+		        positions of the atoms in the supercell.
+		 - typ: list with len = (n_atoms*repX*repY*repZ) containing the 
+		        name/type of all the atoms. (1 to 1 correspondence with 'res')
+		"""
 		from functools import reduce
 		assert(isinstance(repX,(int,range,list,tuple)))
 		assert(isinstance(repY,(int,range,list,tuple)))
@@ -50,7 +65,18 @@ class _structure(atm, latt):
 		return res, typ
 
 	def nearest_neighbour(self, max_shell=5):
-		# from itertools import product
+		"""
+		Find the nearest neighbour up to a max_shell.
+
+		Params:
+		 - max_shell: last shell of nearest neighour returned
+
+		Return:
+		 - dist: Array of shape (max_shell,) containing the radius of every shell
+		         of nearest neighours.
+		 - counts: Array of shape (max_shell,) containing the number of atoms for
+		           every shell of nearest neighours.
+		"""
 		assert(isinstance(max_shell, int))
 
 		m        = max_shell
@@ -58,9 +84,9 @@ class _structure(atm, latt):
 		coord, _ = self.make_supercell(l,l,l)
 		norm     = np.linalg.norm(coord, axis=1)
 
-		dist, index, counts = np.unique(norm, return_index=True, return_counts=True)
+		dist, counts = np.unique(norm, return_counts=True)
 
-		return dist[1:max_shell], index[1:max_shell], counts[1:max_shell]
+		return dist[1:max_shell], counts[1:max_shell]
 
 	def _plot(
 		self, ax,

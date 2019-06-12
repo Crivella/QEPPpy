@@ -135,11 +135,13 @@ class bands(dfp):
 	@store_property
 	def E_tot(self):
 		"""Total energy"""
+		if self._E_tot == 0.0:
+			return None
 		return self._E_tot
 	
 
 	@property
-	@store_property
+	# @store_property
 	def kpt_cart(self):
 		"""
 		np.ndarray of shape(nkpt, 3).
@@ -150,7 +152,7 @@ class bands(dfp):
 		return kpt
 
 	@property
-	@store_property
+	# @store_property
 	def kpt_cryst(self):
 		"""
 		np.ndarray of shape(nkpt, 3).
@@ -161,7 +163,8 @@ class bands(dfp):
 		if kpt.shape[0] > n:
 			kpt = kpt[n:2*n,:]
 		else:
-			raise NotImplementedError()
+			kpt = kpt.dot(np.linalg.inv(self.recipr * self.alat / (2*np.pi)))
+			# raise NotImplementedError()
 		return kpt
 
 	@property

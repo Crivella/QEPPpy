@@ -14,8 +14,8 @@ basis={
 	scope='class'
 	)
 def cls_typ():
-	from qepppy._structure import _structure
-	return _structure
+	from qepppy.structure import structure
+	return structure
 
 @pytest.fixture(
 	scope='class',
@@ -31,6 +31,9 @@ def cls(cls_typ, request):
 
 class Test_cell(Test_atoms):
 	__test__ = True
+
+	# def test_nearest_neighbour(self, cls_wcc):
+	# 	print(cls_wcc.nearest_neighbour())
 	
 	@pytest.mark.mpl_image_compare
 	@pytest.mark.parametrize('rep', [1,2,3])
@@ -42,6 +45,18 @@ class Test_cell(Test_atoms):
 		ax = fig.add_subplot(111, projection='3d')
 
 		cls_wcc._plot(ax, rep, rep, rep, cell=True, graph_lvl=1)
+
+		return fig
+
+	@pytest.mark.mpl_image_compare
+	def test_plot_recipr(self, cls_wcc):
+		import matplotlib.pyplot as plt
+		from mpl_toolkits.mplot3d import Axes3D
+
+		fig = plt.figure()
+		ax = fig.add_subplot(111, projection='3d')
+
+		cls_wcc._plot(ax, recipr=True)
 
 		return fig
 

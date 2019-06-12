@@ -154,11 +154,11 @@ class pw_in(inp_f, structure):
 		self["ATOMIC_POSITIONS"].value = value
 
 	@property
-	def _cell_p(self):
+	def __cell_p(self):
 		return self._find("CELL_PARAMETERS")
 
-	@_cell_p.setter
-	def _cell_p(self, value):
+	@__cell_p.setter
+	def __cell_p(self, value):
 		possib = self.namelist_c._templ_['CELL_PARAMETERS']['c']
 		if possib and not value in possib:
 			raise ValueError("CELL_PARAMETERS card value must be one of {} not '{}'.".format(

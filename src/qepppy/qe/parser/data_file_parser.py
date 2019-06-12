@@ -203,7 +203,8 @@ class data_file_parser(object):
 			try:
 				val = _get_value_(content, v, dtype=t)
 			except Exception as e:
-				print("ERROR: ", e)
+				# print("ERROR: ", k, e)
+				pass
 			self.__dict__[k] = val
 		return
 

@@ -1,8 +1,8 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..errors import ValidateError
-from .._decorators import store_property
-from .._structure import _structure as structure
+# from .._decorators import store_property
+from ..structure import structure as structure
 from .. import utils
 
 bravais_index={	
@@ -57,7 +57,7 @@ data={
 		'res_type':float,
 		'outfile_regex':r'lattice parameter \(alat\)\s*='
 		},
-	'_cell_p':{
+	'__cell_p':{
 		'res_type':str,
 		'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
 		},
@@ -81,7 +81,7 @@ data={
 			r'\s*b\(2\) = \((?P<b2>[\s\d.\-]*)\)\s*\n' + 
 			r'\s*b\(3\) = \((?P<b3>[\s\d.\-]*)\)\s*\n'
 		},
-	'_atom_p':{
+	'__atom_p':{
 		'res_type':str,
 		'outfile_regex':r'positions \((?P<flag>.*) units\)'
 		},
@@ -97,7 +97,11 @@ data={
 		'xml_search_string':'input//species', 
 		'extra_name':None, 
 		'res_type':list,
-		'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
+		# 'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo>\w+\s*\([ \d\.]+\))')
+		'outfile_regex':
+			r'PseudoPot. \#.*\s+(.*/)*(?P<pseudo_file>.+(\.UPF|\.upf))' +
+			r'(.*\n)+\s*atomic species.*' +
+			r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)'
 		},
 	'_symm':{
 		'xml_ptype':'nodelist', 
@@ -115,7 +119,7 @@ data={
 		'extra_name':None, 
 		'res_type':list,
 		'outfile_regex':
-			r'FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*)'
+			r'FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
 		}
 	}
 
@@ -123,8 +127,8 @@ data={
 class qe_structure(dfp, structure):
 	__name__ = "qe_structure";
 	def __init__(self, d={}, **kwargs):
-		self._atom_p = 'bohr'
-		self._cell_p = 'bohr'
+		setattr(self, '__atom_p', 'bohr')
+		setattr(self, '__cell_p', 'bohr')
 
 		d.update(data)
 		super().__init__(d=d, **kwargs)
@@ -168,23 +172,24 @@ class qe_structure(dfp, structure):
 
 	@property
 	def _atoms_coord_cart(self):
-		res = np.array([a['coord'] for a in self._atoms]) * self.atom_p
+		res = np.array([a['coord'] for a in self._atoms]) * self._atom_p
 		n = self._n_atoms
 		if n and len(res) == n*2:
 			res = res[0:n,:]
-		if self._atom_p == 'crystal':
-			res = np.dot(self.direct.T, res.T).T
+		if getattr(self, '__atom_p') == 'crystal':
+			# res = np.dot(self.direct.T, res.T).T
+			res = res.dot(self.direct)
 		return res
 
 	@property
 	def _atoms_coord_cryst(self):
-		res = np.array([a['coord'] for a in self._atoms]) * self.atom_p
+		res = np.array([a['coord'] for a in self._atoms]) * self._atom_p
 		n = self._n_atoms
 		if len(res) == n*2:
-				res = res[n:n*2,:]
+				res = res[n:n*2,:] / self._atom_p
 		else:
-			if self._atom_p != 'crystal':
-				res = np.dot(self.recipr/(2*np.pi), res.T).T
+			if getattr(self, '__atom_p') != 'crystal':
+				res = res.dot(np.linalg.inv(self.direct))
 		return res
 
 	@property
@@ -210,33 +215,36 @@ class qe_structure(dfp, structure):
 		return list([a['name'] for a in self._atom_spec])
 
 	@property
-	def atom_p(self):
+	def _atom_p(self):
 		"""Conversion factor for atom coordinates to atomic units"""
-		if self._atom_p == 'alat':
+		cmp = getattr(self, '__atom_p')#.strip()
+		if cmp == 'alat':
 			return self.alat
-		if self._atom_p == 'angstrom':
-			return 1/0.529177
-		return 1
+		if cmp == 'angstrom':
+			return 1./0.529177
+		return 1.
 
 	@property
-	def cell_p(self):
+	def _cell_p(self):
 		"""Conversion factor for cell vetors to atomic units"""
-		if self._cell_p == 'alat':
+		cmp =  getattr(self, '__cell_p')
+		if cmp == 'alat':
 			return self.alat
-		if self._cell_p == 'angstrom':
-			return 1/0.529177
-		return 1
+		if cmp == 'angstrom':
+			return 1./0.529177
+		return 1.
 
-	@cell_p.setter
-	def cell_p(self, value):
-		self._cell_p = value
+	@_cell_p.setter
+	def _cell_p(self, value):
+		setattr(self, '__cell_p', value)
+		# self.__cell_p = value
 
 	@property
 	def _direct(self):
 		res =  np.array(list(self._cell[0].values()))
 		if res.size != 9:
 			return self._ibrav_to_cell_()
-		res *= self.cell_p
+		res *= self._cell_p
 		return res
 
 	@property
@@ -244,27 +252,28 @@ class qe_structure(dfp, structure):
 		return utils.recipr_base(self._direct)
 	
 	@property
-	@store_property
+	# @store_property
 	def symm_matrix(self):
 		"""List of symmetry operation matrices"""
 		t = type(self._symm[0]['rotation'])
 		if t == np.ndarray:
 			res = np.array([a['rotation'].reshape(3,3) for a in self._symm])
 		elif t == str:
-			g = lambda x: x.replace('(',' ').replace(')',' ').replace('\n',' ')
+			f = lambda x: ' '.join([a.split('(')[1] for a in x.split('\n')])
+			g = lambda x: f(x).replace('(',' ').replace(')',' ').replace('\n',' ').replace('f =', ' ')
 			res = np.array([np.fromstring(g(a['rotation']), sep=' ').reshape(3,3) for a in self._symm])
 		else:
 			raise NotImplementedError()
 		return res
 
 	@property
-	@store_property
+	# @store_property
 	def symm_name(self):
 		"""List of symmetry operation names"""
 		return list([a['name'] for a in self._symm])
 
 	@property
-	@store_property
+	# @store_property
 	def fft_dense_grid(self):
 		"""FFT Grid shape: np.ndarray of shape (3,)"""
 		return np.array([self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']], dtype='int')
@@ -404,7 +413,7 @@ class qe_structure(dfp, structure):
 				c*(cbc-cac*cg)/sg,
 				c*np.sqrt(1+2*cbc*cac*cg-cbc**2-cac**2-cg**2)/sg]) * lp
 
-		self._cell_p = 'bohr'
+		self.__cell_p = 'bohr'
 		return np.array([v1,v2,v3])
 
 

@@ -1,9 +1,15 @@
 import numpy as np
 from .meta import PropertyCreator
-from .utils import _cart_to_cryst_, _cryst_to_cart_
 
 def u(r, q):
 	return (2.*r - q - 1.), (2. * q)
+
+def cart_to_cryst(cls, coord):
+	return coord.dot(np.linalg.inv(cls.recipr))
+
+def cryst_to_cart(cls, coord):
+	return coord.dot(cls.recipr)
+
 
 class _kpoints(metaclass=PropertyCreator):
 	kpt_cart={
@@ -12,7 +18,7 @@ class _kpoints(metaclass=PropertyCreator):
 		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'post_set_name':'_kpt_cryst',
-		'post_set_func':_cart_to_cryst_,
+		'post_set_func':cart_to_cryst,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
 		}
 	kpt_cryst={
@@ -21,7 +27,7 @@ class _kpoints(metaclass=PropertyCreator):
 		'shape': (-1,3),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'post_set_name':'_kpt_cart',
-		'post_set_func':_cryst_to_cart_,
+		'post_set_func':cryst_to_cart,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
 		}
 	recipr={
@@ -40,8 +46,31 @@ class _kpoints(metaclass=PropertyCreator):
 		'doc':"""List of k-points weights."""
 		}
 
-	def __init__(self):
-		pass
+	def __init__(self, 
+		recipr=None,
+		kpoint_list_cart=None,
+		kpoint_list_cryst=None,
+		kpoint_mesh=None, kpoint_shift=None
+		):
+		from itertools import combinations
+		if not recipr is None:
+			self.recipr = recipr
+
+		cond = [not a is None for a in [kpoint_list_cart, kpoint_list_cryst, kpoint_mesh]]
+		cond = combinations(cond, 2)
+		if any(all(a) for a in cond):
+			raise ValueError("Cannot set k-points in multiple different ways at the same time!!!")
+		# if kpoint_list_cart and kpoint_list_cryst:
+		if not kpoint_list_cart is None:
+			self.kpt_cart = kpoint_list_cart
+		if not kpoint_list_cryst is None:
+			self.kpt_cryst = kpoint_list_cryst
+
+		if not kpoint_mesh is None:
+			shift = (0,0,0)
+			if not kpoint_shift is None:
+				shift = kpoint_shift
+			self.generate_monkhorst_pack_grid(kpoint_mesh, shift)
 
 	@property
 	def n_kpt(self):
@@ -98,7 +127,9 @@ class _kpoints(metaclass=PropertyCreator):
 		assert all(isinstance(a, int) for a in shape)
 		assert all(isinstance(a, int) for a in shift)
 		assert all(a == 0 or a == 1   for a in shift)
-		s1,s2,s3 = shift
+		self.mesh  = shape
+		self.shift = shift
+		s1,s2,s3   = shift
 
 		l1,l2,l3 = [
 			(
@@ -113,13 +144,15 @@ class _kpoints(metaclass=PropertyCreator):
 		self.kpt_cryst = res
 
 
-	def reduce_by_space_symmetry(self):
-		pass
-
-	def reduce_by_time_reversal(self):
-		pass
-
 	def crop(self, center=(0,0,0), radius=np.inf, verbose=True):
+		"""
+		Crop the k-points in a sphere of radius 'radius' with center 'center':
+		Params:
+		 - center: tuple of 3 floats containing the coordinate of the center
+		           of the crop sphere. default = (0,0,0)
+		 - radius: Radius of the crop sphere. Defaulr = np.inf
+		 - verbose: Print information about the cropping. Default = True
+		"""
 		center = np.array(center).reshape(3)
 		norms  = np.linalg.norm(self.kpt_cart - center, axis=1)
 		w      = np.where(norms <= radius)[0]

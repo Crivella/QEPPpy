@@ -17,15 +17,17 @@ class pw_out(bands, structure):
 	 - xml     = Name of the data-file*.xml to parse
 	"""
 	__name__ = "pw_out"
-	def __init__( self, **kwargs):
-		super().__init__( **kwargs)
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
 		self.validate()
 
 	@property
-	@store_property
+	# @store_property
 	def tmp(self):
 		"""Iterable. Every element is of type <class wavefnc> and contains the 
 		data from the wafeunction binaries."""
+		if not hasattr(self, 'prefix'):
+			return None
 		return tmp(self.prefix, path=self.data_path)
 
 	@property
@@ -35,6 +37,8 @@ class pw_out(bands, structure):
 		of the atoms pseudopotentials.
 		"""
 		pseudo = []
+		if not hasattr(self, 'xml'):
+			return pseudo
 		path = os.path.dirname(self.xml)
 		for pp in self.atoms_pseudo:
 			file = os.path.join(path,pp)

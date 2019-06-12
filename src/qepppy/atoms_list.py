@@ -21,8 +21,13 @@ def split_atom_list_by_name(atom_coord, atom_names):
 	rad    = []
 	names  = []
 
+	avoid = []
+
 	atom_names = np.array(atom_names)
-	for n in set(atom_names):
+	for n in atom_names:
+		if n in avoid:
+			continue
+		avoid.append(n)
 		coord = atom_coord[atom_names == n,:]
 
 		names.append(n)
@@ -30,7 +35,7 @@ def split_atom_list_by_name(atom_coord, atom_names):
 		rad.append(periodic_table[n]['radius'])
 	return trees, np.array(names), rad
 
-class _atoms(metaclass=PropertyCreator):
+class atoms_list(metaclass=PropertyCreator):
 	atoms_coord_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),

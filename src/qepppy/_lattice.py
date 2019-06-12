@@ -50,15 +50,23 @@ class _lattice(metaclass=PropertyCreator):
 		 - ax: matplotlib 3D axis object
 		"""
 		from scipy.spatial import Voronoi
+		from scipy.spatial import KDTree
 		L = utils.generate_repetition_grid([-1,0,1],[-1,0,1],[-1,0,1], self.recipr)
 
 		vor = Voronoi(L)
 		P = vor.vertices
 		R = vor.ridge_vertices
 
-		rad     = max(np.linalg.norm(self.recipr, axis=1)) * np.sqrt(2)/2
-		cond    = np.where(np.linalg.norm(P, axis=1) > rad)[0]
+		tree       = KDTree(L)
+		d,i        = tree.query([0,0,0])
+		dist, ind  = tree.query(P, k=L.shape[0])
+		w          = (np.abs(dist.T - dist.T[0]) > 1E-5).T
+		closest    = ind.copy()
+		closest[w] = -1
+
+		cond    = np.where([False if i in a else True for a in closest])[0]
 		P[cond] = np.zeros(3)
+
 
 		for i1, e in enumerate(R):
 			for i2, r in enumerate(e):
