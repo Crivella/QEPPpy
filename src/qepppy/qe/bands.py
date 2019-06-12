@@ -229,7 +229,7 @@ class bands(dfp):
 			'max':(np.argmax(app),app.max())
 			}
 
-	def fit_analys(self, n_pt=5):
+	def fit_analysis(self, n_pt=5):
 		"""
 		Fit analysis of the valnece/conduction band extrema.
 		Params:

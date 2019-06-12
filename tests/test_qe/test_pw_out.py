@@ -88,14 +88,24 @@ def out_v_pkl(request):
 
 	return out, xml, pkl
 
-def test_pw_outs(out_v_pkl):
+def test_pw_out_parsing(out_v_pkl):
 	out, xml, pkl = out_v_pkl
 
 	compare_std(out, pkl)
 	compare_std(xml, pkl)
 
+# def test_smallest_gap(out_v_pkl):
+# 	out, xml, pkl = out_v_pkl
+# 	out.smallest_gap()
+# 	# out.fit_analysis()
+
+
 
 if __name__ == '__main__':
+	"""
+	Generates the baseline files for the automated testing.
+	To be run with a stable pre-tested version.
+	"""
 	for out_name in out_files:
 		xml_name = out_name[:-4] + '.xml'
 		pkl_name = out_name[:-4] + '.pickle'
