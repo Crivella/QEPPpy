@@ -510,10 +510,12 @@ class input_files():
 					new.name = nl
 					self.card_c[nl] = new
 			if not i is None:
-				# self.card_c[nl][key][i] = value
 				self.card_c[nl][key+'({})'.format(i)] = value
 			else:
-				self.card_c[nl][key] = value
+				if key:
+					self.card_c[nl][key] = value
+				else:
+					self.card_c[nl].value = value
 		except:
 			if not nl in self.namelist_c:
 				if nl in self.namelist_c._templ_['nl']:
@@ -539,6 +541,14 @@ class input_files():
 		if len(res) == 1:
 			res = res[0]
 		return res
+
+	def validate(self):
+		self.namelist_c.validate()
+		self.card_c.validate()
+		try:
+			super().validate()
+		except:
+			pass
 
 
 

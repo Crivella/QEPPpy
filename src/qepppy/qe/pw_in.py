@@ -53,7 +53,7 @@ class pw_in(inp_f, structure):
 		self._check_atoms_len(value)
 		self._set_atoms_coord(value)
 
-		self._atom_p = 'alat'
+		self._app_atom_p = 'alat'
 
 	@structure._atoms_coord_cryst.setter
 	def _atoms_coord_cryst(self, value):
@@ -62,7 +62,7 @@ class pw_in(inp_f, structure):
 		self._check_atoms_len(value)
 		self._set_atoms_coord(value)
 		
-		self._atom_p = 'crystal'
+		self._app_atom_p = 'crystal'
 
 	@structure._atoms_typ.setter
 	def _atoms_typ(self, value):
@@ -109,14 +109,14 @@ class pw_in(inp_f, structure):
 		a1, a2, a3 = self._find("v1", "v2", "v3")
 		return [{'a1':a1, 'a2':a2, 'a3':a3}]
 
-	@_cell.setter
-	def _cell(self, value):
-		if self.ibrav != 0:
-			raise ValueError("CELL can be set only if ibrav == 0.")
+	@structure._direct.setter
+	def _direct(self, value):
+		# if self.ibrav != 0:
+		# 	raise ValueError("CELL can be set only if ibrav == 0.")
 		a1, a2, a3 = np.array(value)
-		self['CELL/v1'] = a1
-		self['CELL/v2'] = a2
-		self['CELL/v3'] = a3
+		self['CELL_PARAMETERS/v1'] = a1
+		self['CELL_PARAMETERS/v2'] = a2
+		self['CELL_PARAMETERS/v3'] = a3
 
 	@property
 	def celldm(self):
@@ -142,11 +142,14 @@ class pw_in(inp_f, structure):
 		self['SYSTEM/ibrav'] = value
 
 	@property
-	def _atom_p(self):
-		return self._find("ATOMIC_POSITIONS")
+	def _app_atom_p(self):
+		res = self._find("ATOMIC_POSITIONS")
+		if res is None:
+			res = 'alat'
+		return res
 
-	@_atom_p.setter
-	def _atom_p(self, value):
+	@_app_atom_p.setter
+	def _app_atom_p(self, value):
 		possib = self.namelist_c._templ_['ATOMIC_POSITIONS']['c']
 		if possib and not value in possib:
 			raise ValueError("ATOMIC_POSITIONS card value must be one of {} not '{}'.".format(
@@ -154,11 +157,14 @@ class pw_in(inp_f, structure):
 		self["ATOMIC_POSITIONS"].value = value
 
 	@property
-	def __cell_p(self):
-		return self._find("CELL_PARAMETERS")
+	def _app_cell_p(self):
+		res = self._find("CELL_PARAMETERS")
+		if res is None:
+			res = 'alat'
+		return res
 
-	@__cell_p.setter
-	def __cell_p(self, value):
+	@_app_cell_p.setter
+	def _app_cell_p(self, value):
 		possib = self.namelist_c._templ_['CELL_PARAMETERS']['c']
 		if possib and not value in possib:
 			raise ValueError("CELL_PARAMETERS card value must be one of {} not '{}'.".format(
@@ -207,9 +213,7 @@ class pw_in(inp_f, structure):
 		return msg
 
 	def validate(self):
-		structure.validate(self)
-		self.namelist_c.validate()
-		self.card_c.validate()
+		super().validate()
 
 
 

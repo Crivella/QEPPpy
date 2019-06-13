@@ -174,10 +174,13 @@ class fortran_namelist(OrderedDict):
 		else:
 			app = self
 
-		if i is None:
+		if not n:
+			n = i
+
+		if not n:
 			app[tof_param] = value
 		else:
-			app._set_vec_value_(tof_param.lower(), value, i)
+			app._set_vec_value_(tof_param.lower(), value, n)
 
 	def _set_vec_value_(nl, param, value, index):
 		index = str(index)

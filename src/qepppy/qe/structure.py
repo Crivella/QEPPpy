@@ -1,7 +1,6 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..errors import ValidateError
-# from .._decorators import store_property
 from ..structure import structure as structure
 from .. import utils
 
@@ -57,7 +56,7 @@ data={
 		'res_type':float,
 		'outfile_regex':r'lattice parameter \(alat\)\s*='
 		},
-	'__cell_p':{
+	'_app_cell_p':{
 		'res_type':str,
 		'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
 		},
@@ -81,13 +80,13 @@ data={
 			r'\s*b\(2\) = \((?P<b2>[\s\d.\-]*)\)\s*\n' + 
 			r'\s*b\(3\) = \((?P<b3>[\s\d.\-]*)\)\s*\n'
 		},
-	'__atom_p':{
+	'_app_atom_p':{
 		'res_type':str,
 		'outfile_regex':r'positions \((?P<flag>.*) units\)'
 		},
 	'_atoms':{
 		'xml_ptype':'nodelist', 
-		'xml_search_string':'output//atom', 
+		'xml_search_string':'input//atom', 
 		'extra_name':'coord', 
 		'res_type':list,
 		'outfile_regex':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
@@ -97,11 +96,11 @@ data={
 		'xml_search_string':'input//species', 
 		'extra_name':None, 
 		'res_type':list,
-		# 'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo>\w+\s*\([ \d\.]+\))')
-		'outfile_regex':
-			r'PseudoPot. \#.*\s+(.*/)*(?P<pseudo_file>.+(\.UPF|\.upf))' +
-			r'(.*\n)+\s*atomic species.*' +
-			r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)'
+		'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
+		# 'outfile_regex':
+		# 	r'PseudoPot. \#.*\s+(.*/)*(?P<pseudo_file>.+(\.UPF|\.upf))' +
+		# 	r'(.*\n)+\s*atomic species.*' +
+		# 	r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)'
 		},
 	'_symm':{
 		'xml_ptype':'nodelist', 
@@ -113,13 +112,21 @@ data={
 			r'cryst.\s*s\([\s\d]{2}\) = ' +
 			r'(?P<rotation>(\(.*\)\s*){3})'
 		},
-	'_fft_grid':{
+	'_fft_dense_grid':{
+		'xml_ptype':'nodelist', 
+		'xml_search_string':'output//fft_grid', 
+		'extra_name':None, 
+		'res_type':list,
+		'outfile_regex':
+			r'Dense.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
+		},
+	'_fft_smooth_grid':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//fft_smooth', 
 		'extra_name':None, 
 		'res_type':list,
 		'outfile_regex':
-			r'FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
+			r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
 		}
 	}
 
@@ -127,8 +134,8 @@ data={
 class qe_structure(dfp, structure):
 	__name__ = "qe_structure";
 	def __init__(self, d={}, **kwargs):
-		setattr(self, '__atom_p', 'bohr')
-		setattr(self, '__cell_p', 'bohr')
+		self._app_atom_p = 'bohr'
+		self._app_cell_p = 'bohr'
 
 		d.update(data)
 		super().__init__(d=d, **kwargs)
@@ -176,8 +183,7 @@ class qe_structure(dfp, structure):
 		n = self._n_atoms
 		if n and len(res) == n*2:
 			res = res[0:n,:]
-		if getattr(self, '__atom_p') == 'crystal':
-			# res = np.dot(self.direct.T, res.T).T
+		if self._app_atom_p == 'crystal':
 			res = res.dot(self.direct)
 		return res
 
@@ -188,7 +194,7 @@ class qe_structure(dfp, structure):
 		if len(res) == n*2:
 				res = res[n:n*2,:] / self._atom_p
 		else:
-			if getattr(self, '__atom_p') != 'crystal':
+			if self._app_atom_p != 'crystal':
 				res = res.dot(np.linalg.inv(self.direct))
 		return res
 
@@ -217,7 +223,7 @@ class qe_structure(dfp, structure):
 	@property
 	def _atom_p(self):
 		"""Conversion factor for atom coordinates to atomic units"""
-		cmp = getattr(self, '__atom_p')#.strip()
+		cmp = self._app_atom_p #.strip()
 		if cmp == 'alat':
 			return self.alat
 		if cmp == 'angstrom':
@@ -227,7 +233,7 @@ class qe_structure(dfp, structure):
 	@property
 	def _cell_p(self):
 		"""Conversion factor for cell vetors to atomic units"""
-		cmp =  getattr(self, '__cell_p')
+		cmp =  self._app_cell_p
 		if cmp == 'alat':
 			return self.alat
 		if cmp == 'angstrom':
@@ -236,23 +242,31 @@ class qe_structure(dfp, structure):
 
 	@_cell_p.setter
 	def _cell_p(self, value):
-		setattr(self, '__cell_p', value)
-		# self.__cell_p = value
+		self._app_cell_p = value
 
 	@property
 	def _direct(self):
 		res =  np.array(list(self._cell[0].values()))
 		if res.size != 9:
-			return self._ibrav_to_cell_()
+			res = self._ibrav_to_cell_()
+			self._direct = res
+			return res
+
 		res *= self._cell_p
 		return res
+
+	@_direct.setter
+	def _direct(self, value):
+		keys =['a1','a2','a3']
+		app  = {a:b for a,b in zip(keys,value)}
+		self._cell = [] 
+		self._cell.append(app)
 
 	@property
 	def _recipr(self):
 		return utils.recipr_base(self._direct)
 	
 	@property
-	# @store_property
 	def symm_matrix(self):
 		"""List of symmetry operation matrices"""
 		t = type(self._symm[0]['rotation'])
@@ -267,20 +281,33 @@ class qe_structure(dfp, structure):
 		return res
 
 	@property
-	# @store_property
 	def symm_name(self):
 		"""List of symmetry operation names"""
 		return list([a['name'] for a in self._symm])
 
 	@property
-	# @store_property
 	def fft_dense_grid(self):
 		"""FFT Grid shape: np.ndarray of shape (3,)"""
-		return np.array([self._fft_grid[0]['nr1'], self._fft_grid[0]['nr2'], self._fft_grid[0]['nr3']], dtype='int')
+		return np.array([
+			self._fft_dense_grid[0]['nr1'], 
+			self._fft_dense_grid[0]['nr2'], 
+			self._fft_dense_grid[0]['nr3']], dtype='int')
+
+	@property
+	def fft_smooth_grid(self):
+		"""FFT Grid shape: np.ndarray of shape (3,)"""
+		try:
+			res = np.array([
+				self._fft_smooth_grid[0]['nr1'], 
+				self._fft_smooth_grid[0]['nr2'], 
+				self._fft_smooth_grid[0]['nr3']], dtype='int')
+		except:
+			res = self.fft_dense_grid
+		return res
 
 	def validate(self):
-		# if self.ibrav == None:
-		# 	raise ValidateError("ibrav is not set.")
+		if self.ibrav == None:
+			raise ValidateError("ibrav is not set.")
 		if self._atom_spec == None:
 			raise ValidateError("List of atom types is not set.")
 		if self._atoms == None:
@@ -299,7 +326,7 @@ class qe_structure(dfp, structure):
 
 	def _ibrav_to_cell_(self):
 		if self.ibrav == None:
-			raise error("Failed to generate cell structure from self.ibrav: self.ibrav not set.")
+			raise ValueError("Failed to generate cell structure from self.ibrav: self.ibrav not set.")
 
 		lp = self.alat
 
@@ -413,7 +440,7 @@ class qe_structure(dfp, structure):
 				c*(cbc-cac*cg)/sg,
 				c*np.sqrt(1+2*cbc*cac*cg-cbc**2-cac**2-cg**2)/sg]) * lp
 
-		self.__cell_p = 'bohr'
+		self._app_cell_p = 'bohr'
 		return np.array([v1,v2,v3])
 
 

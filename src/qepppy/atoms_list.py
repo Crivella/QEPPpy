@@ -87,11 +87,25 @@ class atoms_list(metaclass=PropertyCreator):
 
 	@property
 	def n_atoms(self):
-		return len(self.atoms_coord_cart)
+		if hasattr(self, '_n_atoms'):
+			return self._n_atoms
+		else:
+			return len(self.atoms_coord_cart)
+
+	@n_atoms.setter
+	def n_atoms(self, value):
+		self._n_atoms = value
 
 	@property
 	def n_types(self):
-		return len(self.all_atoms_typ)
+		if hasattr(self, '_n_typess'):
+			return self._n_types
+		else:
+			return len(self.all_atoms_typ)
+
+	@n_types.setter
+	def n_types(self, value):
+		self._n_types = value
 
 	@property
 	def atoms_group_coord_cart(self):
