@@ -3,6 +3,11 @@ import scipy.fftpack
 from .. import utils
 
 class FFTgrid():
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		if not hasattr(self, 'nspin'):
+			self.nspin = 1
+
 	def make_density_grid(self, bnd_list=[1]):
 		rho = 0
 		for bnd in bnd_list:
@@ -69,7 +74,7 @@ class FFTgrid():
 				)
 
 			ax1.contourf(
-				x, y, rho[(0,*index)].reshape(x.shape) + rho[(1,*index)].reshape(x.shape),
+				x, y, rho[(...,*index)].sum(axis=0).reshape(x.shape),
 				30, cmap=cmap
 				)
 

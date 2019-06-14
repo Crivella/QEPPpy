@@ -1,6 +1,5 @@
 from .FFTgrid import FFTgrid
-from .parser.binary_io import binary_io as bin_io
-# from .._decorators import store_property
+from ..parsers.fortran_binary import binary_io as bin_io
 from .. import utils
 
 class wavefnc(bin_io, FFTgrid):
@@ -28,15 +27,11 @@ class wavefnc(bin_io, FFTgrid):
 			{'type':'c16', 'shape':('nspin','igwx',), 'name':'C_kn'},
 		], 'nbnd'),
 	]
-	def __init__(self, src=""):
-		super().__init__()
-		self.rep = 1
-		self.src = src
-		if src:
-			self.read_binary(self.src)
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		# self.rep = 1
 
 	@property
-	# @store_property
 	def direct(self):
 		return utils.recipr_base(self.recipr)
 

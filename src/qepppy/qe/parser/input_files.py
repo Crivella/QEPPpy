@@ -2,8 +2,8 @@ import re
 import itertools
 from collections import OrderedDict
 
-from ...errors import ParseInputError, ValidateError
-from ... import fortran_namelist as f90nml
+from ...errors  import ParseInputError, ValidateError
+from ...parsers import fortran_namelist as f90nml
 
 tf90_to_py = {
 	'INTEGER': int,

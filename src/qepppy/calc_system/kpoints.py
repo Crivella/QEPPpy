@@ -149,7 +149,7 @@ class kpoints(lattice):
 			]
 
 		res    = np.array(list(product(l1,l2,l3)))
-		_, res = self.reduce(res)
+		_, res = self.symmetries.reduce(res)
 
 		if not set_self:
 			return res

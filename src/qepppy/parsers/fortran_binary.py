@@ -10,10 +10,14 @@ _endian = {
 }
 
 class binary_io():
-	def __init__(self):
+	def __init__(self, src="", endian=endianess, **kwargs):
 		self.binary = False
-		# self.no_squeeze = []
-		return
+		
+		self.src = src
+		if src:
+			self.read_binary(src=src, endian=endian)
+
+		super().__init__(**kwargs)
 		
 	def read_binary(self, src="", endian=endianess):
 		endian = _endian[endian]
@@ -42,6 +46,8 @@ class binary_io():
 					self.__dict__[n] = np.array(self.__dict__[n])
 					if not c:
 						self.__dict__[n] = self.__dict__[n].squeeze()
+
+		self.binary = True
 
 	def _convert_shape_(self, tupl):
 		l = []

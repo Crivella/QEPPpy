@@ -1,7 +1,7 @@
 import re
 import numpy as np
 from .._decorators import numpy_save_opt, numpy_plot_opt, join_doc
-from ..qe.parser.binary_io import binary_io
+from ..parsers.fortran_binary import binary_io
 
 
 HARTREE = 27.2113
