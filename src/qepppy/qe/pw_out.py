@@ -1,14 +1,16 @@
 import os
 import numpy as np
-from .bands        import bands        as bands
-from .structure    import qe_structure as structure
+from .qe_bands     import qe_bands     as bands
+from .qe_structure import qe_structure as structure
 from .tmp          import tmp
 from .UPF          import UPF
+from ..calc_system import system
 # from ..utils       import xyz_mesh
-from .._decorators import store_property
+# from .._decorators import store_property
 # from ..logger import logger
 # @logger()
-class pw_out(bands, structure):
+# class pw_out(bands, structure):
+class pw_out(structure, bands, system):
 	"""
 	Instance used to handle QE outputs (by parsing the "data-file*.xml" file")
 	fname: name of the "data-file*.xml" to parse
@@ -17,8 +19,8 @@ class pw_out(bands, structure):
 	 - xml     = Name of the data-file*.xml to parse
 	"""
 	__name__ = "pw_out"
-	def __init__(self, **kwargs):
-		super().__init__(**kwargs)
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 		self.validate()
 
 	@property
@@ -31,7 +33,7 @@ class pw_out(bands, structure):
 		return tmp(self.prefix, path=self.data_path)
 
 	@property
-	@store_property
+	# @store_property
 	def pseudo(self):
 		"""Iterable. Every element is of type <class UPF> and contains the data
 		of the atoms pseudopotentials.

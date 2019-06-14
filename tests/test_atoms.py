@@ -7,7 +7,7 @@ plist   = [1,5,15,40]
 	scope='class'
 	)
 def cls_typ():
-	from qepppy.atoms_list import atoms_list
+	from qepppy.calc_system.atoms_list import atoms_list
 	return atoms_list
 
 @pytest.fixture(

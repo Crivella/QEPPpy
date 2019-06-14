@@ -1,8 +1,9 @@
 import numpy as np
-from .structure import qe_structure as structure
+from ..calc_system import system
+from .qe_structure import qe_structure as structure
 from .parser.input_files import input_files as inp_f
 
-class pw_in(inp_f, structure):
+class pw_in(inp_f, structure, system):
 	"""
 	Instance used to handle QE pw.x input files.
 	Provides an interface for the 'structure' output file methods, in order to 

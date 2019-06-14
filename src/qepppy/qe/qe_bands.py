@@ -8,14 +8,14 @@ HA_to_eV = 27.21138602
 
 
 data={
-	'n_kpt':{
+	'_n_kpt':{
 		'xml_ptype':'text', 
 		'xml_search_string':'output//nks', 
 		'extra_name':None, 
 		'res_type':int,
 		'outfile_regex':r'number of k points[\s]*='
 		},
-	'n_bnd':{
+	'_n_bnd':{
 		'xml_ptype':'attr', 
 		'xml_search_string':'output//ks_energies/eigenvalues', 
 		'extra_name':'size', 
@@ -68,7 +68,7 @@ data={
 		'res_type':list,
 		'outfile_regex':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)'
 		},
-	'_egv':{
+	'_app_egv':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//ks_energies/eigenvalues', 
 		'extra_name':'egv', 
@@ -76,7 +76,7 @@ data={
 		'outfile_regex':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
 		'modifier':1/HA_to_eV
 		},
-	'_occ':{
+	'_app_occ':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//ks_energies/occupations', 
 		'extra_name':'occ', 
@@ -93,7 +93,7 @@ data={
 	}
 
 # @logger()
-class bands(dfp):
+class qe_bands(dfp):
 	"""
 	Instance used for QE eigenvalues/vector(k-points) and occupations numbers.
 	Uses the internal "data_file_parser" to read from a "data-file-schema.xml"
@@ -110,29 +110,27 @@ class bands(dfp):
 	def __init__(self, d={}, **kwargs):
 		d.update(data)
 		super().__init__(d=d, **kwargs)
-		return
 
 	def __str__(self):
 		msg = super().__str__()
-		bnd = self.n_bnd
+		bnd = self._n_bnd
 		kpt_fmt = "\nkpt(#{{:5d}}):  " + "{:8.4f}"*3 + " [2pi/alat]"
 		egv_fmt = "\nEigenvalues(eV):\n" + ("  "+"{:12.6f}"*8+"\n")*(bnd//8)
 		egv_fmt += "  " + "{:12.6f}"*(bnd%8) + "\n"
-		for i in range(self.n_kpt):
+		for i in range(self._n_kpt):
 			msg += kpt_fmt.format(*self.kpt_cart[i]).format(i)
 			msg += egv_fmt.format(*self.egv[i])
 		return msg
 
 	def __getitem__(self, key):
 		if(isinstance(key, int)):
-			if(0 <= key < self.n_kpt):
+			if(0 <= key < self._n_kpt):
 				return {'kpt':self.kpt_cart[key], 'egv':self.egv[key], 'occ':self.occ[key]} 
 			else:
-				raise KeyError("Index '{}' out of range {}-{}".format(key, 0, self.n_kpt - 1))
+				raise KeyError("Index '{}' out of range {}-{}".format(key, 0, self._n_kpt - 1))
 		return super().__getitem__(key)
 
 	@property
-	@store_property
 	def E_tot(self):
 		"""Total energy"""
 		if self._E_tot == 0.0:
@@ -141,19 +139,17 @@ class bands(dfp):
 	
 
 	@property
-	# @store_property
-	def kpt_cart(self):
+	def _kpt_cart(self):
 		"""
 		np.ndarray of shape(nkpt, 3).
 		Contains the coordinates in cartesian units of all k-points.
 		"""
 		kpt = np.array([a['kpt'] for a in self._kpt])
-		kpt = kpt[:self.n_kpt,:]
+		kpt = kpt[:self._n_kpt,:]
 		return kpt
 
 	@property
-	# @store_property
-	def kpt_cryst(self):
+	def _kpt_cryst(self):
 		"""
 		np.ndarray of shape(nkpt, 3).
 		Contains the coordinates in crystal units of all k-points.
@@ -168,46 +164,43 @@ class bands(dfp):
 		return kpt
 
 	@property
-	@store_property
-	def weight(self):
+	def _weight(self):
 		"""
 		np.ndarray of shape (nkpt,)
 		Contains the weights for all k-points.
 		"""
-		n = self.n_kpt
+		n = self._n_kpt
 		occ = np.array([a['weight'] for a in self._kpt])
 		if occ.shape[0] > n:
 			occ = occ[:n]
 		return occ
 
 	@property
-	@store_property
-	def egv(self):
+	def _egv(self):
 		"""
 		np.ndarray of shape (nkpt,nbnd).
 		Contains all the eigenvalues for the bands.
 		"""
-		app = np.array([a['egv'] for a in self._egv]) * self.e_units
+		app = np.array([a['egv'] for a in self._app_egv]) * self.e_units
 		num = app.shape[0]
-		if num > self.n_kpt:
+		if num > self._n_kpt:
 			if num % self.n_kpt != 0:
-				raise NotImplemented("Read egv #{} is not a multiple of n_kpt #{}".format(num, self.n_kpt))
-			app = app[-self.n_kpt:]
+				raise NotImplemented("Read egv #{} is not a multiple of n_kpt #{}".format(num, self._n_kpt))
+			app = app[-self._n_kpt:]
 		return app
 
 	@property
-	@store_property
-	def occ(self):
+	def _occ(self):
 		"""
 		np.ndarray of shape (nkpt,nbnd).
 		Contains the occupation number of all the bands.
 		"""
-		app = np.array([a['occ'] for a in self._occ])
+		app = np.array([a['occ'] for a in self._app_occ])
 		num = app.shape[0]
-		if num > self.n_kpt:
-			if num % self.n_kpt != 0:
-				raise NotImplemented("Read occ #{} is not a multiple of n_kpt #{}".format(num, self.n_kpt))
-			app = app[-self.n_kpt:]
+		if num > self._n_kpt:
+			if num % self._n_kpt != 0:
+				raise NotImplemented("Read occ #{} is not a multiple of n_kpt #{}".format(num, self._n_kpt))
+			app = app[-self._n_kpt:]
 		return app
 
 	@property
@@ -299,104 +292,104 @@ class bands(dfp):
 		return res
 	
 
-	@numpy_save_opt(_fname='kpt.dat', _fmt="%14.6f")
-	def kpt_crop(self, center, radius, mode='cart'):
-		"""
-		Crop all k-point from the grid, in a sphere around a center.
-		Params:
-		 - center: Iterable containing the X,Y,Z coordinates of the center of 
-		           the sphere.
-		 - radius: Radius of the sphere
-		 - mode:   Crop the k-points from cartesian('cart') or crystal('cryst')
-		           coordinates.
-		"""
-		center = np.array(center)
-		if center.size != 3:
-			raise ValueError("First positional argument must be a 3D coordinate for the center")
+	# @numpy_save_opt(_fname='kpt.dat', _fmt="%14.6f")
+	# def kpt_crop(self, center, radius, mode='cart'):
+	# 	"""
+	# 	Crop all k-point from the grid, in a sphere around a center.
+	# 	Params:
+	# 	 - center: Iterable containing the X,Y,Z coordinates of the center of 
+	# 	           the sphere.
+	# 	 - radius: Radius of the sphere
+	# 	 - mode:   Crop the k-points from cartesian('cart') or crystal('cryst')
+	# 	           coordinates.
+	# 	"""
+	# 	center = np.array(center)
+	# 	if center.size != 3:
+	# 		raise ValueError("First positional argument must be a 3D coordinate for the center")
 
-		if mode == 'cart':
-			kpt = self.kpt_cart
-		elif mode == 'cryst':
-			kpt = self.kpt_cryst
+	# 	if mode == 'cart':
+	# 		kpt = self.kpt_cart
+	# 	elif mode == 'cryst':
+	# 		kpt = self.kpt_cryst
 
-		norm = np.linalg.norm(kpt - center, axis=1)
-		w = np.where(norm <= radius)[0]
+	# 	norm = np.linalg.norm(kpt - center, axis=1)
+	# 	w = np.where(norm <= radius)[0]
 
-		print("Cropping {} points out of {}.".format(w.size, norm.size))
-		w_red = np.sum(self.weight[w])
-		w_tot = np.sum(self.weight)
-		print("Total weight {:.5f} / {:.5f} = {:.5f} = Renormalization factor".format(
-			w_red, w_tot, w_red/w_tot
-			))
+	# 	print("Cropping {} points out of {}.".format(w.size, norm.size))
+	# 	w_red = np.sum(self.weight[w])
+	# 	w_tot = np.sum(self.weight)
+	# 	print("Total weight {:.5f} / {:.5f} = {:.5f} = Renormalization factor".format(
+	# 		w_red, w_tot, w_red/w_tot
+	# 		))
 
-		return np.column_stack((kpt[w,:], self.weight[w]))
+	# 	return np.column_stack((kpt[w,:], self.weight[w]))
 	
 	
 
-	@numpy_plot_opt(_ylab="Energy (eV)")
-	@numpy_save_opt(_fname="plotted.dat",_fmt="")
-	def band_structure(self, thr=np.inf):
-		"""
-		Compute the band structure.
-		Params:
-		  - thr: Threshold of delta_K to be considered a cut in the band plot
-		Return:
-		  numpy array with shape(n_kpt,n_bnd+1).
-		  The first column is the coordinates of |dK| to be used as X axis for 
-		  a band plot.
-		  The other column are the ordered band eigenvalue for the 
-		  corresponding kpt.
-		"""
-		kpt = np.array(self.kpt_cart)
-		kpt[1:] -= kpt[:-1]
-		kpt[0]  -= kpt[0]
-		norm = np.linalg.norm(kpt, axis=1)
+	# @numpy_plot_opt(_ylab="Energy (eV)")
+	# @numpy_save_opt(_fname="plotted.dat",_fmt="")
+	# def band_structure(self, thr=np.inf):
+	# 	"""
+	# 	Compute the band structure.
+	# 	Params:
+	# 	  - thr: Threshold of delta_K to be considered a cut in the band plot
+	# 	Return:
+	# 	  numpy array with shape(n_kpt,n_bnd+1).
+	# 	  The first column is the coordinates of |dK| to be used as X axis for 
+	# 	  a band plot.
+	# 	  The other column are the ordered band eigenvalue for the 
+	# 	  corresponding kpt.
+	# 	"""
+	# 	kpt = np.array(self.kpt_cart)
+	# 	kpt[1:] -= kpt[:-1]
+	# 	kpt[0]  -= kpt[0]
+	# 	norm = np.linalg.norm(kpt, axis=1)
 
-		norm[norm > thr] = 0
+	# 	norm[norm > thr] = 0
 		
-		x = [norm[:i+1].sum() for i in range(len(norm))]
-		egv = self.egv
+	# 	x = [norm[:i+1].sum() for i in range(len(norm))]
+	# 	egv = self.egv
 
-		res = np.column_stack((x, egv))
+	# 	res = np.column_stack((x, egv))
 
-		return res
+	# 	return res
 
-	@numpy_plot_opt(_xlab="Energy (eV)",_ylab="DOS (arb. units)")
-	@numpy_save_opt(_fname="dos.dat")
-	def density_of_states(self, 
-		Emin=-20, Emax=20, deltaE=0.001, deg=0.00
-		):
-		"""
-		Compute the DOS.
-		  DOS(E) = sum_{n,K} [delta(E - E_{n}(K)) * weight(K)]
-		Params:
-		  - Emin:   Starting energy for the DOS
-		  - Emax:   Final energy for the DOS
-		  - deltaE: Tick separation on the X axis
-		  - deg:    Sigma to be used for a gaussian broadening.
-		            Default = 0.0: Does not apply any broadening.
+	# @numpy_plot_opt(_xlab="Energy (eV)",_ylab="DOS (arb. units)")
+	# @numpy_save_opt(_fname="dos.dat")
+	# def density_of_states(self, 
+	# 	Emin=-20, Emax=20, deltaE=0.001, deg=0.00
+	# 	):
+	# 	"""
+	# 	Compute the DOS.
+	# 	  DOS(E) = sum_{n,K} [delta(E - E_{n}(K)) * weight(K)]
+	# 	Params:
+	# 	  - Emin:   Starting energy for the DOS
+	# 	  - Emax:   Final energy for the DOS
+	# 	  - deltaE: Tick separation on the X axis
+	# 	  - deg:    Sigma to be used for a gaussian broadening.
+	# 	            Default = 0.0: Does not apply any broadening.
 
-		Return:
-		  numpy array of shape ((Emax-Emin)/(deltaE)+1,2)
-		  The first column is the value of the energies generated using 
-		   np.linspace(Emin,Emax,(Emax-Emin)/(deltaE)+1)
-		  The second column is the value of the DOS
-		"""
-		res = np.linspace(Emin, Emax, (Emax-Emin)/deltaE+1).reshape(1,-1)
-		res = np.pad(res, ((0,1),(0,0)), 'constant')
+	# 	Return:
+	# 	  numpy array of shape ((Emax-Emin)/(deltaE)+1,2)
+	# 	  The first column is the value of the energies generated using 
+	# 	   np.linspace(Emin,Emax,(Emax-Emin)/(deltaE)+1)
+	# 	  The second column is the value of the DOS
+	# 	"""
+	# 	res = np.linspace(Emin, Emax, (Emax-Emin)/deltaE+1).reshape(1,-1)
+	# 	res = np.pad(res, ((0,1),(0,0)), 'constant')
 
-		for n,egv in enumerate(self.egv):
-			i = np.floor((egv - Emin) / deltaE +0.5).astype(dtype='int')
-			i = i[np.where( (0 <= i) & (i < res[0].size))]
-			res[1,i] += self.weight[n]
+	# 	for n,egv in enumerate(self.egv):
+	# 		i = np.floor((egv - Emin) / deltaE +0.5).astype(dtype='int')
+	# 		i = i[np.where( (0 <= i) & (i < res[0].size))]
+	# 		res[1,i] += self.weight[n]
 
-		res[1:] /= deltaE
+	# 	res[1:] /= deltaE
 
-		if deg > 0:
-			from ..tools.broad import broad
-			res = broad(res, t='gauss', deg=deg, axis=1)
+	# 	if deg > 0:
+	# 		from ..tools.broad import broad
+	# 		res = broad(res, t='gauss', deg=deg, axis=1)
 
-		return res.T
+	# 	return res.T
 
 	@IO_stdout_redirect()
 	def smallest_gap(self,
@@ -445,7 +438,7 @@ class bands(dfp):
 		mod  = np.linalg.norm(cp-kpt,axis=1) - radius
 		in_range = np.where(mod >= 0)[0]
 
-		num = np.arange(self.n_kpt)
+		num = np.arange(self._n_kpt)
 		num = num[in_range]
 		kpt = kpt[in_range,:]
 		egv = egv[in_range,:]
@@ -503,13 +496,13 @@ class bands(dfp):
 		print("\t{} -> {}   Ef: {} eV".format(egv[res,cb], egv[res,cb+1], ef))
 
 	def validate(self):
-		if self.n_kpt <= 0:
+		if self._n_kpt <= 0:
 			raise ValidateError("Failed to read nkpt from file '{}'.".format(self.xml))
-		if self.n_bnd <= 0:
+		if self._n_bnd <= 0:
 			raise ValidateError("Failed to read nbnd from file '{}'.".format(self.xml))
-		legv = self.egv.shape[0]
+		legv = self._egv.shape[0]
 		if self.occ.size:
-			locc = self.occ.shape[0]
+			locc = self._occ.shape[0]
 		else:
 			locc = legv
 		# if not self.n_kpt == legv == locc:

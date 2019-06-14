@@ -1,7 +1,8 @@
 import numpy as np
 from .parser.data_file_parser import data_file_parser as dfp
 from ..errors import ValidateError
-from ..structure import structure as structure
+# from ..calc_system.structure import structure as structure
+# from ..calc_system import system
 from .. import utils
 
 bravais_index={	
@@ -131,7 +132,8 @@ data={
 	}
 
 # @logger()
-class qe_structure(dfp, structure):
+# class qe_structure(dfp, structure):
+class qe_structure(dfp):
 	__name__ = "qe_structure";
 	def __init__(self, d={}, **kwargs):
 		self._app_atom_p = 'bohr'

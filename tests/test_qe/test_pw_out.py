@@ -26,7 +26,14 @@ cmp_list = [
 	scope='module',
 	params=out_files,
 	)
-def out_v_pkl(request):
+def outputs(request):
+	"""
+	Collection of outputs from pw.x calculation.
+	Returns:
+	 - out: parsed output(log) file
+	 - xml: parsed data-file-schema.xml
+	 - pkl: dictionary of expected parse results
+	"""
 	name     = request.param
 	out_name = name + '.out'
 	xml_name = name + '.xml'
@@ -41,8 +48,8 @@ def out_v_pkl(request):
 	return out, xml, pkl
 	
 
-def test_pw_out_parsing(out_v_pkl):
-	out, xml, pkl = out_v_pkl
+def test_pw_out_parsing(outputs):
+	out, xml, pkl = outputs
 
 	compare_std(out, pkl, cmp_list=cmp_list)
 	compare_std(xml, pkl, cmp_list=cmp_list)

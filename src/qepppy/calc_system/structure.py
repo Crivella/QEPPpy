@@ -1,7 +1,7 @@
 import numpy as np
-from .atoms_list  import atoms_list   as atm
-from ._lattice    import _lattice     as latt
-from . import utils
+from .atoms_list  import atoms_list  as atm
+from .lattice     import lattice     as latt
+from .. import utils
 
 def cart_to_cryst(cls, coord):
 	return coord.dot(np.linalg.inv(cls.direct))
@@ -29,6 +29,9 @@ class structure(atm, latt):
 		'post_set_func':cryst_to_cart,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
 		}
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 
 	def make_supercell(self,repX,repY,repZ):
 		"""
@@ -120,11 +123,6 @@ class structure(atm, latt):
 	def plot(
 		self, 
 		*args, **kwargs,
-		# repX=1, repY=1, repZ=1, 
-		# cell=False, 
-		# bonds=True,
-		# recipr=False,
-		# graph_lvl=1,
 		):
 		"""
 		Plot the crystal cell structure.

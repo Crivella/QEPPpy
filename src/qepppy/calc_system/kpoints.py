@@ -1,5 +1,7 @@
 import numpy as np
-from .meta import PropertyCreator
+from .symmetry import symmetries
+from .lattice  import lattice
+# from ..meta import PropertyCreator
 
 def u(r, q):
 	return (2.*r - q - 1.), (2. * q)
@@ -11,7 +13,7 @@ def cryst_to_cart(cls, coord):
 	return coord.dot(cls.recipr)
 
 
-class _kpoints(metaclass=PropertyCreator):
+class kpoints(lattice):
 	kpt_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
@@ -30,14 +32,6 @@ class _kpoints(metaclass=PropertyCreator):
 		'post_set_func':cryst_to_cart,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
 		}
-	recipr={
-		'typ':(list,np.ndarray),
-		'sub_typ':(int,float,np.number),
-		# 'size':9,
-		'shape':(3,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(3,3),
-		'doc':"""Matrix of reciprocal basis vector (as rows)."""
-		}
 	weight={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
@@ -46,21 +40,19 @@ class _kpoints(metaclass=PropertyCreator):
 		'doc':"""List of k-points weights."""
 		}
 
-	def __init__(self, 
-		recipr=None,
+	def __init__(
+		self, *args, 
 		kpoint_list_cart=None,
 		kpoint_list_cryst=None,
-		kpoint_mesh=None, kpoint_shift=None
+		kpoint_mesh=None, kpoint_shift=None,
+		**kwargs
 		):
 		from itertools import combinations
-		if not recipr is None:
-			self.recipr = recipr
 
 		cond = [not a is None for a in [kpoint_list_cart, kpoint_list_cryst, kpoint_mesh]]
 		cond = combinations(cond, 2)
 		if any(all(a) for a in cond):
 			raise ValueError("Cannot set k-points in multiple different ways at the same time!!!")
-		# if kpoint_list_cart and kpoint_list_cryst:
 		if not kpoint_list_cart is None:
 			self.kpt_cart = kpoint_list_cart
 		if not kpoint_list_cryst is None:
@@ -72,11 +64,19 @@ class _kpoints(metaclass=PropertyCreator):
 				shift = kpoint_shift
 			self.generate_monkhorst_pack_grid(kpoint_mesh, shift)
 
+		self.symmetries = symmetries()
+
+		super().__init__(*args, **kwargs)
+
 	@property
 	def n_kpt(self):
 		return len(self.kpt_cart)
 
-	def generate_kpath(self, edges, mode='crystal'):
+	def generate_kpath(
+		self, 
+		edges,
+		mode='crystal'
+		):
 		"""
 		Generate a k-point path.
 		Params:
@@ -93,6 +93,9 @@ class _kpoints(metaclass=PropertyCreator):
 		 np.array of shape (edges[:-1,-1].sum(), 3), where every row is the 3D
 		 coordinate of a k-point.
 		"""
+		self.edges = edges
+		self.mesh  = self.shift = None
+
 		n_pt  = np.array(edges)[:,3].astype(dtype=int)
 		edges = np.array(edges)[:,0:3]
 
@@ -113,7 +116,11 @@ class _kpoints(metaclass=PropertyCreator):
 
 		return path
 
-	def generate_monkhorst_pack_grid(self, shape, shift=(0,0,0), set_self=True):
+	def generate_monkhorst_pack_grid(
+		self, 
+		shape, shift=(0,0,0), 
+		set_self=True
+		):
 		"""
 		Generate a Monkhorst-Pack grid of k-point.
 		Params:
@@ -129,6 +136,8 @@ class _kpoints(metaclass=PropertyCreator):
 		assert all(a == 0 or a == 1   for a in shift)
 		self.mesh  = shape
 		self.shift = shift
+		self.edges = None
+
 		s1,s2,s3   = shift
 
 		l1,l2,l3 = [
@@ -138,13 +147,20 @@ class _kpoints(metaclass=PropertyCreator):
 					)
 				) for i,q in enumerate(shape)
 			]
-		res = np.array(list(product(l1,l2,l3)))
+
+		res    = np.array(list(product(l1,l2,l3)))
+		_, res = self.reduce(res)
+
 		if not set_self:
 			return res
 		self.kpt_cryst = res
 
 
-	def crop(self, center=(0,0,0), radius=np.inf, verbose=True):
+	def kpt_crop(
+		self, 
+		center=(0,0,0), radius=np.inf, 
+		verbose=True, set_self=True
+		):
 		"""
 		Crop the k-points in a sphere of radius 'radius' with center 'center':
 		Params:
@@ -153,6 +169,8 @@ class _kpoints(metaclass=PropertyCreator):
 		 - radius: Radius of the crop sphere. Defaulr = np.inf
 		 - verbose: Print information about the cropping. Default = True
 		"""
+		self.mesh  = self.shift = self.edges = None
+
 		center = np.array(center).reshape(3)
 		norms  = np.linalg.norm(self.kpt_cart - center, axis=1)
 		w      = np.where(norms <= radius)[0]
@@ -160,6 +178,9 @@ class _kpoints(metaclass=PropertyCreator):
 		if verbose:
 			print(f"# Cropping k-points around {center} with radius {radius}")
 			print(f"# Cropped {len(w)} k-points out of {self.n_kpt}")
+
+		if not set_self:
+			return self.kpt_cart[w]
 		self.kpt_cart = self.kpt_cart[w]
 		self.weight   = self.weight[w]
 

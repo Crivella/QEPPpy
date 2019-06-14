@@ -14,7 +14,7 @@ basis={
 	scope='class'
 	)
 def cls_typ():
-	from qepppy.structure import structure
+	from qepppy.calc_system.structure import structure
 	return structure
 
 @pytest.fixture(

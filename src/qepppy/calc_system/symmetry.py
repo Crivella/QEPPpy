@@ -1,6 +1,6 @@
 import numpy as np
 
-from .meta import PropertyCreator
+from ..meta import PropertyCreator
 
 def get_symmetry_order(symm_matrix):
 	from scipy.linalg import eigvals
@@ -40,7 +40,7 @@ def _iteration(k, sm, thr):
 
 	return res_i, np.array(res_p)
 
-class _symmetry(metaclass=PropertyCreator):
+class symmetry(metaclass=PropertyCreator):
 	matrix={
 		'typ':(np.ndarray,),
 		'sub_typ':(np.number,),
@@ -90,11 +90,14 @@ class _symmetry(metaclass=PropertyCreator):
 		return new_i, new_p
 
 class symmetries(list):
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		
 	def append(self, value):
-		if isinstance(value, _symmetry):
+		if isinstance(value, symmetry):
 			new = value
 		else:
-			new = _symmetry(value)
+			new = symmetry(value)
 
 		super().append(new)
 

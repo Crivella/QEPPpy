@@ -1,6 +1,6 @@
 import numpy as np
-from .meta import PropertyCreator
-from . import cell_graphic as cg
+from ..meta import PropertyCreator
+from ..graphics import mpl_graphics as cg
 
 
 import json
@@ -84,6 +84,9 @@ class atoms_list(metaclass=PropertyCreator):
 		'sub_typ':(str,),
 		'doc':"""List of atom names (same order as list of masses)."""
 		}
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 
 	@property
 	def n_atoms(self):

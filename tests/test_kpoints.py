@@ -3,8 +3,8 @@ import numpy as np
 
 @pytest.fixture
 def cls():
-	from qepppy._kpoints import _kpoints
-	return _kpoints
+	from qepppy.calc_system.kpoints import kpoints
+	return kpoints
 
 @pytest.fixture
 def cls_rec(cls):

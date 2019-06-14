@@ -70,7 +70,7 @@ class FFTgrid():
 
 			ax1.contourf(
 				x, y, rho[(0,*index)].reshape(x.shape) + rho[(1,*index)].reshape(x.shape),
-				100, cmap=cmap
+				30, cmap=cmap
 				)
 
 			ax1.set_title('Slice {}'.format(zs))

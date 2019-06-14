@@ -2,7 +2,6 @@ import pytest
 import os
 import qepppy
 import pickle
-import numpy as np
 from .conftest import compare_std
 
 cwd      = os.path.dirname(os.path.realpath(__file__))
@@ -21,6 +20,12 @@ cmp_list = [
 	params=in_files
 	)
 def inputs(request):
+	"""
+	Collection of inputs for pw.in.
+	Returns:
+	 - inp: parsed input file
+	 - pkl: dictionary of expected results
+	"""
 	name = request.param
 
 	in_name  = name + '.in'
