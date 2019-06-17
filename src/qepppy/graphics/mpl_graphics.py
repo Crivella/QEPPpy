@@ -42,7 +42,7 @@ def draw_Wigner_Seitz(ax, recipr):
 	closest    = ind.copy()
 	closest[w] = -1
 
-	cond    = np.where([False if i in a else True for a in closest])[0]
+	cond    = np.where([not i in a for a in closest])[0]
 	P[cond] = np.zeros(3)
 
 

@@ -59,10 +59,10 @@ def test_pw_in_build_init(inputs):
 			}
 		)
 
-	new.atoms_coord_cart = inp.atoms_coord_cart
-	new.atoms_typ        = inp.atoms_typ
-	new.atoms_mass       = inp.atoms_mass
-	new.atoms_pseudo     = inp.atoms_pseudo
+	new.atoms_coord_cart  = inp.atoms_coord_cart
+	new.atoms_typ         = inp.atoms_typ
+	new.atoms_mass        = inp.atoms_mass
+	new.atoms_pseudo      = inp.atoms_pseudo
 
 	new.validate()
 	str(new)
@@ -71,15 +71,15 @@ def test_pw_in_build_scratch(inputs):
 	inp, std = inputs
 	new = qepppy.qe.pw_in()
 
-	new.n_atoms          = inp.n_atoms
-	new.n_types          = inp.n_types
-	new.ibrav            = inp.ibrav
-	new['SYSTEM/ecutwfc']= inp.ecutwfc
-	new.alat             = inp.alat
-	new.atoms_coord_cart = inp.atoms_coord_cart
-	new.atoms_typ        = inp.atoms_typ
-	new.atoms_mass       = inp.atoms_mass
-	new.atoms_pseudo     = inp.atoms_pseudo
+	new.n_atoms           = inp.n_atoms
+	new.n_types           = inp.n_types
+	new.ibrav             = inp.ibrav
+	new['SYSTEM/ecutwfc'] = inp.ecutwfc
+	new.alat              = inp.alat
+	new.atoms_coord_cart  = inp.atoms_coord_cart
+	new.atoms_typ         = inp.atoms_typ
+	new.atoms_mass        = inp.atoms_mass
+	new.atoms_pseudo      = inp.atoms_pseudo
 
 	new.validate()
 	str(new)

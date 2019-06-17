@@ -75,6 +75,7 @@ class kpoints(lattice):
 	def generate_kpath(
 		self, 
 		edges,
+		# edges_name=[],
 		mode='crystal'
 		):
 		"""
@@ -84,7 +85,7 @@ class kpoints(lattice):
 		          k-points lines.
 		          The first 3 columns have to contain the coordinates of the 
 		          k-point.
-		          The 4th columns has to contain and integer > 0 that indicates
+		          The 4th columns has to contain an integer > 0 that indicates
 		          the number of k-points between the current and the next edge.
 		 - mode: Referse to the basis set for the k-point coordinates.
 		         - 'crystal': coordinates given in b1,b2,b3 units
@@ -93,8 +94,10 @@ class kpoints(lattice):
 		 np.array of shape (edges[:-1,-1].sum(), 3), where every row is the 3D
 		 coordinate of a k-point.
 		"""
-		self.edges = edges
-		self.mesh  = self.shift = None
+		self.edges      = edges
+		# self.edges_name = edges_name
+		self.mode       = mode
+		self.mesh       = self.shift = None
 
 		n_pt  = np.array(edges)[:,3].astype(dtype=int)
 		edges = np.array(edges)[:,0:3]
@@ -136,7 +139,9 @@ class kpoints(lattice):
 		assert all(a == 0 or a == 1   for a in shift)
 		self.mesh  = shape
 		self.shift = shift
-		self.edges = None
+		self.edges = self.mode = None
+		# self.edges_name = None
+
 
 		s1,s2,s3   = shift
 
@@ -183,6 +188,46 @@ class kpoints(lattice):
 			return self.kpt_cart[w]
 		self.kpt_cart = self.kpt_cart[w]
 		self.weight   = self.weight[w]
+
+	def _kpt_plot(self, ax, edges_name=[]):
+		self.draw_Wigner_Seitz(ax)
+		ax.scatter(*self.kpt_cart.T)
+		if not self.edges is None:
+			ax.scatter(
+				*self.edges[:,:3].dot(self.recipr).T, 
+				s=10, color='r'
+				)
+
+			for name,edge in zip(edges_name, self.edges):
+				e = edge[:3]
+				if self.mode == 'crystal':
+					e = e.dot(self.recipr)
+				ax.text(*e, name, size=15)
+
+
+	def kpt_plot(self, **kwargs):
+		"""
+		Plot the FBZ and the with the selected k-points inside.
+		Params:
+		 - edges_name: List containing the names of the highsymm points.
+		               Used if the kpt are generated using generate_kpath.
+		"""
+		import matplotlib.pyplot as plt
+		from mpl_toolkits.mplot3d import Axes3D
+
+		fig = plt.figure()
+		ax = fig.add_subplot(111, projection='3d')
+
+		self._kpt_plot(ax, **kwargs)
+
+		ax.set_xlabel(r'$k_x$')
+		ax.set_ylabel(r'$k_y$')
+		ax.set_zlabel(r'$k_z$')
+		ax.set_xticklabels([])
+		ax.set_yticklabels([])
+		ax.set_zticklabels([])
+
+		plt.show()
 
 
 
