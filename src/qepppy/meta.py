@@ -87,6 +87,14 @@ def key_setter(key,
 				f"elements of value='{value}' must be of type '{sub_typ}'."
 				)
 
+		try:
+			value = conv_func(value)
+		except Exception as e:
+			raise Exception(
+				err_header + 
+				f"Failed to run conversion function '{conv_func}' on value='{value}'"
+				) from e
+
 		if shape:
 			if hasattr(value, 'shape'):
 				v_shape = value.shape
@@ -103,14 +111,6 @@ def key_setter(key,
 				app = convert_var(cls, shape[0])
 				if l != app:
 					raise ValueError(err_header + f"Shape mismatch '{shape[0]}'={app} not equal to {l}")
-
-		try:
-			value = conv_func(value)
-		except Exception as e:
-			raise Exception(
-				err_header + 
-				f"Failed to run conversion function '{conv_func}' on value='{value}'"
-				) from e
 
 		set_other(cls, post_set_name, post_set_func ,value)
 		setattr(cls, key, value)

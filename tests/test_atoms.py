@@ -1,38 +1,24 @@
 import pytest
 import numpy as np
+from .conftest import BaseTest
+from qepppy.calc_system.atoms_list import atoms_list
 
-plist   = [1,5,15,40]
+class Test_atoms(BaseTest):
+	cls_typ = atoms_list
 
-@pytest.fixture(
-	scope='class'
-	)
-def cls_typ():
-	from qepppy.calc_system.atoms_list import atoms_list
-	return atoms_list
+	@pytest.fixture(scope='class')
+	def cls_wcc(self, cls, coord):
+		cls.atoms_coord_cryst = coord
 
-@pytest.fixture(
-	scope='class'
-	)
-def cls(cls_typ):
-	res = cls_typ()
-	assert isinstance(res, cls_typ), "Failed to initialize empty instance of " + repr(cls_typ)
-	return res
+		assert np.allclose(cls.atoms_coord_cryst, coord), "Failed to assign coordinates"
 
-@pytest.fixture(
-	scope='class',
-	params=[1,2]
-	)
-def cls_wcc(cls, request):
-	cls.atoms_coord_cryst = np.array([[0,0,0],[.25,.25,.25]])[:request.param]
-	return cls
+		return cls
 
-class Test_atoms():
 	def test_atoms_coord_cryst(self, cls_wcc):
 		pass
 
 	def test_atoms_typ(self, cls_wcc):
 		n_atoms = cls_wcc.n_atoms
-		# print(n_atoms)
 		cls_wcc.atoms_typ = (['Si', 'Ge'] * (n_atoms))[:n_atoms]
 		assert cls_wcc.all_atoms_typ == ['Si', 'Ge'][:min(2,n_atoms)]
 

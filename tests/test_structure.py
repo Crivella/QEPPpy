@@ -1,42 +1,24 @@
 import pytest
-import itertools
-import numpy as np
-from .test_atoms import cls_wcc, Test_atoms
+from .test_atoms   import Test_atoms
+from .test_lattice import Test_lattice
+from qepppy.calc_system.structure import structure
 
-Test_atoms.__test__ = False
-
-basis={
-	'sc':np.diag([1]*3)*5.1,
-	'fcc':np.array(list(set(itertools.permutations([0,.5,.5]))))*10.2,
-}
-
-@pytest.fixture(
-	scope='class'
-	)
-def cls_typ():
-	from qepppy.calc_system.structure import structure
-	return structure
-
-@pytest.fixture(
-	scope='class',
-	params=['sc', 'fcc',]
-	)
-def cls(cls_typ, request):
-	res = cls_typ()
-	assert isinstance(res, cls_typ), "Failed to initialize empty instance of " + repr(cls_typ)
-
-	res.direct = basis[request.param]
-	return res
+Test_atoms.__test__   = False
+Test_lattice.__test__ = False
 
 
-class Test_cell(Test_atoms):
+
+class Test_structure(Test_atoms, Test_lattice):
 	__test__ = True
+	cls_typ  = structure
 
-	# def test_nearest_neighbour(self, cls_wcc):
-	# 	print(cls_wcc.nearest_neighbour())
+	@pytest.fixture(scope='class')
+	def cls_wcc(self, cls_rec, coord):
+		cls_rec.atoms_coord_cryst = coord
+		return cls_rec
 	
 	@pytest.mark.mpl_image_compare
-	@pytest.mark.parametrize('rep', [1,2,3])
+	@pytest.mark.parametrize('rep', [1,2,3], ids=['rep:' + str(a) for a in [1,2,3]])
 	def test_plot_cell(self, cls_wcc, rep):
 		import matplotlib.pyplot as plt
 		from mpl_toolkits.mplot3d import Axes3D
