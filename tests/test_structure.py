@@ -42,6 +42,10 @@ class Test_structure(Test_atoms, Test_lattice):
 
 		return fig
 
+	def test_save_xyz(self, cls_wcc):
+		cls_wcc.atoms_typ=['Si']*cls_wcc.n_atoms
+		cls_wcc.save_xyz('app.xyz')
+
 
 
 

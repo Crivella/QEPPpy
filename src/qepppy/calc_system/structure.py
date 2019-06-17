@@ -29,7 +29,7 @@ class structure(atm, latt):
 		'post_set_func':cryst_to_cart,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
 		}
-		
+
 	atoms_forces={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
@@ -38,8 +38,51 @@ class structure(atm, latt):
 		'doc':"""Array of forces acting on the atoms."""
 		}
 
+	atoms_velocities={
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'shape': (-1,3),
+		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'doc':"""Array of velocities of the atoms."""
+		}
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+
+	def save_xyz(self, name):
+		latt_str = (
+			'Lattice="' + 
+			' '.join(str(a) for a in self.direct.flatten()) + 
+			'"'
+			)
+		prop_str = (
+			'Properties=' + 
+			':'.join([
+				'species:S:1',
+				'pos:R:3'
+				])
+			# '"'
+			)
+		data_str = np.hstack((np.array(self.atoms_typ).reshape(-1,1), self.atoms_coord_cart))
+		fmt = '%3s' + '%9s'*3
+
+		if not self.atoms_velocities == []:
+			prop_str += ':vel:R:3'
+			data_str = np.hstack((data_str, self.atoms_velocities))
+			fmt += '%9s'*3
+
+		if not self.atoms_forces == []:
+			prop_str += ':forces:R:3'
+			data_str = np.hstack((data_str, self.atoms_forces))
+			fmt += '%9s'*3
+
+		with open(name, 'w') as f:
+			f.write(str(self.n_atoms) + '\n')
+			f.write(latt_str + ' ' + prop_str + '\n')
+			np.savetxt(f, data_str, fmt=fmt)
+
+	def load_xyz(self, name):
+		pass
 
 	def make_supercell(self,repX,repY,repZ):
 		"""
