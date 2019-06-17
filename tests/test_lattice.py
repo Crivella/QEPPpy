@@ -20,7 +20,7 @@ class Test_lattice(BaseTest):
 				[1,1,1],
 				[1,.25,1]
 				])
-		C,G = cls_rec.translate_atoms_into_cell(coord)
+		C,G = cls_rec.translate_coord_into_PC(coord)
 		res_C = np.array([
 			[.25,.25,.25],
 			[0,0,0],

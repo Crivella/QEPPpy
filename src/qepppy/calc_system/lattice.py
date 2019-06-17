@@ -56,11 +56,12 @@ class lattice(metaclass=PropertyCreator):
 
 	@staticmethod
 	def _transalte_points(
-		base, coord, num=5, mode='cryst',
-		# verbose=True
+		base, coord, 
+		mode='cryst',
+		num=5,
 		):
 		from scipy.spatial import KDTree
-		from ..utils import generate_repetition_grid
+		from itertools import product
 
 		base_inv = np.linalg.inv(base)
 
@@ -75,7 +76,7 @@ class lattice(metaclass=PropertyCreator):
 			raise ValueError("Mode must be either 'cart' or 'cryst'.")
 
 		l       = range(-num,num+1)
-		L_cryst = generate_repetition_grid(l,l,l)
+		L_cryst = np.array(list(product(l, repeat=3)))
 		L_cart  = L_cryst.dot(base)
 		L_tree  = KDTree(L_cart)
 
@@ -96,8 +97,26 @@ class lattice(metaclass=PropertyCreator):
 
 		return C_res, G_res
 
-	def translate_atoms_into_cell(self, coord, **kwargs):
+	def translate_coord_into_PC(self, coord, **kwargs):
+		"""
+		Translate a list of atoms coordinates into the Primitive Cell.
+		Params:
+		 - coord: np.array of shape (-1,3) containing the coordinates
+		          of the atoms to translate.
+		 - mode: 'crystal'/'cart' Specify the basis for the coordinates.
+		 - num:  integer that specify the maximum number of cells on
+		         which to test.
+		"""
 		return self._transalte_points(self.direct, coord, **kwargs)
 
-	def translate_kpt_into_fbz(self, coord, **kwargs):
+	def translate_coord_into_FBZ(self, coord, **kwargs):
+		"""
+		Translate a list of k-points coordinates into the First BZ.
+		Params:
+		 - coord: np.array of shape (-1,3) containing the coordinates
+		          of the k-points to translate.
+		 - mode: 'crystal'/'cart' Specify the basis for the coordinates.
+		 - num:  integer that specify the maximum number of cells on
+		         which to test.
+		"""
 		return self._transalte_points(self.recipr, coord, **kwargs)

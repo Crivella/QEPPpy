@@ -1,6 +1,7 @@
 import numpy as np
 from .symmetry import symmetries
 from .lattice  import lattice
+from .._decorators import set_self
 # from ..meta import PropertyCreator
 
 def u(r, q):
@@ -119,18 +120,16 @@ class kpoints(lattice):
 
 		return path
 
+	@set_self('kpt_cryst')
 	def generate_monkhorst_pack_grid(
 		self, 
 		shape, shift=(0,0,0), 
-		set_self=True
 		):
 		"""
 		Generate a Monkhorst-Pack grid of k-point.
 		Params:
 		 -shape: tuple of 3 ints > 0
 		 -shift: tuple of 3 ints that can be either 0 or 1
-		 -set_self: If True set the resulting k_point to self.kpt_cryst
-		            If False return the generated kpt_list
 		"""
 		from itertools import product
 
@@ -156,10 +155,7 @@ class kpoints(lattice):
 		res    = np.array(list(product(l1,l2,l3)))
 		_, res = self.symmetries.reduce(res)
 
-		if not set_self:
-			return res
-		self.kpt_cryst = res
-
+		return res
 
 	def kpt_crop(
 		self, 

@@ -12,10 +12,11 @@ class TypedList(list):
 def recipr_base(base):
 	return np.linalg.inv(base).T * 2 * np.pi
 
-def generate_repetition_grid(r1,r2,r3, vect_matrix=np.diag([1]*3)):
+def generate_repetition_grid(r1,r2,r3, vect_matrix=None):
 	from itertools import product
 	res = np.array(list(product(r1,r2,r3)))
-	res = np.dot(vect_matrix.T, res.T).T
+	if not vect_matrix is None:
+		res = res.dot(vect_matrix)
 
 	return res
 
@@ -85,12 +86,9 @@ def remap_plane(
 	Xlim, Ylim, Zlim, 
 	shape, rep, fixaxis=2
 	):
-	# Xlim, Ylim, Zlim = lim
 	lim = (Xlim, Ylim, Zlim)
 	shape = np.array(shape)
-	# print(lim,shape,rep,sep='\n')
-	# if lim[fixaxis][0] != lim[fixaxis][2]:
-	# 	raise ValueError("Rmin Rmax must be equal for fixed axis direction")
+
 	xmin, xmax = Xlim
 	ymin, ymax = Ylim
 	zmin, zmax = Zlim
@@ -99,10 +97,10 @@ def remap_plane(
 	m2 = np.linspace(*lim[(fixaxis+2)%3], shape[1] * rep[1])
 	a,b = np.meshgrid(m1,m2)
 
-	fix = np.ones(a.shape) * (zmax + zmin)/2
+	fix = np.ones(a.shape) * (sum(lim[fixaxis]))/2
 	rec = np.round(
 			np.dot(
-			invT, # self.direct.T.I,
+			invT,
 			[a.flatten(),b.flatten(),fix.flatten()]
 			),
 			decimals=8

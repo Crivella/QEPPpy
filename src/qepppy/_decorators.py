@@ -40,6 +40,12 @@ plot_opt_doc = """
 	               If no dash_list is specified, the lines will switch from 
 	               nodash to dash=(8,2) for every loop of the colors"""
 
+set_self_doc = """
+	set_self specific params:
+	 - set_self: If True set the variable as an attribute of the
+	             calling class.
+	             If False return the value."""
+
 def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
 	"""
 	Decorator factory to add functionality to save return value to file 
@@ -141,6 +147,26 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
 			return res
 
 		join_doc(wrapped, plot_opt_doc)
+		return wrapped
+	return decorator
+
+def set_self(_name, _default=True):
+	"""
+	Decorator factory to add functionality to return value, or set
+	it as a class attribute.
+	Params:
+	 - _name:    Name of the attribute to set.
+	 - _default: [True/False] Default behavior of set_self.
+	"""
+	def decorator(func):
+		@functools.wraps(func)
+		def wrapped(cls, *args, set_self=_default, **kwargs):
+			res = func(cls, *args, **kwargs)
+			if not set_self:
+				return res
+			setattr(cls, _name, res)
+
+		join_doc(wrapped, set_self_doc)
 		return wrapped
 	return decorator
 

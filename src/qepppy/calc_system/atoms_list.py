@@ -79,13 +79,28 @@ class atoms_list(metaclass=PropertyCreator):
 		'doc':"""List of atomic pseudopotential files."""
 		}
 
-	all_atoms_typ={
-		'typ':(list,np.ndarray,),
-		'sub_typ':(str,),
-		'doc':"""List of atom names (same order as list of masses)."""
-		}
+	# all_atoms_typ={
+	# 	'typ':(list,np.ndarray,),
+	# 	'sub_typ':(str,),
+	# 	'doc':"""List of atom names (same order as list of masses)."""
+	# 	}
 
-	def __init__(self, *args, **kwargs):
+	def __init__(
+		self, *args, 
+		atoms_coord_cart=None,
+		atoms_coord_cryst=None,
+		atoms_typ=None,
+		**kwargs
+		):
+		if not atoms_coord_cart is None:
+			if not atoms_coord_cart is None:
+				raise ValueError("Cannot set atoms coord as cartesian and crystal at the same time.")
+			self.atoms_coord_cart = atoms_coord_cart
+		if not atoms_coord_cryst is None:
+			self.atoms_coord_cryst = atoms_coord_cryst
+		if not atoms_typ is None:
+			self.atoms_typ = atoms_typ
+			
 		super().__init__(*args, **kwargs)
 
 	@property
@@ -109,6 +124,15 @@ class atoms_list(metaclass=PropertyCreator):
 	@n_types.setter
 	def n_types(self, value):
 		self._n_types = value
+
+	@property
+	def all_atoms_typ(self):
+		res = []
+		for name in self.atoms_typ:
+			if not name in res:
+				res.append(name)
+
+		return res
 
 	@property
 	def atoms_group_coord_cart(self):

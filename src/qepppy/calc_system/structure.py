@@ -29,6 +29,14 @@ class structure(atm, latt):
 		'post_set_func':cryst_to_cart,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
 		}
+		
+	atoms_forces={
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
+		'shape': (-1,3),
+		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'doc':"""Array of forces acting on the atoms."""
+		}
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
