@@ -30,34 +30,25 @@ l = list(range(1, len(coords)+1))
 def coord(request):
 	return coords[:request.param]
 
-
-# clist=[
-# 	np.array([
-# 			[.25,.25,.25],
-# 			[1,1,1],
-# 			[1,.25,1]
-# 			]),
-# 	]
-
-# l = range(len(clist))
-# @pytest.fixture(
-# 	scope='module',
-# 	params=l,
-# 	ids=['coord_set:' + str(a+1) for a in l]
-# 	)
-# def coord2(request):
-# 	return clist[request.param]
-
-
 @pytest.fixture
 def tmpfile(tmpdir):
 	import tempfile
-	with tempfile.NamedTemporaryFile(dir=tmpdir) as f:
+	# with tempfile.NamedTemporaryFile(mode='w', dir=tmpdir) as f:
+	with tempfile.NamedTemporaryFile(mode='w+', dir=tmpdir) as f:
 		yield f
 
 
 class BaseTest():
 	cls_typ = object
+
+	@pytest.fixture
+	def new_cls(self):
+		cls_typ = self.cls_typ
+		res = cls_typ()
+
+		assert isinstance(res, cls_typ), "Failed to initialize empty instance of " + repr(cls_typ)
+
+		return res
 
 	@pytest.fixture(scope='class')
 	def cls(self):

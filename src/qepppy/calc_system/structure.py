@@ -2,6 +2,7 @@ import numpy as np
 from .atoms_list  import atoms_list  as atm
 from .lattice     import lattice     as latt
 from .. import utils
+from .._decorators import file_name_handle
 
 def cart_to_cryst(cls, coord):
 	return coord.dot(np.linalg.inv(cls.direct))
@@ -49,7 +50,9 @@ class structure(atm, latt):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-	def save_xyz(self, name):
+	@file_name_handle('w')
+	def save_xyz(self, file):
+		from numpy.lib.recfunctions import append_fields
 		latt_str = (
 			'Lattice="' + 
 			' '.join(str(a) for a in self.direct.flatten()) + 
@@ -61,28 +64,69 @@ class structure(atm, latt):
 				'species:S:1',
 				'pos:R:3'
 				])
-			# '"'
 			)
-		data_str = np.hstack((np.array(self.atoms_typ).reshape(-1,1), self.atoms_coord_cart))
-		fmt = '%3s' + '%9s'*3
+
+		data_str = self.atoms_coord_cart
 
 		if not self.atoms_velocities == []:
 			prop_str += ':vel:R:3'
 			data_str = np.hstack((data_str, self.atoms_velocities))
-			fmt += '%9s'*3
 
 		if not self.atoms_forces == []:
 			prop_str += ':forces:R:3'
 			data_str = np.hstack((data_str, self.atoms_forces))
-			fmt += '%9s'*3
 
-		with open(name, 'w') as f:
-			f.write(str(self.n_atoms) + '\n')
-			f.write(latt_str + ' ' + prop_str + '\n')
-			np.savetxt(f, data_str, fmt=fmt)
+		file.write(str(self.n_atoms) + '\n')
+		file.write(latt_str + ' ' + prop_str + '\n')
+		ml = max(len(a) for a in self.atoms_typ) + 1
 
-	def load_xyz(self, name):
-		pass
+		for i in range(self.n_atoms):
+			file.write('{{:{}s}}'.format(ml).format(self.atoms_typ[i]))
+			np.savetxt(file, data_str[i], fmt='%14.7e', newline=' ')
+			file.write('\n')
+
+	@file_name_handle('r')
+	def load_xyz(self, file):
+		import re
+		conv={
+			'R':np.float,
+			'I':np.bool,
+			'S':'|U15',
+			}
+
+		n_atoms = int(file.readline())
+		prop    = file.readline()
+
+		latt  = re.search(r'Lattice="(.*)"', prop).group(1)
+		latt  = np.fromstring(latt, sep=' ').reshape(3,3)
+		dprop = re.search(r'Properties=(.*)', prop).group(1).split(':')
+
+		typ = {
+			'names':dprop[::3],
+			'formats':[(conv[a], int(n)) for n,a in zip(dprop[2::3], dprop[1::3])],
+			}
+
+		data = np.loadtxt(file, dtype=typ)
+
+		self.direct = latt
+		# print(typ)
+		# print(data)
+		# print(data['pos'].reshape(-1,3))
+		# print(data['pos'].reshape(-1,3).shape)
+		# print(data['forces'].reshape(-1,3))
+		# print('-'*20)
+		self.atoms_coord_cart = data['pos'].reshape(-1,3)
+		if 'vel' in data.dtype.names:
+			self.atoms_velocities = data['vel'].reshape(-1,3)
+		if 'forces' in data.dtype.names:
+			self.atoms_forces = data['forces'].reshape(-1,3)
+
+		if n_atoms != self.n_atoms:
+			raise ValueError("Invalid xyz file. Number of atoms does not match number of lines read")
+
+
+
+
 
 	def make_supercell(self,repX,repY,repZ):
 		"""

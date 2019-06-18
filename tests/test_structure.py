@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from .test_atoms   import Test_atoms
 from .test_lattice import Test_lattice
 from qepppy.calc_system.structure import structure
@@ -42,9 +43,18 @@ class Test_structure(Test_atoms, Test_lattice):
 
 		return fig
 
-	def test_save_xyz(self, cls_wcc):
-		cls_wcc.atoms_typ=['Si']*cls_wcc.n_atoms
-		cls_wcc.save_xyz('app.xyz')
+	def test_save_xyz(self, new_cls, cls_wcc, tmpfile):
+		cls_wcc.atoms_typ    = ['Si']*cls_wcc.n_atoms
+		cls_wcc.atoms_forces = np.random.rand(cls_wcc.n_atoms,3)
+		cls_wcc.save_xyz(tmpfile.file)
+
+		tmpfile.file.seek(0)
+
+		new_cls.load_xyz(tmpfile.file)
+
+		assert np.allclose(cls_wcc.direct, new_cls.direct)
+		assert np.allclose(cls_wcc.atoms_coord_cryst, new_cls.atoms_coord_cryst)
+		assert np.allclose(cls_wcc.atoms_forces, new_cls.atoms_forces)
 
 
 

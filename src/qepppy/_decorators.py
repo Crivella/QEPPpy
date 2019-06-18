@@ -221,3 +221,39 @@ def IO_stdout_redirect(
 		f.close()
 
 	return res
+
+
+def file_name_handle(
+	_mode,
+	):
+	"""
+	Decorator factory.
+	Make it so that the first arg of a function or bound method can either be
+	a file name or file handle.
+	The decorated function should accept a file handle as its first argument.
+	Params:
+	 _mode: open mode for the file if the name is passed ['r','w',...]
+	"""
+	def decorator(func):
+		@functools.wraps(func)
+		def wrapped(*args, **kwargs):
+			args = list(args)
+
+			app = func
+			if isinstance(args[0], object):
+				cls  = args.pop(0)
+				app = functools.partial(app, cls)
+
+			file = args.pop(0)
+
+			if hasattr(file, 'close'):
+				return app(file, *args, **kwargs)
+
+			f   = open(file, _mode)
+			res = app(f, *args, **kwargs)
+			f.close()
+
+			return res
+
+		return wrapped
+	return decorator
