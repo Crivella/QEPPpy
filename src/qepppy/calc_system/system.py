@@ -1,12 +1,37 @@
 from .structure import structure
 from .bands     import bands
-from .._decorators import set_self
+from .._decorators import set_self, file_name_handle
 
 class system(structure, bands):
+	steps={
+		'typ':(list,),
+		'sub_typ':(structure,),
+		# 'shape': (-1,3),
+		# 'conv_func':lambda x: np.array(x, dtype=np.float),
+		'doc':"""List of configurations for the atoms during time/relaxation steps."""
+		}
+
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
 		self.symmetries = self.get_symmetries()
+
+	@file_name_handle('w')
+	def save_step_xyz(self, file):
+		for step in self.steps:
+			step.save_xyz(file)
+
+	@file_name_handle('r')
+	def load_step_xyz(self, file):
+		steps = []
+		while True:
+			new = structure()
+			if new.load_xyz(file):
+				break
+			steps.append(new)
+
+		self.steps = steps
+
 
 	@set_self('atoms_coord_cryst')
 	def translate_into_PC(self):

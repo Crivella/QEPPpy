@@ -93,7 +93,10 @@ class structure(atm, latt):
 			'S':'|U30',
 			}
 
-		n_atoms = int(file.readline())
+		test    = file.readline()
+		if test == '':
+			return 1
+		n_atoms = int(test)
 		prop    = file.readline()
 
 		latt  = re.search(r'Lattice="(.*)"', prop).group(1)
@@ -105,7 +108,7 @@ class structure(atm, latt):
 			'formats':[(conv[a], int(n)) for n,a in zip(dprop[2::3], dprop[1::3])],
 			}
 
-		data = np.loadtxt(file, dtype=typ)
+		data = np.loadtxt(file, dtype=typ, max_rows=n_atoms)
 
 		self.direct = latt
 		self.atoms_coord_cart = data['pos'].reshape(-1,3)
@@ -114,11 +117,7 @@ class structure(atm, latt):
 		if 'forces' in data.dtype.names:
 			self.atoms_forces = data['forces'].reshape(-1,3)
 
-		if n_atoms != self.n_atoms:
-			raise ValueError("Invalid xyz file. Number of atoms does not match number of lines read")
-
-
-
+		self.atoms_typ = list(data['species'].reshape(n_atoms,))
 
 
 	def make_supercell(self,repX,repY,repZ):
