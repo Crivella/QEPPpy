@@ -7,6 +7,14 @@ import json
 from pkg_resources import resource_string
 periodic_table = json.loads(resource_string('qepppy.data', 'periodic_table.json').decode('utf-8'))
 
+def get_all_atoms_typ(cls, typ):
+	res = []
+	for name in typ:
+		if not name in res:
+			res.append(name)
+
+	return res
+
 def split_atom_list_by_name(atom_coord, atom_names):
 	from scipy.spatial import KDTree
 	trees  = []
@@ -52,6 +60,8 @@ class atoms_list(metaclass=PropertyCreator):
 		'typ':(list,),
 		'sub_typ':(str,np.ndarray,),
 		'shape':('n_atoms',),
+		'post_set_name':'_all_atoms_typ',
+		'post_set_func':get_all_atoms_typ,
 		'doc':"""List of atom names (same order as the list of coordinates)."""
 		}
 
@@ -111,12 +121,7 @@ class atoms_list(metaclass=PropertyCreator):
 
 	@property
 	def all_atoms_typ(self):
-		res = []
-		for name in self.atoms_typ:
-			if not name in res:
-				res.append(name)
-
-		return res
+		return get_all_atoms_typ(self, self.atoms_typ)
 
 	@property
 	def atoms_group_coord_cart(self):

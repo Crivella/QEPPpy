@@ -52,7 +52,6 @@ class structure(atm, latt):
 
 	@file_name_handle('w')
 	def save_xyz(self, file):
-		from numpy.lib.recfunctions import append_fields
 		latt_str = (
 			'Lattice="' + 
 			' '.join(str(a) for a in self.direct.flatten()) + 
@@ -91,7 +90,7 @@ class structure(atm, latt):
 		conv={
 			'R':np.float,
 			'I':np.bool,
-			'S':'|U15',
+			'S':'|U30',
 			}
 
 		n_atoms = int(file.readline())
@@ -109,12 +108,6 @@ class structure(atm, latt):
 		data = np.loadtxt(file, dtype=typ)
 
 		self.direct = latt
-		# print(typ)
-		# print(data)
-		# print(data['pos'].reshape(-1,3))
-		# print(data['pos'].reshape(-1,3).shape)
-		# print(data['forces'].reshape(-1,3))
-		# print('-'*20)
 		self.atoms_coord_cart = data['pos'].reshape(-1,3)
 		if 'vel' in data.dtype.names:
 			self.atoms_velocities = data['vel'].reshape(-1,3)
