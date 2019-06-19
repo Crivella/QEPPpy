@@ -30,6 +30,13 @@ class system(structure, bands):
 
 		self.steps = steps
 
+	def _make_ase_steps(self):
+		return [a._make_ase_atoms() for a in self.steps]
+
+	def plot_step_ase(self):
+		from ase.visualize import view
+
+		view(self._make_ase_steps())
 
 	@set_self('atoms_coord_cryst')
 	def translate_into_PC(self):

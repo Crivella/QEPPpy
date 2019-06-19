@@ -96,7 +96,7 @@ class Test_structure(Test_atoms, Test_lattice):
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
 
-		cls_wcc._plot(ax, rep, rep, rep, cell=True, graph_lvl=1)
+		cls_wcc._plot_mpl(ax, rep, rep, rep, cell=True, graph_lvl=1)
 
 		return fig
 
@@ -108,7 +108,7 @@ class Test_structure(Test_atoms, Test_lattice):
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
 
-		cls_wcc._plot(ax, recipr=True)
+		cls_wcc._plot_mpl(ax, recipr=True)
 
 		return fig
 

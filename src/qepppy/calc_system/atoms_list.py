@@ -21,19 +21,19 @@ def split_atom_list_by_name(atom_coord, atom_names):
 	rad    = []
 	names  = []
 
-	avoid = []
-
 	atom_names = np.array(atom_names)
 	for n in atom_names:
-		if n in avoid:
+		if n in names:
 			continue
-		avoid.append(n)
 		coord = atom_coord[atom_names == n,:]
 
 		names.append(n)
 		trees.append(KDTree(coord))
 		rad.append(periodic_table[n]['radius'])
 	return trees, np.array(names), rad
+
+# class atom(metaclass=PropertyCreator):
+# 	pass
 
 class atoms_list(metaclass=PropertyCreator):
 	atoms_coord_cart={

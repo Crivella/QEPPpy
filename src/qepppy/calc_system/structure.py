@@ -181,7 +181,7 @@ class structure(atm, latt):
 
 		return dist[1:max_shell], counts[1:max_shell]
 
-	def _plot(
+	def _plot_mpl(
 		self, ax,
 		repX=1, repY=1, repZ=1, 
 		cell=False, 
@@ -210,7 +210,7 @@ class structure(atm, latt):
 			self.draw_bonds(ax, L, typ, graph_lvl=graph_lvl)
 		ax.legend()
 
-	def plot(
+	def plot_mpl(
 		self, 
 		*args, **kwargs,
 		):
@@ -240,4 +240,35 @@ class structure(atm, latt):
 		self._plot(ax, *args, **kwargs)
 
 		plt.show()
+
+	def _make_ase_atoms(self):
+		import ase
+		masses = self.atoms_mass[[np.where(np.array(self.all_atoms_typ) == typ)[0][0] for typ in self.atoms_typ]]
+		new = ase.Atoms(
+			symbols          = self.atoms_typ,
+			scaled_positions = self.atoms_coord_cryst,
+			cell             = self.direct * ase.units.Bohr,
+			masses           = masses
+			)
+
+		return new
+
+	def plot_ase(self, *args, **kwargs):
+		from ase.visualize import view
+
+		view(self._make_ase_atoms())
+
+	def plot(self, *args, mode='mpl', **kwargs):
+		if   mode == 'mpl':
+			self.plot_mpl(*args, **kwargs)
+		elif mode == 'ase':
+			try:
+				import ase
+			except ImportError:
+				print("ase must be installed and accessible to the PYTHONPATH.")
+
+			self.plot_ase(*args, **kwargs)
+		else:
+			raise NotImplemented()
+
 

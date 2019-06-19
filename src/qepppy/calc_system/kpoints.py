@@ -1,5 +1,4 @@
 import numpy as np
-from .symmetry import symmetries
 from .lattice  import lattice
 from .._decorators import set_self
 # from ..meta import PropertyCreator
@@ -77,6 +76,7 @@ class kpoints(lattice):
 		}
 
 	def __init__(self, *args, **kwargs):
+		from .symmetry import symmetries
 		if self.kpt_mesh != ():
 			self.generate_monkhorst_pack_grid()
 		if self.kpt_edges != []:
