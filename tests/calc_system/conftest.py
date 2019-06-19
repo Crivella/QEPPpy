@@ -37,24 +37,3 @@ def tmpfile(tmpdir):
 	with tempfile.NamedTemporaryFile(mode='w+', dir=tmpdir) as f:
 		yield f
 
-
-class BaseTest():
-	cls_typ = object
-
-	@pytest.fixture
-	def new_cls(self):
-		cls_typ = self.cls_typ
-		res = cls_typ()
-
-		assert isinstance(res, cls_typ), "Failed to initialize empty instance of " + repr(cls_typ)
-
-		return res
-
-	@pytest.fixture(scope='class')
-	def cls(self):
-		cls_typ = self.cls_typ
-		res = cls_typ()
-
-		assert isinstance(res, cls_typ), "Failed to initialize empty instance of " + repr(cls_typ)
-
-		return res

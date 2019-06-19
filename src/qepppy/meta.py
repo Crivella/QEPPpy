@@ -1,3 +1,5 @@
+import numpy as np
+
 err_header = ''
 
 def flatten_iter(iterable):
@@ -50,9 +52,12 @@ def _check_shape_np(cls, value, shape):
 		if lv != l:
 			raise ValueError(err_header + f"Mismatch in number of dimensions: value='{v_shape}' vs required='{shape}'.")
 		for ve, ce in zip(v_shape, shape):
-			app = convert_var(cls, ce)
+			try:
+				app = convert_var(cls, ce)
+			except KeyError:
+				raise ValueError(err_header + f"Attribute '{ce}' is not present in '{cls}'.")
 			if ve != app and app != -1:
-				raise ValueError(err_header + f"Shape mismatch '{ce}'={app} not equal to '{v_shape}'")
+				raise ValueError(err_header + f"Shape mismatch '{ce}'={app} not equal to '{v_shape}'.")
 
 def _check_value_list(cls, value, shape):
 	l  = len(shape)
@@ -61,8 +66,12 @@ def _check_value_list(cls, value, shape):
 		return
 	if l > 1:
 		raise ValueError(err_header + f"Can't confront shape of value='{lv}' with '{shape}'")
-	app = convert_var(cls, shape[0])
-	if lv != app:
+	try:
+		app = convert_var(cls, shape[0])
+	except KeyError:
+		raise ValueError(err_header + f"Attribute '{shape[0]}' is not present in '{cls}'.")
+
+	if lv != app and app != -1:
 		raise ValueError(err_header + f"Shape mismatch '{shape[0]}'={app} not equal to {lv}")
 
 def check_shape(cls, value, shape):
@@ -100,6 +109,23 @@ def set_other(cls, other_name, other_func, value):
 	for name,func in zip(l_name, l_func):
 		setattr(cls, name, func(cls, value))
 
+def set_typ(typ, value):
+	if typ is None:
+		return value
+
+	if value is None:
+		app = flatten_iter(typ)[0]
+		if app == np.ndarray:
+			return np.empty((0,))
+		return app()
+
+	if isinstance(typ, tuple):
+		for t in typ:
+			if isinstance(value, t):
+				return value
+		raise TypeError("Invalid type value '{}' for type '{}'.".format(type(value), typ))
+
+	return typ(value)
 
 def key_setter(key, 
 	typ=None, sub_typ=None, 
@@ -116,7 +142,7 @@ def key_setter(key,
 
 		nonetyp = None
 		if value is None and not None in typ:
-			value   = flatten_iter(typ)[0]()
+			value = set_typ(typ, value)
 			nonetyp = value 
 
 		set_other(cls, pre_set_name, pre_set_func, value)
@@ -139,21 +165,6 @@ def key_setter(key,
 		setattr(cls, key, value)
 
 	return setter
-
-def set_typ(typ, value):
-	if typ is None:
-		return value
-
-	if value is None:
-		return flatten_iter(typ)[0]()
-
-	if isinstance(typ, tuple):
-		for t in typ:
-			if isinstance(value, t):
-				return value
-		raise TypeError("Invalid type value '{}' for type '{}'.".format(type(value), typ))
-
-	return typ(value)
 
 class PropertyCreator(type):
 	"""
@@ -232,10 +243,10 @@ class PropertyCreator(type):
 			allowed   = v.pop('allowed',   [])
 
 			pre_set_name = v.pop('pre_set_name', None)
-			pre_set_func = v.pop('pre_set_func', lambda x: x)
+			pre_set_func = v.pop('pre_set_func', lambda cls,x: x)
 
 			post_set_name = v.pop('post_set_name', None)
-			post_set_func = v.pop('post_set_func', lambda x: x)
+			post_set_func = v.pop('post_set_func', lambda cls,x: x)
 
 			doc       = v.pop('doc',       '')
 

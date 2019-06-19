@@ -8,10 +8,16 @@ def u(r, q):
 	return (2.*r - q - 1.), (2. * q)
 
 def cart_to_cryst(cls, coord):
-	return coord.dot(np.linalg.inv(cls.recipr))
+	recipr = cls.recipr
+	if recipr == []:
+		return
+	return coord.dot(np.linalg.inv(recipr))
 
 def cryst_to_cart(cls, coord):
-	return coord.dot(cls.recipr)
+	recipr = cls.recipr
+	if recipr == []:
+		return
+	return coord.dot(recipr)
 
 
 class kpoints(lattice):
@@ -42,14 +48,14 @@ class kpoints(lattice):
 		}
 	kpt_mesh={
 		'typ':(tuple,),
-		'sub_typ':(int,),
+		'sub_typ':(int, np.integer),
 		'shape': (3,),
 		'conv_func':lambda x: np.array(x, dtype=np.int),
 		'doc':"""Density of the Monkhorst-Pack mesh grid."""
 		}
 	kpt_shift={
 		'typ':(tuple,),
-		'sub_typ':(int,),
+		'sub_typ':(int, np.integer),
 		'shape': (3,),
 		'default':(0,0,0),
 		'allowed':(0,1),
@@ -66,7 +72,7 @@ class kpoints(lattice):
 		}
 	mode={
 		'typ':(str,),
-		'allowed':['cart','cryst'],
+		'allowed':['cart','cryst', 'crystal', 'cartesian'],
 		'doc':"""Set mode for the k-path."""
 		}
 
@@ -102,9 +108,9 @@ class kpoints(lattice):
 		 np.array of shape (edges[:-1,-1].sum(), 3), where every row is the 3D
 		 coordinate of a k-point.
 		"""
-		self.edges      = edges
-		self.mesh       = None
-		self.shift      = (0,0,0)
+		self.kpt_edges = edges
+		self.kpt_mesh  = None
+		self.kpt_shift = (0,0,0)
 
 		n_pt  = np.array(edges)[:,3].astype(dtype=int)
 		edges = np.array(edges)[:,0:3]
@@ -136,11 +142,11 @@ class kpoints(lattice):
 		 coordinate of a k-point.
 		"""
 		self.mode = mode
-		path = self._generate_kpath(self.edges)
+		path = self._generate_kpath(self.kpt_edges)
 
-		if   mode == 'crystal':
+		if   'cryst' in mode:
 			self.kpt_cryst = path 
-		elif mode == 'cart':
+		elif 'cart' in mode:
 			self.kpt_cart  = path
 
 		return path
@@ -219,13 +225,13 @@ class kpoints(lattice):
 	def _kpt_plot(self, ax, edges_name=[]):
 		self.draw_Wigner_Seitz(ax)
 		ax.scatter(*self.kpt_cart.T)
-		if not self.edges is None:
+		if not self.kpt_edges is None:
 			ax.scatter(
-				*self.edges[:,:3].dot(self.recipr).T, 
+				*self.kpt_edges[:,:3].dot(self.recipr).T, 
 				s=10, color='r'
 				)
 
-			for name,edge in zip(edges_name, self.edges):
+			for name,edge in zip(edges_name, self.kpt_edges):
 				e = edge[:3]
 				if self.mode == 'crystal':
 					e = e.dot(self.recipr)
