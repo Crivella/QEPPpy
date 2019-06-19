@@ -79,23 +79,6 @@ class atoms_list(metaclass=PropertyCreator):
 		'doc':"""List of atomic pseudopotential files."""
 		}
 
-	def __init__(
-		self, *args, 
-		atoms_coord_cart=None,
-		atoms_coord_cryst=None,
-		atoms_typ=None,
-		**kwargs
-		):
-		if not atoms_coord_cart is None:
-			if not atoms_coord_cart is None:
-				raise ValueError("Cannot set atoms coord as cartesian and crystal at the same time.")
-			self.atoms_coord_cart = atoms_coord_cart
-		if not atoms_coord_cryst is None:
-			self.atoms_coord_cryst = atoms_coord_cryst
-		if not atoms_typ is None:
-			self.atoms_typ = atoms_typ
-
-		super().__init__(*args, **kwargs)
 
 	@property
 	def n_atoms(self):

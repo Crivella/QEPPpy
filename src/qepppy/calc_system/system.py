@@ -6,8 +6,6 @@ class system(structure, bands):
 	steps={
 		'typ':(list,),
 		'sub_typ':(structure,),
-		# 'shape': (-1,3),
-		# 'conv_func':lambda x: np.array(x, dtype=np.float),
 		'doc':"""List of configurations for the atoms during time/relaxation steps."""
 		}
 

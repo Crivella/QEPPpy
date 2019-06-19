@@ -20,10 +20,6 @@ class bands(kpoints):
 		column represent the occupation for the Jth band of the Nth kpoint."""
 		}
 
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-
 	@property
 	def n_bnd(self):
 		return self.egv.shape[1]

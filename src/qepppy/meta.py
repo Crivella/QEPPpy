@@ -1,3 +1,5 @@
+err_header = ''
+
 def flatten_iter(iterable):
 	try:
 		iter(iterable)
@@ -12,38 +14,75 @@ def flatten_iter(iterable):
 		res += flatten_iter(i)
 	return res
 
-# def key_getter(key, func=None, excp_val=None, excp_func=None):
 def key_getter(key):
 	def getter(cls):
 		val = getattr(cls, key)
-		# if val:
-		# 	if not func is None:
-		# 		val = func(val)
-		# else:
-		# 	# print(excp_val)
-		# 	if isinstance(excp_val, str):
-		# 		val = getattr(self, excp_val)
-		# 	# print(excp_func)
-		# 	if not excp_func is None :
-		# 		val = excp_func(val)
 		return val
 
 	return getter
 
 def check_type(typ, value):
-	# if typ is None or any(isinstance(value,t) for t in flatten_iter(typ)):
 	if typ is None or isinstance(value, typ):
 		return True
 
+	raise TypeError(
+		err_header + 
+		f"value='{value}' must be of type '{typ}'."
+		)
+
 
 def check_sub_type(sub_typ, value):
-	# if sub_typ is None or all(any(isinstance(v,t) for t in sub_typ) for v in flatten_iter(value)):
 	if sub_typ is None or all(isinstance(v,sub_typ) for v in flatten_iter(value)):
 		return True
 
-def convert_var(self, value, typ=int):
+	raise TypeError(
+		err_header + 
+		f"elements of value='{value}' must be of type '{sub_typ}'."
+		)
+
+def _check_shape_np(cls, value, shape):
+	l = len(shape)
+	if hasattr(value, 'shape'):
+		v_shape = value.shape
+		lv = len(v_shape)
+		if lv == 1 and v_shape[0] == 0:
+			return
+		if lv != l:
+			raise ValueError(err_header + f"Mismatch in number of dimensions: value='{v_shape}' vs required='{shape}'.")
+		for ve, ce in zip(v_shape, shape):
+			app = convert_var(cls, ce)
+			if ve != app and app != -1:
+				raise ValueError(err_header + f"Shape mismatch '{ce}'={app} not equal to '{v_shape}'")
+
+def _check_value_list(cls, value, shape):
+	l  = len(shape)
+	lv = len(value)
+	if lv == 0:
+		return
+	if l > 1:
+		raise ValueError(err_header + f"Can't confront shape of value='{lv}' with '{shape}'")
+	app = convert_var(cls, shape[0])
+	if lv != app:
+		raise ValueError(err_header + f"Shape mismatch '{shape[0]}'={app} not equal to {lv}")
+
+def check_shape(cls, value, shape):
+	if not shape:
+		return
+	if hasattr(value, 'shape'):
+		_check_shape_np(cls, value, shape)
+	else:
+		_check_value_list(cls, value, shape)
+
+def check_allowed(value, allowed, nonetyp=None):
+	if len(allowed) == 0 or (not nonetyp is None and value == nonetyp):
+		return
+	for v in flatten_iter(value):
+		if not v in allowed:
+			raise ValueError(err_header + f"Value '{v}' is not allowed.")
+
+def convert_var(cls, value, typ=int):
 	if not str in flatten_iter(typ) and isinstance(value,str):
-		return getattr(self, value)
+		return getattr(cls, value)
 	if isinstance(value, typ):
 		return value
 
@@ -66,26 +105,24 @@ def key_setter(key,
 	typ=None, sub_typ=None, 
 	shape=None,
 	conv_func=lambda x:x,
+	allowed=[],
 	pre_set_name=None, pre_set_func=None,
 	post_set_name=None, post_set_func=None,
 	):
 	def setter(cls, value):
 		# print(f'Setting attribute {key} with value {value}')
+		global err_header
 		err_header = f"While assigning '{key[1:]}':\n" + "*"*8 + " "
+
+		nonetyp = None
+		if value is None and not None in typ:
+			value   = flatten_iter(typ)[0]()
+			nonetyp = value 
 
 		set_other(cls, pre_set_name, pre_set_func, value)
 
-		if not check_type(typ, value):
-			raise TypeError(
-				err_header + 
-				f"value='{value}' must be of type '{typ}'."
-				)
-
-		if not check_sub_type(sub_typ, value):
-			raise TypeError(
-				err_header + 
-				f"elements of value='{value}' must be of type '{sub_typ}'."
-				)
+		check_type(typ, value)
+		check_sub_type(sub_typ, value)
 
 		try:
 			value = conv_func(value)
@@ -95,22 +132,8 @@ def key_setter(key,
 				f"Failed to run conversion function '{conv_func}' on value='{value}'"
 				) from e
 
-		if shape:
-			if hasattr(value, 'shape'):
-				v_shape = value.shape
-				if len(v_shape) != len(shape):
-					raise ValueError(err_header + f"Mismatch in number of dimension required value='{v_shape}' vs required='{shape}'.")
-				for ve, ce in zip(v_shape, shape):
-					app = convert_var(cls, ce)
-					if ve != app and app != -1:
-						raise ValueError(err_header + f"Shape mismatch '{ce}'={app} not equal to '{v_shape}'")
-			else:
-				l = len(value)
-				if len(shape) > 1:
-					raise ValueError(err_header + f"Can't confront shape of value='{l}' with '{shape}'")
-				app = convert_var(cls, shape[0])
-				if l != app:
-					raise ValueError(err_header + f"Shape mismatch '{shape[0]}'={app} not equal to {l}")
+		check_allowed(value, allowed, nonetyp)
+		check_shape(cls, value, shape)
 
 		set_other(cls, post_set_name, post_set_func ,value)
 		setattr(cls, key, value)
@@ -154,6 +177,8 @@ class PropertyCreator(type):
 	    If the property is not of any of the specified type, a 'TypeError' will
 	    be raised during assignment (cls.prop = var).
 	    Examples: 'typ':int,    'typ':(int,float,),
+	 - allowed:
+	    List or Tuple of allowed values (if not iterable) or sub_values for the property.
 	 - conv_func:
 	    Function to be applied to the input data before it is set.
 	 - pre_set_name:
@@ -190,11 +215,13 @@ class PropertyCreator(type):
 	"""
 	def __new__(cls, clsname, base, dct):
 		new_dct = {}
+		lprop   = []
 		for k,v in dct.items():
 			new_dct[k] = v
 			if not isinstance(k, str) or k.startswith("_") or not isinstance(v, dict):
 				continue
 
+			lprop.append(k)
 			hk        = "_" + k
 			settable  = v.pop('settable',  True)
 			typ       = v.pop('typ',       None)
@@ -202,6 +229,7 @@ class PropertyCreator(type):
 			shape     = v.pop('shape',     0)
 			default   = v.pop('default',   None)
 			conv_func = v.pop('conv_func', lambda x: x)
+			allowed   = v.pop('allowed',   [])
 
 			pre_set_name = v.pop('pre_set_name', None)
 			pre_set_func = v.pop('pre_set_func', lambda x: x)
@@ -216,26 +244,46 @@ class PropertyCreator(type):
 
 			doc = ('type          = {}.\n'
 				   'sub_type      = {}.\n'
+				   'allowed       = {}.\n'
 				   'default_value = {}.\n\n'
-				   '{}').format(typ, sub_typ, default, doc.lstrip().replace('\t', '')) 
+				   '{}').format(typ, sub_typ, allowed, default, doc.lstrip().replace('\t', '')) 
 
 			new_dct[hk] = set_typ(typ, default)
 
-			# getter = key_getter(hk, func, excp_val, excp_func)
 			getter = key_getter(hk)
+			setter = None
 			if settable:
 				setter = key_setter(
 					hk, typ, sub_typ, 
 					shape,
 					conv_func,
+					allowed,
 					pre_set_name, pre_set_func,
 					post_set_name, post_set_func)
-			else:
-				setter = None
 
 			new_dct[k] = property(getter, setter, doc=doc)
 
-		return super().__new__(cls, clsname, base, new_dct)
+		res = super().__new__(cls, clsname, base, new_dct)
+
+		old_init = new_dct.get('__init__', None)
+		def __init__(self, *args, **kwargs):
+			for p in lprop:
+				app = kwargs.pop(p, None)
+				if not app is None:
+					setattr(self, p, app)
+
+			if not old_init is None:
+				old_init(self, *args, **kwargs)
+			else:
+				super(res, self).__init__(*args, **kwargs)
+
+		if not old_init is None:
+			__init__.__doc__ = old_init.__doc__
+		new_dct['__init__'] = __init__
+
+		res.__init__ = __init__
+
+		return res
 
 
 

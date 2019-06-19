@@ -5,10 +5,16 @@ from .. import utils
 from .._decorators import file_name_handle
 
 def cart_to_cryst(cls, coord):
-	return coord.dot(np.linalg.inv(cls.direct))
+	direct = cls.direct
+	if direct == []:
+		return []
+	return coord.dot(np.linalg.inv(direct))
 
 def cryst_to_cart(cls, coord):
-	return coord.dot(cls.direct)
+	direct = cls.direct
+	if direct == []:
+		return []
+	return coord.dot(direct)
 
 class structure(atm, latt):
 	atoms_coord_cart={
@@ -46,9 +52,6 @@ class structure(atm, latt):
 		'conv_func':lambda x: np.array(x, dtype=np.float),
 		'doc':"""Array of velocities of the atoms."""
 		}
-
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
 
 	@file_name_handle('w')
 	def save_xyz(self, file):

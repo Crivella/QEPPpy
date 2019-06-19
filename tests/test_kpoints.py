@@ -30,4 +30,4 @@ def test_kpt_cryst(cls_rec, point_list_3d):
 @pytest.mark.parametrize('shift',[(0,0,0),(1,1,1)])
 @pytest.mark.parametrize('shape',[(1,1,1),(5,5,5),(10,10,7)])
 def test_kpt_mesh(cls_rec, shape, shift):
-	cls_rec.generate_monkhorst_pack_grid(shape, shift)
+	cls_rec._generate_monkhorst_pack_grid(shape, shift)

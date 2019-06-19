@@ -24,19 +24,6 @@ class lattice(metaclass=PropertyCreator):
 		'doc':"""Matrix of reciprocal basis vector (as rows)."""
 		}
 
-	def __init__(self, *args, 
-		direct=None,
-		recipr=None,
-		**kwargs
-		):
-		if not direct is None:
-			if not recipr is None:
-				raise ValueError("Cannot set direct and recipr at the same time.")
-			self.direct = direct
-		if not recipr is None:
-			self.recipr = recipr
-		super().__init__(*args, **kwargs)
-
 	def draw_direct_cell(self, ax, center=[0,0,0]):
 		"""
 		Draw a cell centered on 'center'.
