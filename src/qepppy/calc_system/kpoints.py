@@ -187,7 +187,10 @@ class kpoints(lattice):
 		# from ase.spacegroup import Spacegroup
 		# print(Spacegroup(227).unique_sites(kpts))
 
+		self.full_kpt_cryst = kpts
+
 		ind, kpts = self.symmetries.reduce(kpts)
+		self.irrep_mapping  = ind
 
 		unique, counts = np.unique(ind, return_counts=True)
 		weight = counts[np.argsort(unique)]
