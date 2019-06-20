@@ -285,15 +285,30 @@ class structure(atm, latt):
 
 		sg = ase.spacegroup.get_spacegroup(self._make_ase_atoms())
 
-		# print(sg.no)
-
 		new = symmetries()
 
-		# for rot,transl in sg.get_symop():
-		# 	new.append(symmetry(rotation=rot, translation=transl))
 		for rot in sg.rotations:
 			new.append(symmetry(rotation=rot))
 
 		return new
+
+	# @set_self('symmetries')
+	# def get_symmetries_spglib(self):
+	# 	import spglib
+	# 	from .symmetry import symmetries, symmetry
+
+	# 	nums = [self.unique_atoms_typ.index(a) for a in self.atoms_typ]
+	# 	cell = (
+	# 		self.direct,
+	# 		self.atoms_coord_cryst,
+	# 		nums
+	# 		)
+	# 	dataset = spglib.get_symmetry(cell)
+
+	# 	new = symmetries()
+	# 	for rot in dataset['rotations']:
+	# 		new.append(symmetry(rotation=rot))
+
+	# 	return new
 
 
