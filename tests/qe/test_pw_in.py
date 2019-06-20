@@ -12,7 +12,7 @@ in_files = [a[:-3] for a in os.listdir(test_dir) if a.endswith('.in')]
 
 cmp_list = [
 	'ibrav', 'alat',
-	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 'atoms_typ', 'atoms_mass', 
+	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 'atoms_typ', 'unique_atoms_mass', 
 	]
 
 @pytest.fixture(
@@ -61,8 +61,8 @@ def test_pw_in_build_init(inputs):
 
 	new.atoms_coord_cart  = inp.atoms_coord_cart
 	new.atoms_typ         = inp.atoms_typ
-	new.atoms_mass        = inp.atoms_mass
-	new.atoms_pseudo      = inp.atoms_pseudo
+	new.unique_atoms_mass    = inp.unique_atoms_mass
+	new.unique_atoms_pseudo  = inp.unique_atoms_pseudo
 
 	new.validate()
 	str(new)
@@ -78,8 +78,8 @@ def test_pw_in_build_scratch(inputs):
 	new.alat              = inp.alat
 	new.atoms_coord_cart  = inp.atoms_coord_cart
 	new.atoms_typ         = inp.atoms_typ
-	new.atoms_mass        = inp.atoms_mass
-	new.atoms_pseudo      = inp.atoms_pseudo
+	new.unique_atoms_mass    = inp.unique_atoms_mass
+	new.unique_atoms_pseudo  = inp.unique_atoms_pseudo
 
 	new.validate()
 	str(new)

@@ -1,7 +1,7 @@
 import numpy as np
 # from ._decorators import store_property
 from ..meta     import PropertyCreator
-from ..graphics import mpl_graphics as cg
+from ..graphics import mpl_graphics as mplg
 from .. import utils
 
 class lattice(metaclass=PropertyCreator):
@@ -31,15 +31,16 @@ class lattice(metaclass=PropertyCreator):
 		 - ax: matplotlib 3D axis object
 		 - center: center for plotting the cell
 		"""
-		cg.draw_cell(ax, self.direct, center=center)
+		mplg.draw_cell(ax, self.direct, center=center)
 
-	def draw_Wigner_Seitz(self, ax):
+	def draw_Wigner_Seitz(self, ax, draw_corners=True):
 		"""
 		Draw the Wigner Seitz cell for the lattice.
 		Params:
 		 - ax: matplotlib 3D axis object
+		 - draw_corners: Draw the cell corners as green dots
 		"""
-		cg.draw_Wigner_Seitz(ax, self.recipr)
+		mplg.draw_Wigner_Seitz(ax, self.recipr, draw_corners=draw_corners)
 
 	@staticmethod
 	def _transalte_points(

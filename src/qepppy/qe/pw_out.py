@@ -42,7 +42,7 @@ class pw_out(structure, bands, system):
 		if not hasattr(self, 'xml'):
 			return pseudo
 		path = os.path.dirname(self.xml)
-		for pp in self.atoms_pseudo:
+		for pp in self.unique_atoms_pseudo:
 			file = os.path.join(path,pp)
 			pseudo.append(UPF(xml=file))
 		return pseudo

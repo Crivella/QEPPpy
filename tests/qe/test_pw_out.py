@@ -13,7 +13,7 @@ out_files = [a[:-4] for a in os.listdir(test_dir) if a.endswith('.out')]
 cmp_list = [
 	'direct', 'recipr',
 	'ibrav', 'alat',
-	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 'atoms_typ', 'atoms_mass', # 'atoms_pseudo',
+	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 'atoms_typ', 'unique_atoms_mass', # 'atoms_pseudo',
 	'n_kpt', 'kpt_cart', 'kpt_cryst', 'weight',
 	'egv',
 	# 'symm_matrix', 'symm_name',

@@ -211,15 +211,15 @@ class qe_structure(dfp):
 		return res
 
 	@property
-	def _atoms_mass(self):
+	def _unique_atoms_mass(self):
 		return np.array([a['mass'] for a in self._atom_spec])
 
 	@property
-	def _atoms_pseudo(self):
+	def _unique_atoms_pseudo(self):
 		return np.array([a['pseudo_file'] for a in self._atom_spec])
 
 	@property
-	def _all_atoms_typ(self):
+	def _unique_atoms_typ(self):
 		return list([a['name'] for a in self._atom_spec])
 
 	@property
@@ -316,7 +316,7 @@ class qe_structure(dfp):
 			raise ValidateError("List of atomic positions is not set.")
 
 		for typ in self.atoms_typ:
-			if not typ in self.all_atoms_typ:
+			if not typ in self.unique_atoms_typ:
 				raise ValidateError("Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
 
 		if self.ibrav == 0:

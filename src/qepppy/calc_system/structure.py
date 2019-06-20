@@ -2,7 +2,7 @@ import numpy as np
 from .atoms_list  import atoms_list  as atm
 from .lattice     import lattice     as latt
 from .. import utils
-from .._decorators import file_name_handle
+from .._decorators import file_name_handle, set_self
 
 def cart_to_cryst(cls, coord):
 	direct = cls.direct
@@ -21,7 +21,7 @@ class structure(atm, latt):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
 		'post_set_name':'_atoms_coord_cryst',
 		'post_set_func':cart_to_cryst,
 		'doc':"""List of atomic coordinate in CARTESIAN basis."""
@@ -31,7 +31,7 @@ class structure(atm, latt):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
 		'post_set_name':'_atoms_coord_cart',
 		'post_set_func':cryst_to_cart,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
@@ -41,7 +41,7 @@ class structure(atm, latt):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
 		'doc':"""Array of forces acting on the atoms."""
 		}
 
@@ -49,9 +49,15 @@ class structure(atm, latt):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
 		'doc':"""Array of velocities of the atoms."""
 		}
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		if self.direct != [] and self.atoms_coord_cryst != []:
+			self.get_symmetries()
 
 	@file_name_handle('w')
 	def save_xyz(self, file):
@@ -243,12 +249,12 @@ class structure(atm, latt):
 
 	def _make_ase_atoms(self):
 		import ase
-		masses = self.atoms_mass[[np.where(np.array(self.all_atoms_typ) == typ)[0][0] for typ in self.atoms_typ]]
+
 		new = ase.Atoms(
 			symbols          = self.atoms_typ,
 			scaled_positions = self.atoms_coord_cryst,
 			cell             = self.direct * ase.units.Bohr,
-			masses           = masses
+			masses           = self.atoms_mass
 			)
 
 		return new
@@ -270,5 +276,24 @@ class structure(atm, latt):
 			self.plot_ase(*args, **kwargs)
 		else:
 			raise NotImplemented()
+
+
+	@set_self('symmetries')
+	def get_symmetries(self):
+		import ase.spacegroup
+		from .symmetry import symmetries, symmetry
+
+		sg = ase.spacegroup.get_spacegroup(self._make_ase_atoms())
+
+		# print(sg.no)
+
+		new = symmetries()
+
+		# for rot,transl in sg.get_symop():
+		# 	new.append(symmetry(rotation=rot, translation=transl))
+		for rot in sg.rotations:
+			new.append(symmetry(rotation=rot))
+
+		return new
 
 

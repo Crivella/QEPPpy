@@ -6,7 +6,7 @@ class ElementMismatch(Exception):
 
 def compare_element(a,b):
 	if type(a) != type(b):
-		raise ElementMismatch("Type of the two element is different")
+		raise ElementMismatch("Type of the two elements are different")
 	if isinstance(a, np.ndarray):
 		if len(a) == len(b) == 0:
 			return
@@ -18,12 +18,12 @@ def compare_element(a,b):
 				raise ElementMismatch("The two array are different.")
 	elif isinstance(a, list):
 		if len(a) != len(b):
-			raise ElementMismatch("List of different lenghts.")
+			raise ElementMismatch("Two lists of different lenghts.")
 		for c1,c2 in zip(a,b):
 			compare_element(c1,c2)
 	elif isinstance(a, dict):
 		if len(a) != len(b):
-			raise ElementMismatch("List of different lenghts.")
+			raise ElementMismatch("Two lists of different lenghts.")
 		for k,v in a.items():
 			if not k in b:
 				raise ElementMismatch(f"dict is missing key '{k}'")

@@ -2,16 +2,34 @@ import numpy as np
 from ..meta import PropertyCreator
 from ..graphics import mpl_graphics as cg
 
-
 import json
 from pkg_resources import resource_string
 periodic_table = json.loads(resource_string('qepppy.data', 'periodic_table.json').decode('utf-8'))
 
-def get_all_atoms_typ(cls, typ):
+def undo_unique(cls, l):
 	res = []
-	for name in typ:
+	names     = cls.atoms_typ
+	all_names = cls.unique_atoms_typ
+	for n in names:
+		res.append(l[all_names.index(n)])
+
+	return res
+
+def get_unique(cls, l):
+	res = []
+	for name in l:
 		if not name in res:
 			res.append(name)
+
+	return res
+
+def get_unique2(cls, l):
+	res   = []
+
+	names     = cls.atoms_typ
+	all_names = cls.unique_atoms_typ
+	for n in all_names:
+		res.append(l[names.index(n)])
 
 	return res
 
@@ -32,15 +50,12 @@ def split_atom_list_by_name(atom_coord, atom_names):
 		rad.append(periodic_table[n]['radius'])
 	return trees, np.array(names), rad
 
-# class atom(metaclass=PropertyCreator):
-# 	pass
-
 class atoms_list(metaclass=PropertyCreator):
 	atoms_coord_cart={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
 		# 'post_set_name':'_atoms_coord_cryst',
 		# 'post_set_func':_cart_to_cryst_,
 		'doc':"""List of atomic coordinate in CARTESIAN basis."""
@@ -50,7 +65,7 @@ class atoms_list(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
 		# 'post_set_name':'_atoms_coord_cart',
 		# 'post_set_func':_cryst_to_cart_,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
@@ -59,23 +74,52 @@ class atoms_list(metaclass=PropertyCreator):
 	atoms_typ={
 		'typ':(list,),
 		'sub_typ':(str,np.ndarray,),
-		'shape':('n_atoms',),
-		'post_set_name':'_all_atoms_typ',
-		'post_set_func':get_all_atoms_typ,
+		# 'shape':('n_atoms',),
+		'post_set_name':'_unique_atoms_typ',
+		'post_set_func':get_unique,
 		'doc':"""List of atom names (same order as the list of coordinates)."""
 		}
 
 	atoms_mass={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'shape':('n_types',),
+		'shape':('n_atoms',),
 		'conv_func':lambda x: np.array(x, dtype=np.float),
-		'doc':"""List of atomic masses."""
+		'post_set_name':'_unique_atoms_mass',
+		'post_set_func':get_unique,
+		'doc':"""List of atomic masses (same order as the list of coordinates)."""
 		}
 
 	atoms_pseudo={
 		'typ':(list,np.ndarray,),
+		'shape':('n_atoms',),
+		'post_set_name':'_unique_atoms_pseudo',
+		'post_set_func':get_unique,
+		'doc':"""List of atomic pseudopotential files (same order as the list of coordinates)."""
+		}
+
+	unique_atoms_typ={
+		'typ':(list,np.ndarray,),
+		'sub_typ':(str,np.ndarray,),
+		# 'conv_func':lambda x: np.array(x, dtype=np.float),
+		'doc':"""List of atom names."""
+		}
+
+	unique_atoms_mass={
+		'typ':(list,np.ndarray),
+		'sub_typ':(int,float,np.number),
 		'shape':('n_types',),
+		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'post_set_name':'_atoms_mass',
+		'post_set_func':undo_unique,
+		'doc':"""List of atomic masses."""
+		}
+
+	unique_atoms_pseudo={
+		'typ':(list,np.ndarray,),
+		'shape':('n_types',),
+		'post_set_name':'_atoms_pseudo',
+		'post_set_func':undo_unique,
 		'doc':"""List of atomic pseudopotential files."""
 		}
 
@@ -96,27 +140,27 @@ class atoms_list(metaclass=PropertyCreator):
 		if hasattr(self, '_n_typess'):
 			return self._n_types
 		else:
-			return len(self.all_atoms_typ)
+			return len(self.unique_atoms_typ)
 
 	@n_types.setter
 	def n_types(self, value):
 		self._n_types = value
 
-	@property
-	def all_atoms_typ(self):
-		return get_all_atoms_typ(self, self.atoms_typ)
+	# @property
+	# def unique_atoms_typ(self):
+	# 	return get_unique_atoms_typ(self, self.atoms_typ)
 
 	@property
 	def atoms_group_coord_cart(self):
 		"""List of atomic coordinate in cartesian basis grouped by atom name
 		in a dictionary."""
-		return {a:np.array(self.atoms_coord_cart[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
+		return {a:np.array(self.atoms_coord_cart[np.array(self.atoms_typ) == a]) for a in self.unique_atoms_typ}
 
 	@property
 	def atoms_group_coord_cryst(self):
 		"""List of atomic coordinate in crystal basis grouped by atom name
 		in a dictionary."""
-		return {a:np.array(self.atoms_coord_cryst[np.array(self.atoms_typ) == a]) for a in self.all_atoms_typ}
+		return {a:np.array(self.atoms_coord_cryst[np.array(self.atoms_typ) == a]) for a in self.unique_atoms_typ}
 
 	def draw_atoms(self, ax, atom_coord=None, atom_names=None, **kwargs):
 		"""

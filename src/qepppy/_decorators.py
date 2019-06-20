@@ -164,7 +164,13 @@ def set_self(_name, _default=True):
 			res = func(cls, *args, **kwargs)
 			if not set_self:
 				return res
-			setattr(cls, _name, res)
+
+			names = _name.split(',')
+			if len(names) == 1:
+				setattr(cls, names[0], res)
+			else:
+				for name,val in zip(names,res):
+					setattr(cls, name, val)
 
 		join_doc(wrapped, set_self_doc)
 		return wrapped

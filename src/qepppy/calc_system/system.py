@@ -9,10 +9,11 @@ class system(structure, bands):
 		'doc':"""List of configurations for the atoms during time/relaxation steps."""
 		}
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		
-		self.symmetries = self.get_symmetries()
+	# def __init__(self, *args, **kwargs):
+	# 	super().__init__(*args, **kwargs)
+
+	# 	if self.direct != [] and self.atoms_coord_cryst != []:
+	# 		self.get_symmetries()
 
 	@file_name_handle('w')
 	def save_step_xyz(self, file):
@@ -54,6 +55,3 @@ class system(structure, bands):
 		res, _ = self.translate_coord_into_FBZ(self.kpt_cryst)
 		return res
 
-	@set_self('symmetries')
-	def get_symmetries(self):
-		pass

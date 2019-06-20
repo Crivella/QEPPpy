@@ -21,7 +21,7 @@ def draw_cell(ax, cell, center=[0,0,0]):
 			ax.plot(v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 		ax.plot(v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 
-def draw_Wigner_Seitz(ax, recipr):
+def draw_Wigner_Seitz(ax, recipr, draw_corners=True):
 	"""
 	Draw the Wigner Seitz cell for the lattice.
 	Params:
@@ -54,7 +54,9 @@ def draw_Wigner_Seitz(ax, recipr):
 	X = P[:,0]
 	Y = P[:,1]
 	Z = P[:,2]
-	ax.scatter(X,Y,Z, color='green')
+
+	if draw_corners:
+		ax.scatter(X,Y,Z, color='green')
 
 	for vert in R:
 		vert.append(vert[0])

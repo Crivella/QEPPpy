@@ -76,13 +76,14 @@ class kpoints(lattice):
 		}
 
 	def __init__(self, *args, **kwargs):
-		from .symmetry import symmetries
+		if not hasattr(self, 'symmetries'):
+			from .symmetry import symmetries
+			self.symmetries = symmetries()
+
 		if self.kpt_mesh != ():
 			self.generate_monkhorst_pack_grid()
 		if self.kpt_edges != []:
 			self.generate_kpath()
-
-		self.symmetries = symmetries()
 
 		super().__init__(*args, **kwargs)
 
@@ -151,23 +152,22 @@ class kpoints(lattice):
 
 		return path
 
-	def _generate_monkhorst_pack_grid(
-		self, 
-		shape, shift=(0,0,0), 
-		):
+	@set_self('kpt_cryst,weight')
+	def generate_monkhorst_pack_grid(self, mesh=None, shift=None):
 		"""
 		Generate a Monkhorst-Pack grid of k-point.
 		Params:
-		 -shape: tuple of 3 ints > 0
+		 -mesh:  tuple of 3 ints > 0
 		 -shift: tuple of 3 ints that can be either 0 or 1
 		"""
 		from itertools import product
 
-		# assert all(isinstance(a, int) for a in shape)
-		# assert all(isinstance(a, int) for a in shift)
-		# assert all(a == 0 or a == 1   for a in shift)
+		if mesh is None:
+			mesh = self.kpt_mesh
+		if shift is None:
+			shift = self.kpt_shift
 
-		self.kpt_mesh  = shape
+		self.kpt_mesh  = mesh
 		self.kpt_shift = shift
 		self.kpt_edges = self.mode = None
 
@@ -178,20 +178,21 @@ class kpoints(lattice):
 				(n+shift[i])/d for n,d in (
 					u(r+1,q) for r in range(q)
 					)
-				) for i,q in enumerate(shape)
+				) for i,q in enumerate(mesh)
 			]
 
-		res    = np.array(list(product(l1,l2,l3)))
-		_, res = self.symmetries.reduce(res)
 
-		return res
+		kpts = np.array(list(product(l1,l2,l3)))
 
-	@set_self('kpt_cryst')
-	def generate_monkhorst_pack_grid(self):
-		"""
-		Generate a Monkhorst-Pack grid of k-point.
-		"""
-		return self._generate_monkhorst_pack_grid(self.kpt_mesh, self.kpt_shift)
+		# from ase.spacegroup import Spacegroup
+		# print(Spacegroup(227).unique_sites(kpts))
+
+		ind, kpts = self.symmetries.reduce(kpts)
+
+		unique, counts = np.unique(ind, return_counts=True)
+		weight = counts[np.argsort(unique)]
+
+		return kpts, weight
 
 
 	def kpt_crop(

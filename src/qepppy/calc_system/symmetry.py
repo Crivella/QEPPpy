@@ -41,7 +41,7 @@ def _iteration(k, sm, thr):
 	return res_i, np.array(res_p)
 
 class symmetry(metaclass=PropertyCreator):
-	matrix={
+	rotation={
 		'typ':(np.ndarray,),
 		'sub_typ':(np.number,),
 		'shape':(3,3),
@@ -49,14 +49,18 @@ class symmetry(metaclass=PropertyCreator):
 		'doc':"""Matrix representation of the symmetry."""
 		}
 
-	def __init__(self, matrix=None):
-		if not matrix is None:
-			self.matrix = np.array(matrix)
+	translation={
+		'typ':(np.ndarray,),
+		'sub_typ':(np.number,),
+		'shape':(3,),
+		'default':np.zeros((3,)),
+		'doc':"""Translation vector."""
+		}
 
 	@property
 	def order(self):
 		"""Order (N) of the symmetry (A) so that A^N = I."""
-		return get_symmetry_order(self.matrix)
+		return get_symmetry_order(self.rotation)
 
 	def reduce(self, coord, thr=1E-5):
 		"""
@@ -74,10 +78,10 @@ class symmetry(metaclass=PropertyCreator):
 		assert(isinstance(coord, np.ndarray))
 		assert(coord.shape[1] == 3)
 
-		symm_matrix = self.matrix
+		symm_matrix = self.rotation
 
 		test     = symm_matrix.copy()
-		new_p    = coord.copy()
+		new_p    = coord.copy() - self.translation
 		new_i    = np.arange(coord.shape[0])
 		order    = self.order - 1
 		order    = max(order, 1)

@@ -81,25 +81,34 @@ class pw_in(inp_f, structure, system):
 
 	@property
 	def _atom_spec(self):
-		name, mass, pfile = self._find("X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
-		return [{'name':n, 'mass':m, 'pseudo_file':p} for n,m,p in zip(name, mass, pfile)]
+		# name, mass, pfile = self._find("X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
+		names = self._find("X", up="ATOMIC_SPECIES")
+		try:
+			mass = self._find("Mass_X", up="ATOMIC_SPECIES")
+		except KeyError:
+			mass = [0] * len(names)
+		try:
+			pfile = self._find("PseudoPot_X", up="ATOMIC_SPECIES")
+		except KeyError:
+			pfile =[n + '.UPF' for n in names]
+		return [{'name':n, 'mass':m, 'pseudo_file':p} for n,m,p in zip(names, mass, pfile)]
 
-	@structure._all_atoms_typ.setter
-	def _all_atoms_typ(self, value):
+	@structure._unique_atoms_typ.setter
+	def _unique_atoms_typ(self, value):
 		self._check_atoms_spec_len(value)
 		self._check_atoms_spec_type(value, str, 'Atoms')
 
 		self['ATOMIC_SPECIES/X'] = value
 
-	@structure._atoms_mass.setter
-	def _atoms_mass(self, value):
+	@structure._unique_atoms_mass.setter
+	def _unique_atoms_mass(self, value):
 		self._check_atoms_spec_len(value)
 		self._check_atoms_spec_type(value, (int, float), 'Mass')
 
 		self['ATOMIC_SPECIES/Mass_X'] = value
 
-	@structure._atoms_pseudo.setter
-	def _atoms_pseudo(self, value):
+	@structure._unique_atoms_pseudo.setter
+	def _unique_atoms_pseudo(self, value):
 		self._check_atoms_spec_len(value)
 		self._check_atoms_spec_type(value, str, 'Pseudo')
 
