@@ -193,10 +193,11 @@ class kpoints(lattice):
 
 		l1,l2,l3 = [
 			(
-				(n+shift[i])/d for n,d in (
-					u(r+1,q) for r in range(q)
+				(n+shift[i])/d for n,d in 
+					(
+						u(r+1,q) for r in range(q)
 					)
-				) for i,q in enumerate(mesh)
+			) for i,q in enumerate(mesh)
 			]
 
 
@@ -216,10 +217,11 @@ class kpoints(lattice):
 		return kpts, weight
 
 
+	@set_self('kpt_cart,weight')
 	def kpt_crop(
 		self, 
 		center=(0,0,0), radius=np.inf, 
-		verbose=True, set_self=True
+		verbose=True
 		):
 		"""
 		Crop the k-points in a sphere of radius 'radius' with center 'center':
@@ -229,6 +231,8 @@ class kpoints(lattice):
 		 - radius: Radius of the crop sphere. Defaulr = np.inf
 		 - verbose: Print information about the cropping. Default = True
 		"""
+		if radius < 0:
+			raise ValueError("Radius must be greather than 0.")
 		self.mesh  = self.shift = self.edges = None
 
 		center = np.array(center).reshape(3)
@@ -239,10 +243,7 @@ class kpoints(lattice):
 			print(f"# Cropping k-points around {center} with radius {radius}")
 			print(f"# Cropped {len(w)} k-points out of {self.n_kpt}")
 
-		if not set_self:
-			return self.kpt_cart[w]
-		self.kpt_cart = self.kpt_cart[w]
-		self.weight   = self.weight[w]
+		return self.kpt_cart[w], self.weight[w]/np.sum(self.weight[w])
 
 	def _kpt_plot(self, ax, edges_name=[]):
 		self.draw_Wigner_Seitz(ax)
