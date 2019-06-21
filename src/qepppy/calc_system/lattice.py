@@ -1,5 +1,4 @@
 import numpy as np
-# from ._decorators import store_property
 from ..meta     import PropertyCreator
 from ..graphics import mpl_graphics as mplg
 from .. import utils

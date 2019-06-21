@@ -1,6 +1,5 @@
 import os
-# import numpy as np
-# from .pw_out  import pw_out
+import numpy as np
 from .wavefnc import wavefnc
 
 class tmp():
@@ -24,7 +23,7 @@ class tmp():
 		raise NotImplementedError()
 
 	def __getitem__(self,key):
-		if not isinstance(key, int):
+		if not isinstance(key, (int,np.integer)):
 			raise NotImplementedError()
 		return self._get_wfc_num_(key+1)
 

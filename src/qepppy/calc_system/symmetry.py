@@ -57,6 +57,15 @@ class symmetry(metaclass=PropertyCreator):
 		'doc':"""Translation vector."""
 		}
 
+	def __init__(self, *args, **kwargs):
+		args = list(args)
+		if len(args) > 0:
+			self.rotation = args.pop(0)
+		if len(args) > 0:
+			self.translation = args.pop(0)
+
+		super().__init__(*args, **kwargs)
+
 	@property
 	def order(self):
 		"""Order (N) of the symmetry (A) so that A^N = I."""
@@ -94,8 +103,8 @@ class symmetry(metaclass=PropertyCreator):
 		return new_i, new_p
 
 class symmetries(list):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+	# def __init__(self, *args, **kwargs):
+	# 	super().__init__(*args, **kwargs)
 		
 	def append(self, value):
 		if isinstance(value, symmetry):

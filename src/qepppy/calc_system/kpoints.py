@@ -92,9 +92,10 @@ class kpoints(lattice):
 	def n_kpt(self):
 		return len(self.kpt_cart)
 
-	def _generate_kpath(
+	def generate_kpath(
 		self, 
-		edges,
+		edges=None,
+		mode='crystal'
 		):
 		"""
 		Generate a k-point path.
@@ -105,16 +106,23 @@ class kpoints(lattice):
 		          k-point.
 		          The 4th columns has to contain an integer > 0 that indicates
 		          the number of k-points between the current and the next edge.
+		 - mode: Referse to the basis set for the k-point coordinates.
+		         - 'crystal': coordinates given in b1,b2,b3 units
+		         - 'cart':    coordinates given in kx,ky,kz units (2pi/a).
 		Return:
 		 np.array of shape (edges[:-1,-1].sum(), 3), where every row is the 3D
 		 coordinate of a k-point.
 		"""
-		self.kpt_edges = edges
+		self.mode = mode
+		if edges is None:
+			edges = self.kpt_edges
+		else:
+			self.kpt_edges = edges
 		self.kpt_mesh  = None
 		self.kpt_shift = (0,0,0)
 
-		n_pt  = np.array(edges)[:,3].astype(dtype=int)
-		edges = np.array(edges)[:,0:3]
+		n_pt  = np.array(edges)[:,3].astype(dtype=int) + 1
+		edges = np.array(edges)[:,:3]
 
 		path  = np.empty((0,3))
 		for n,i in enumerate(n_pt[:-1]):
@@ -126,31 +134,41 @@ class kpoints(lattice):
 			new  = new[(n>0):,:]
 			path = np.vstack((path, new))
 
-		return path
-
-	def generate_kpath(
-		self, 
-		mode='crystal'
-		):
-		"""
-		Generate a k-point path.
-		Params:
-		 - mode: Referse to the basis set for the k-point coordinates.
-		         - 'crystal': coordinates given in b1,b2,b3 units
-		         - 'cart':    coordinates given in kx,ky,kz units (2pi/a).
-		Return:
-		 np.array of shape (edges[:-1,-1].sum(), 3), where every row is the 3D
-		 coordinate of a k-point.
-		"""
-		self.mode = mode
-		path = self._generate_kpath(self.kpt_edges)
-
 		if   'cryst' in mode:
 			self.kpt_cryst = path 
 		elif 'cart' in mode:
 			self.kpt_cart  = path
 
 		return path
+
+	def generate_unfolding_path(self, SC_rec, mode='cryst', return_all=False):
+		from .symmetry import symmetries
+
+		PC_rec     = self.recipr
+		SC_rec_inv = np.linalg.inv(SC_rec)
+		M          = SC_rec_inv.dot(PC_rec).T
+
+		K_G     = self.kpt_cryst.dot(M.T)
+		
+		max_G_i = int(np.ceil(((np.linalg.det(M) ** (1/3)-1)/2))) + 3
+		new, _  = self._transalte_points(SC_rec, K_G, mode='cryst', num=max_G_i)
+
+		if mode == 'cart':
+			new = new.dot(SC_rec)
+
+		full_kpts = new
+
+		symm = symmetries()
+		symm.append(np.diag([1]*3))
+		symm.append(np.diag([-1]*3))
+
+		ind, red_kpts = symm.reduce(new)
+
+		if return_all:
+			return ind, full_kpts, red_kpts
+
+		return red_kpts
+
 
 	@set_self('kpt_cryst,weight')
 	def generate_monkhorst_pack_grid(self, mesh=None, shift=None):
