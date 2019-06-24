@@ -9,7 +9,7 @@ _endian = {
 	'big':'>'
 }
 
-class binary_io():
+class fortran_binary_io():
 	def __init__(self, src="", endian=endianess, **kwargs):
 		self.binary = False
 		

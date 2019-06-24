@@ -1,7 +1,7 @@
 import pytest
 import re
 import numpy as np
-from qepppy.meta import PropertyCreator
+from qepppy.meta.property_creator import PropertyCreator
 # import qepppy.meta.Pr as meta
 
 initl_corr={

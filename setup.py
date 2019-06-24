@@ -27,6 +27,7 @@ REQUIRED = [
 	'matplotlib',
     'scipy',
     'decorator',
+    'xmlschema'
 ]
 
 # What packages are optional?

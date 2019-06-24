@@ -1,7 +1,6 @@
 import numpy as np
 from .lattice  import lattice
 from .._decorators import set_self
-# from ..meta import PropertyCreator
 
 def u(r, q):
 	return (2.*r - q - 1.), (2. * q)

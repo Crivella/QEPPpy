@@ -1,5 +1,5 @@
 from .FFTgrid import FFTgrid
-from ..parsers.fortran_binary import binary_io as bin_io
+from ..parsers import fortran_binary_io as bin_io
 from .. import utils
 
 class wavefnc(bin_io, FFTgrid):

@@ -1,7 +1,7 @@
 import pytest
 import re
 import numpy as np
-import qepppy.meta as meta
+import qepppy.meta.property_creator as meta
 
 class appdict(dict):
 	def __getattr__(self, key):

@@ -1,6 +1,5 @@
 import numpy as np
-
-from ..meta import PropertyCreator
+from ..meta.property_creator import PropertyCreator
 
 def get_symmetry_order(symm_matrix):
 	from scipy.linalg import eigvals

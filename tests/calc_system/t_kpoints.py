@@ -1,7 +1,10 @@
 import pytest
+import os
 import numpy as np
 from .t_lattice import Test_lattice
 from qepppy.calc_system.kpoints import kpoints
+
+cwd = os.path.dirname(os.path.realpath(__file__))
 
 edges = np.array([
 	[0.500, 0.500, 0.500,   30],
@@ -45,8 +48,9 @@ class Test_kpoints(Test_lattice):
 		cls_rec.generate_kpath(edges=edges, mode='crystal')
 
 	def test_kpt_unfold_path(self, cls_edges):
+		file = os.path.join(cwd, '../qe/test_files', 'unf.pwscf')
 		unf = cls_edges.generate_unfolding_path(cls_edges.recipr/3)
-		test = np.loadtxt('unf.pwscf')[:,:3]
+		test = np.loadtxt(file)[:,:3]
 
 		assert np.allclose(unf, test), "Incorrect unfold path."
 
