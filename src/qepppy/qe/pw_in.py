@@ -42,12 +42,12 @@ class pw_in(inp_f, structure, system):
 				len(value), self._n_atoms))
 
 	@property
-	def _atoms(self):
-		name, x, y, z = self._find("X", "x", "y", "z", up="ATOMIC_POSITIONS")
-		coord = list(zip(x, y, z))
-		return [{'name':n, 'coord':c} for n,c in zip(name, coord)]
+	def _atoms_coord_cart(self):
+		x, y, z = self._find("x", "y", "z", up="ATOMIC_POSITIONS")
+		coord = np.array(list(zip(x, y, z))) * self._atom_p
+		return coord
 
-	@structure._atoms_coord_cart.setter
+	@_atoms_coord_cart.setter
 	def _atoms_coord_cart(self, value):
 		value = np.array(value)
 
@@ -55,6 +55,10 @@ class pw_in(inp_f, structure, system):
 		self._set_atoms_coord(value)
 
 		self._app_atom_p = 'alat'
+
+	# @property
+	# def _atoms_coord_cryst(self):
+	# 	return self._atoms_coord_cart.dot(np.linalg.inv(self.direct))
 
 	@structure._atoms_coord_cryst.setter
 	def _atoms_coord_cryst(self, value):
@@ -65,7 +69,13 @@ class pw_in(inp_f, structure, system):
 		
 		self._app_atom_p = 'crystal'
 
-	@structure._atoms_typ.setter
+	@property
+	def _atoms_typ(self):
+		name = self._find("X", up="ATOMIC_POSITIONS")
+
+		return name
+	
+	@_atoms_typ.setter
 	def _atoms_typ(self, value):
 		self._check_atoms_len(value)
 		self['ATOMIC_POSITIONS/X'] = value
@@ -80,34 +90,41 @@ class pw_in(inp_f, structure, system):
 			raise TypeError("{} types must all be of type {}.".format(msg, t))
 
 	@property
-	def _atom_spec(self):
-		# name, mass, pfile = self._find("X", "Mass_X", "PseudoPot_X", up="ATOMIC_SPECIES")
+	def _unique_atoms_typ(self):
 		names = self._find("X", up="ATOMIC_SPECIES")
-		try:
-			mass = self._find("Mass_X", up="ATOMIC_SPECIES")
-		except KeyError:
-			mass = [0] * len(names)
-		try:
-			pfile = self._find("PseudoPot_X", up="ATOMIC_SPECIES")
-		except KeyError:
-			pfile =[n + '.UPF' for n in names]
-		return [{'name':n, 'mass':m, 'pseudo_file':p} for n,m,p in zip(names, mass, pfile)]
+		return names
 
-	@structure._unique_atoms_typ.setter
+	@_unique_atoms_typ.setter
 	def _unique_atoms_typ(self, value):
 		self._check_atoms_spec_len(value)
 		self._check_atoms_spec_type(value, str, 'Atoms')
 
 		self['ATOMIC_SPECIES/X'] = value
 
-	@structure._unique_atoms_mass.setter
+	@property
+	def _unique_atoms_mass(self):
+		try:
+			mass = self._find("Mass_X", up="ATOMIC_SPECIES")
+		except KeyError:
+			mass = [0] * len(self._atoms_typ)
+		return np.array(mass)
+
+	@_unique_atoms_mass.setter
 	def _unique_atoms_mass(self, value):
 		self._check_atoms_spec_len(value)
 		self._check_atoms_spec_type(value, (int, float), 'Mass')
 
 		self['ATOMIC_SPECIES/Mass_X'] = value
 
-	@structure._unique_atoms_pseudo.setter
+	@property
+	def _unique_atoms_pseudo(self):
+		try:
+			pfile = self._find("PseudoPot_X", up="ATOMIC_SPECIES")
+		except KeyError:
+			pfile =[n + '.UPF' for n in self._atoms_typ]
+		return pfile
+	
+	@_unique_atoms_pseudo.setter
 	def _unique_atoms_pseudo(self, value):
 		self._check_atoms_spec_len(value)
 		self._check_atoms_spec_type(value, str, 'Pseudo')
@@ -117,7 +134,7 @@ class pw_in(inp_f, structure, system):
 	@property
 	def _cell(self):
 		a1, a2, a3 = self._find("v1", "v2", "v3")
-		return [{'a1':a1, 'a2':a2, 'a3':a3}]
+		return {'a1':a1, 'a2':a2, 'a3':a3}
 
 	@structure._direct.setter
 	def _direct(self, value):

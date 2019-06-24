@@ -6,7 +6,11 @@ class ElementMismatch(Exception):
 
 def compare_element(a,b):
 	if type(a) != type(b):
-		raise ElementMismatch("Type of the two elements are different")
+		if all(isinstance(c, (list, np.ndarray)) for c in [a,b]):
+			a = np.array(a)
+			b = np.array(b)
+		else:
+			raise ElementMismatch("Type of the two elements are different")
 	if isinstance(a, np.ndarray):
 		if len(a) == len(b) == 0:
 			return
@@ -38,6 +42,8 @@ def compare_std(cls, std, cmp_list=[]):
 			compare_element(c1, c2)
 		except ElementMismatch as e:
 			raise ValueError(f"While comparing '{name}': {e}")
+		except Exception as e:
+			raise type(e)(f"UNEXPECTED!!!: While comparing '{name}': {e}")
 
 
 

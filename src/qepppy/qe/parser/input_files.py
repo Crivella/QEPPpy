@@ -2,8 +2,10 @@ import re
 import itertools
 from collections import OrderedDict
 
+from ...parsers.fortran_namelist import _tokenize_pattern_
 from ...errors  import ParseInputError, ValidateError
-from ...parsers import fortran_namelist as f90nml
+from ...parsers import fortran_namelist as f90nml, fortran_namelist_collection as f90nml_C
+
 
 tf90_to_py = {
 	'INTEGER': int,
@@ -19,7 +21,7 @@ tf90_to_np = {
 	'CHARACTER': 'U64'
 	}
 
-class qe_namelist_collection(f90nml.fortran_namelist_collection):
+class qe_namelist_collection(f90nml_C):
 	def __init__(self, tpl=None, **kwargs):
 		if tpl:
 			self.load_templ(tpl)
@@ -350,7 +352,7 @@ class qe_card_collection(OrderedDict):
 		try:
 			return self.namelist.deep_find(pattern, up)
 		except:
-			tof_card, tof_param, n  = f90nml._tokenize_pattern_(pattern, up)
+			tof_card, tof_param, n  = _tokenize_pattern_(pattern, up)
 			if tof_param in self:
 				return self[tof_param].value
 			if tof_card:
@@ -519,7 +521,7 @@ class input_files():
 		except:
 			if not nl in self.namelist_c:
 				if nl in self.namelist_c._templ_['nl']:
-					new = f90nml.fortran_namelist()
+					new = f90nml()
 					new.name = nl
 					self.namelist_c[nl.lower()] = new
 			self.namelist_c[nl].set_item(key, value, i)

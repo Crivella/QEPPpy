@@ -6,7 +6,6 @@ from .conftest import compare_std
 
 cwd      = os.path.dirname(os.path.realpath(__file__))
 test_dir = os.path.join(cwd, 'test_files')
-os.chdir(test_dir)
 
 out_files = [a[:-4] for a in os.listdir(test_dir) if a.endswith('.out')]
 
@@ -26,33 +25,56 @@ cmp_list = [
 	scope='module',
 	params=out_files,
 	)
-def outputs(request):
+def outputs_xml(request):
 	"""
 	Collection of outputs from pw.x calculation.
 	Returns:
-	 - out: parsed output(log) file
 	 - xml: parsed data-file-schema.xml
 	 - pkl: dictionary of expected parse results
 	"""
 	name     = request.param
-	out_name = name + '.out'
+	name     = os.path.join(test_dir, name)
 	xml_name = name + '.xml'
 	pkl_name = name + '.pickle'
 
-	out = qepppy.qe.pw_out(outfile=out_name)
 	xml = qepppy.qe.pw_out(xml=xml_name)
 
 	with open(pkl_name, 'rb') as f:
 		pkl = pickle.load(f)
 
-	return out, xml, pkl
+	return xml, pkl
+
+@pytest.fixture(
+	scope='module',
+	params=out_files,
+	)
+def outputs_outfile(request):
+	"""
+	Collection of outputs from pw.x calculation.
+	Returns:
+	 - out: parsed output(log) file
+	 - pkl: dictionary of expected parse results
+	"""
+	name     = request.param
+	name     = os.path.join(test_dir, name)
+	out_name = name + '.out'
+	pkl_name = name + '.pickle'
+
+	out = qepppy.qe.pw_out(outfile=out_name)
+
+	with open(pkl_name, 'rb') as f:
+		pkl = pickle.load(f)
+
+	return out, pkl
 	
 
-def test_pw_out_parsing(outputs):
-	out, xml, pkl = outputs
-
-	compare_std(out, pkl, cmp_list=cmp_list)
+def test_pw_out_parsing_xml(outputs_xml):
+	xml, pkl = outputs_xml
 	compare_std(xml, pkl, cmp_list=cmp_list)
+
+def test_pw_out_parsing_outfiles(outputs_outfile):
+	out, pkl = outputs_outfile
+	compare_std(out, pkl, cmp_list=cmp_list)
 
 
 if __name__ == '__main__':

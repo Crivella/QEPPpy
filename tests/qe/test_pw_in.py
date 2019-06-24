@@ -6,7 +6,6 @@ from .conftest import compare_std
 
 cwd      = os.path.dirname(os.path.realpath(__file__))
 test_dir = os.path.join(cwd, 'test_files')
-os.chdir(test_dir)
 
 in_files = [a[:-3] for a in os.listdir(test_dir) if a.endswith('.in')]
 
@@ -27,6 +26,7 @@ def inputs(request):
 	 - pkl: dictionary of expected results
 	"""
 	name = request.param
+	name = os.path.join(test_dir, name)
 
 	in_name  = name + '.in'
 	pkl_name = name + '.pickle'
@@ -83,3 +83,4 @@ def test_pw_in_build_scratch(inputs):
 
 	new.validate()
 	str(new)
+

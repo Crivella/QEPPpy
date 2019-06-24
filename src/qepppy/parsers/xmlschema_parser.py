@@ -1,4 +1,9 @@
 import xmlschema
+import numpy as np
+
+def dbg(*args, **kwargs):
+	return
+	print(*args, **kwargs)
 
 class Parser_xmlschema():
 	def __init__(self, xml=None, schema=None, data={}):
@@ -16,7 +21,8 @@ class Parser_xmlschema():
 		self.xml_dict = xmlschema.to_dict(self.xml, schema=self.schema)
 		# return xmlschema.to_dict(self.xml, schema=self.schema, path=path)
 
-	# def find(self, path, mode='all'):
+	# Much slower as xmlschema reparse the XMLTree for every find call
+	# def find_native_xpath(self, path, mode='all'):
 	# 	res =  xmlschema.to_dict(self.xml, schema=self.schema, path=path)
 
 	# 	if mode.startswith('attr'):
@@ -58,10 +64,8 @@ class Parser_xmlschema():
 		return res
 
 
-	def find(self, path, mode='all'):
+	def find(self, path):
 		"""Xpath find function"""
-		if not any(mode.startswith(a) for a in ['all','attr','value']):
-			raise ValueError(f"Mode = {mode}  is not a valid value.")
 		dct       = self.xml_dict
 		find_list = [a.split('/') for a in path.split('//')]
 
@@ -77,16 +81,16 @@ class Parser_xmlschema():
 		if len(ptr) == 1:
 			ptr = ptr[0]
 
-		if mode.startswith('attr'):
-			attr = mode.split('=')[1]
-			ptr = self.get_attr(ptr, attr)
-		elif mode.startswith('value'):
-			ptr = self.get_value(ptr)
-
 		return ptr
 
 	@staticmethod
 	def get_attr(l, attr):
+		if not isinstance(l, list):
+			if isinstance(l, dict):
+				return l['@' + attr]
+			else:
+				raise ValueError("Unexpected behavior!!")
+
 		res = []
 		for e in l:
 			res.append(e['@' + attr])
@@ -95,6 +99,12 @@ class Parser_xmlschema():
 
 	@staticmethod
 	def get_value(l):
+		if not isinstance(l, list):
+			if isinstance(l, dict):
+				return l['$']
+			else:
+				raise ValueError("Unexpected behavior!!")
+
 		res = []
 		for e in l:
 			res.append(e['$'])
@@ -103,12 +113,40 @@ class Parser_xmlschema():
 
 	def load_data(self):
 		for k,v in self.data.items():
+			dbg("-"*40)
+			dbg(f"Setting attribute '{k}'")
 			mode = v.get('mode', 'all')
+			typ  = v.get('typ',   None)
+
+			if not any(mode.startswith(a) for a in ['all','attr','value']):
+				raise ValueError(f"Mode = {mode}  is not a valid value.")
+
 			try:
-				val = self.find(v['xml_search_string'], mode=mode)
+				val = self.find(v['xml_search_string'])
 			except Exception as e:
 				raise type(e)(f'While finding {k}:' + str(e))
+			dbg(f'Found value: {val}')
+
+			if mode.startswith('attr'):
+				attr = mode.split('=')[1]
+				val  = self.get_attr(val, attr)
+			elif mode.startswith('value'):
+				val  = self.get_value(val)
+
+			if not typ is None:
+				if typ == np.ndarray:
+					val = np.array(val)
+					if val.shape == ():
+						val = val.reshape(-1)
+				else:
+					val = typ(val)
+			dbg(f'Assigning:  {val}')
+			# if hasattr(self, k):
+			# 	print(f'WARNING self already has attribute "{k}" of type "{type(getattr(self,k))}')
 			setattr(self, k, val)
+
+	def validate(self):
+		xmlschema.validate(self.xml, schema=self.schema)
 
 
 

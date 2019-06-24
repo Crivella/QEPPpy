@@ -152,9 +152,9 @@ class data_file_parser(object):
 	                  the last one will be stored.
 	"""
 	__name__ = "data_file_parser"
-	def __init__(self, xml="", outfile="", d={}, **kwargs):
-		self._data_ = d
-		for i in d:
+	def __init__(self, xml="", outfile="", data={}, **kwargs):
+		self._data_ = data
+		for i in data:
 			self.__dict__[i] = None
 		if xml:
 			self.xml = os.path.realpath(xml)
@@ -227,7 +227,6 @@ class data_file_parser(object):
 				func = xml_acq_rule[v['xml_ptype']]
 				res  = func(root, f, n)
 			except Exception as e:
-				# print(k, "!!!!!!!!!", e)
 				continue
 
 			if res is None:

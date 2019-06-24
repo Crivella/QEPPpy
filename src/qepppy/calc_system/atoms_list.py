@@ -9,7 +9,7 @@ periodic_table = json.loads(resource_string('qepppy.data', 'periodic_table.json'
 def undo_unique(cls, l):
 	res = []
 	names     = cls.atoms_typ
-	all_names = cls.unique_atoms_typ
+	all_names = list(cls.unique_atoms_typ)
 	for n in names:
 		res.append(l[all_names.index(n)])
 
@@ -26,7 +26,7 @@ def get_unique(cls, l):
 def get_unique2(cls, l):
 	res   = []
 
-	names     = cls.atoms_typ
+	names     = list(cls.atoms_typ)
 	all_names = cls.unique_atoms_typ
 	for n in all_names:
 		res.append(l[names.index(n)])
@@ -138,9 +138,10 @@ class atoms_list(metaclass=PropertyCreator):
 	@property
 	def n_types(self):
 		if hasattr(self, '_n_typess'):
-			return self._n_types
+			res = self._n_types
 		else:
-			return len(self.unique_atoms_typ)
+			res = len(self.unique_atoms_typ)
+		return res
 
 	@n_types.setter
 	def n_types(self, value):

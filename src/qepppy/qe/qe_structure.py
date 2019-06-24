@@ -1,5 +1,6 @@
 import numpy as np
-from .parser.data_file_parser import data_file_parser as dfp
+from ..parsers import Parser_xmlschema
+# from .parser.data_file_parser import data_file_parser as dfp
 from ..errors import ValidateError
 # from ..calc_system.structure import structure as structure
 # from ..calc_system import system
@@ -28,119 +29,193 @@ bravais_index={
 	'14':'triclinic'
 	}
 
-data={
+# _data={
+# 	'_n_atoms':{
+# 		'xml_ptype':'attr', 
+# 		'xml_search_string':'output//atomic_structure', 
+# 		'extra_name':'nat', 
+# 		'res_type':int,
+# 		'outfile_regex':r'number of atoms/cell\s*=\s*'
+# 		},
+# 	'_n_types':{
+# 		'xml_ptype':'attr', 
+# 		'xml_search_string':'output//atomic_species', 
+# 		'extra_name':'ntyp', 
+# 		'res_type':int,
+# 		'outfile_regex':r'number of atomic types\s*=\s*'
+# 		},
+# 	'ibrav':{
+# 		'xml_ptype':'attr', 
+# 		'xml_search_string':'output//atomic_structure', 
+# 		'extra_name':'bravais_index', 
+# 		'res_type':int,
+# 		'outfile_regex':r'bravais-lattice index\s*='
+# 		},
+# 	'alat':{
+# 		'xml_ptype':'attr', 
+# 		'xml_search_string':'output//atomic_structure', 
+# 		'extra_name':'alat', 
+# 		'res_type':float,
+# 		'outfile_regex':r'lattice parameter \(alat\)\s*='
+# 		},
+# 	'_app_cell_p':{
+# 		'res_type':str,
+# 		'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
+# 		},
+# 	'_cell':{
+# 		'xml_ptype':'nodelist', 
+# 		'xml_search_string':'output//cell', 
+# 		'extra_name':None, 
+# 		'res_type':list,
+# 		'outfile_regex':
+# 			r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' + 
+# 			r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' + 
+# 			r'\s*a\(3\) = \((?P<a3>[\s\d.\-]*)\)\s*\n'
+# 		},
+# 	'_recip':{
+# 		'xml_ptype':'nodelist', 
+# 		'xml_search_string':'output//reciprocal_lattice', 
+# 		'extra_name':None, 
+# 		'res_type':list,
+# 		'outfile_regex':
+# 			r'\s*b\(1\) = \((?P<b1>[\s\d.\-]*)\)\s*\n' + 
+# 			r'\s*b\(2\) = \((?P<b2>[\s\d.\-]*)\)\s*\n' + 
+# 			r'\s*b\(3\) = \((?P<b3>[\s\d.\-]*)\)\s*\n'
+# 		},
+# 	'_app_atom_p':{
+# 		'res_type':str,
+# 		'outfile_regex':r'positions \((?P<flag>.*) units\)'
+# 		},
+# 	'_atoms':{
+# 		'xml_ptype':'nodelist', 
+# 		'xml_search_string':'input//atom', 
+# 		'extra_name':'coord', 
+# 		'res_type':list,
+# 		'outfile_regex':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
+# 		},
+# 	'_atom_spec':{
+# 		'xml_ptype':'nodelist', 
+# 		'xml_search_string':'input//species', 
+# 		'extra_name':None, 
+# 		'res_type':list,
+# 		'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
+# 		# 'outfile_regex':
+# 		# 	r'PseudoPot. \#.*\s+(.*/)*(?P<pseudo_file>.+(\.UPF|\.upf))' +
+# 		# 	r'(.*\n)+\s*atomic species.*' +
+# 		# 	r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)'
+# 		},
+# 	'_symm':{
+# 		'xml_ptype':'nodelist', 
+# 		'xml_search_string':'output//symmetry', 
+# 		'extra_name':None, 
+# 		'res_type':list,
+# 		'outfile_regex':
+# 			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
+# 			r'cryst.\s*s\([\s\d]{2}\) = ' +
+# 			r'(?P<rotation>(\(.*\)\s*){3})'
+# 		},
+# 	'_fft_dense_grid':{
+# 		'xml_ptype':'nodelist', 
+# 		'xml_search_string':'output//fft_grid', 
+# 		'extra_name':None, 
+# 		'res_type':list,
+# 		'outfile_regex':
+# 			r'Dense.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
+# 		},
+# 	'_fft_smooth_grid':{
+# 		'xml_ptype':'nodelist', 
+# 		'xml_search_string':'output//fft_smooth', 
+# 		'extra_name':None, 
+# 		'res_type':list,
+# 		'outfile_regex':
+# 			r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
+# 		}
+# 	}
+
+_data={
 	'_n_atoms':{
-		'xml_ptype':'attr', 
-		'xml_search_string':'output//atomic_structure', 
-		'extra_name':'nat', 
-		'res_type':int,
-		'outfile_regex':r'number of atoms/cell\s*=\s*'
+		'xml_search_string':'output//atomic_structure',
+		'mode':'attr=nat'
 		},
 	'_n_types':{
-		'xml_ptype':'attr', 
 		'xml_search_string':'output//atomic_species', 
-		'extra_name':'ntyp', 
-		'res_type':int,
-		'outfile_regex':r'number of atomic types\s*=\s*'
+		'mode':'attr=ntyp'
 		},
 	'ibrav':{
-		'xml_ptype':'attr', 
 		'xml_search_string':'output//atomic_structure', 
-		'extra_name':'bravais_index', 
-		'res_type':int,
-		'outfile_regex':r'bravais-lattice index\s*='
+		'mode':'attr=bravais_index'
 		},
 	'alat':{
-		'xml_ptype':'attr', 
 		'xml_search_string':'output//atomic_structure', 
-		'extra_name':'alat', 
-		'res_type':float,
-		'outfile_regex':r'lattice parameter \(alat\)\s*='
+		'mode':'attr=alat'
 		},
-	'_app_cell_p':{
-		'res_type':str,
-		'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
-		},
+	# '_app_cell_p':{
+	# 	'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
+	# 	},
 	'_cell':{
-		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//cell', 
-		'extra_name':None, 
-		'res_type':list,
-		'outfile_regex':
-			r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' + 
-			r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' + 
-			r'\s*a\(3\) = \((?P<a3>[\s\d.\-]*)\)\s*\n'
 		},
+	# '_direct':{
+	# 	'xml_search_string':'output//cell', 
+	# 	},
 	'_recip':{
-		'xml_ptype':'nodelist', 
 		'xml_search_string':'output//reciprocal_lattice', 
-		'extra_name':None, 
-		'res_type':list,
-		'outfile_regex':
-			r'\s*b\(1\) = \((?P<b1>[\s\d.\-]*)\)\s*\n' + 
-			r'\s*b\(2\) = \((?P<b2>[\s\d.\-]*)\)\s*\n' + 
-			r'\s*b\(3\) = \((?P<b3>[\s\d.\-]*)\)\s*\n'
 		},
-	'_app_atom_p':{
-		'res_type':str,
-		'outfile_regex':r'positions \((?P<flag>.*) units\)'
+	# '_app_atom_p':{
+	# 	'res_type':str,
+	# 	'outfile_regex':r'positions \((?P<flag>.*) units\)'
+	# 	},
+	# '_atoms':{
+	# 	'xml_search_string':'input//atom', 
+	# 	},
+	'_atoms_coord_cart':{
+		'xml_search_string':'input//atomic_positions/atom', 
+		'mode':'value',
+		'typ':np.ndarray
 		},
-	'_atoms':{
-		'xml_ptype':'nodelist', 
-		'xml_search_string':'input//atom', 
-		'extra_name':'coord', 
-		'res_type':list,
-		'outfile_regex':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
+	'_atoms_typ':{
+		'xml_search_string':'input//atomic_positions/atom',
+		'mode':'attr=name',
+		'typ':np.ndarray
 		},
-	'_atom_spec':{
-		'xml_ptype':'nodelist', 
-		'xml_search_string':'input//species', 
-		'extra_name':None, 
-		'res_type':list,
-		'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
-		# 'outfile_regex':
-		# 	r'PseudoPot. \#.*\s+(.*/)*(?P<pseudo_file>.+(\.UPF|\.upf))' +
-		# 	r'(.*\n)+\s*atomic species.*' +
-		# 	r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)'
+	# '_atom_spec':{
+	# 	'xml_search_string':'input//species', 
+	# 	},
+	'_unique_atoms_typ':{
+		'xml_search_string':'input//atomic_species/species',
+		'mode':'attr=name',
+		'typ':np.ndarray
 		},
-	'_symm':{
-		'xml_ptype':'nodelist', 
-		'xml_search_string':'output//symmetry', 
-		'extra_name':None, 
-		'res_type':list,
-		'outfile_regex':
-			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
-			r'cryst.\s*s\([\s\d]{2}\) = ' +
-			r'(?P<rotation>(\(.*\)\s*){3})'
+	'unique_atoms_mass':{
+		'xml_search_string':'input//atomic_species//mass', 
+		'typ':np.ndarray
 		},
-	'_fft_dense_grid':{
-		'xml_ptype':'nodelist', 
-		'xml_search_string':'output//fft_grid', 
-		'extra_name':None, 
-		'res_type':list,
-		'outfile_regex':
-			r'Dense.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
+	'_unique_atoms_pseudo':{
+		'xml_search_string':'input//atomic_species//pseudo_file',
+		'typ':np.ndarray
 		},
-	'_fft_smooth_grid':{
-		'xml_ptype':'nodelist', 
-		'xml_search_string':'output//fft_smooth', 
-		'extra_name':None, 
-		'res_type':list,
-		'outfile_regex':
-			r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
-		}
+	# '_symm':{
+	# 	'xml_search_string':'output//symmetry', 
+	# 	},
+	# '_fft_dense_grid':{
+	# 	'xml_search_string':'output//fft_grid', 
+	# 	},
+	# '_fft_smooth_grid':{
+	# 	'xml_search_string':'output//fft_smooth', 
+	# 	}
 	}
 
 # @logger()
 # class qe_structure(dfp, structure):
-class qe_structure(dfp):
+# class qe_structure(dfp):
+class qe_structure(Parser_xmlschema):
 	__name__ = "qe_structure";
-	def __init__(self, d={}, **kwargs):
+	def __init__(self, data={}, **kwargs):
 		self._app_atom_p = 'bohr'
 		self._app_cell_p = 'bohr'
 
-		d.update(data)
-		super().__init__(d=d, **kwargs)
+		data.update(_data)
+		super().__init__(data=data, **kwargs)
 
 	def _format_cell_(self, info):
 		if self.ibrav and info == 0:
@@ -180,47 +255,8 @@ class qe_structure(dfp):
 		return msg
 
 	@property
-	def _atoms_coord_cart(self):
-		res = np.array([a['coord'] for a in self._atoms]) * self._atom_p
-		n = self._n_atoms
-		if n and len(res) == n*2:
-			res = res[0:n,:]
-		if self._app_atom_p == 'crystal':
-			res = res.dot(self.direct)
-		return res
-
-	@property
 	def _atoms_coord_cryst(self):
-		res = np.array([a['coord'] for a in self._atoms]) * self._atom_p
-		n = self._n_atoms
-		if len(res) == n*2:
-				res = res[n:n*2,:] / self._atom_p
-		else:
-			if self._app_atom_p != 'crystal':
-				res = res.dot(np.linalg.inv(self.direct))
-		return res
-
-	@property
-	def _atoms_typ(self):
-		res = list([a['name'] for a in self._atoms])
-		n = self.n_atoms
-
-		# Cut the crystal coordinates that are taken using regex on output files
-		if len(res) == n*2:
-			res = res[:n]
-		return res
-
-	@property
-	def _unique_atoms_mass(self):
-		return np.array([a['mass'] for a in self._atom_spec])
-
-	@property
-	def _unique_atoms_pseudo(self):
-		return np.array([a['pseudo_file'] for a in self._atom_spec])
-
-	@property
-	def _unique_atoms_typ(self):
-		return list([a['name'] for a in self._atom_spec])
+		return self._atoms_coord_cart.dot(np.linalg.inv(self.direct))
 
 	@property
 	def _atom_p(self):
@@ -248,7 +284,7 @@ class qe_structure(dfp):
 
 	@property
 	def _direct(self):
-		res =  np.array(list(self._cell[0].values()))
+		res =  np.array(list(self._cell.values()))
 		if res.size != 9:
 			res = self._ibrav_to_cell_()
 			self._direct = res
@@ -310,9 +346,11 @@ class qe_structure(dfp):
 	def validate(self):
 		if self.ibrav == None:
 			raise ValidateError("ibrav is not set.")
-		if self._atom_spec == None:
+		# if self._atom_spec == None:
+		if self._atoms_typ is None:
 			raise ValidateError("List of atom types is not set.")
-		if self._atoms == None:
+		# if self._atoms == None:
+		if self._atoms_coord_cart is None:
 			raise ValidateError("List of atomic positions is not set.")
 
 		for typ in self.atoms_typ:
