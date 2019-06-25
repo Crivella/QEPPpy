@@ -56,7 +56,7 @@ class structure(atm, latt):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		if self.direct != [] and self.atoms_coord_cryst != []:
+		if self.direct != [] and self.atoms_coord_cryst != [] and self.atoms_typ != []:
 			self.get_symmetries()
 
 	@file_name_handle('w')

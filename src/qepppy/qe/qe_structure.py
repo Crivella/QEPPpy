@@ -152,28 +152,20 @@ _data={
 	# '_app_cell_p':{
 	# 	'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
 	# 	},
-	'_cell':{
+	'direct':{
 		'xml_search_string':'output//cell', 
-		},
-	# '_direct':{
-	# 	'xml_search_string':'output//cell', 
-	# 	},
-	'_recip':{
-		'xml_search_string':'output//reciprocal_lattice', 
+		'mode':'value'
 		},
 	# '_app_atom_p':{
 	# 	'res_type':str,
 	# 	'outfile_regex':r'positions \((?P<flag>.*) units\)'
 	# 	},
-	# '_atoms':{
-	# 	'xml_search_string':'input//atom', 
-	# 	},
-	'_atoms_coord_cart':{
+	'atoms_coord_cart':{
 		'xml_search_string':'input//atomic_positions/atom', 
 		'mode':'value',
 		'typ':np.ndarray
 		},
-	'_atoms_typ':{
+	'atoms_typ':{
 		'xml_search_string':'input//atomic_positions/atom',
 		'mode':'attr=name',
 		'typ':np.ndarray
@@ -181,38 +173,36 @@ _data={
 	# '_atom_spec':{
 	# 	'xml_search_string':'input//species', 
 	# 	},
-	'_unique_atoms_typ':{
-		'xml_search_string':'input//atomic_species/species',
-		'mode':'attr=name',
-		'typ':np.ndarray
-		},
 	'unique_atoms_mass':{
 		'xml_search_string':'input//atomic_species//mass', 
 		'typ':np.ndarray
 		},
-	'_unique_atoms_pseudo':{
+	'unique_atoms_pseudo':{
 		'xml_search_string':'input//atomic_species//pseudo_file',
 		'typ':np.ndarray
 		},
 	# '_symm':{
 	# 	'xml_search_string':'output//symmetry', 
 	# 	},
-	# '_fft_dense_grid':{
-	# 	'xml_search_string':'output//fft_grid', 
-	# 	},
-	# '_fft_smooth_grid':{
-	# 	'xml_search_string':'output//fft_smooth', 
-	# 	}
+	'fft_dense_grid':{
+		'xml_search_string':'output//fft_grid',
+		'mode':r'attr=nr\d'
+		},
+	'fft_smooth_grid':{
+		'xml_search_string':'output//fft_smooth', 
+		'mode':r'attr=nr\d'
+		}
 	}
 
-# @logger()
-# class qe_structure(dfp, structure):
-# class qe_structure(dfp):
 class qe_structure(Parser_xmlschema):
 	__name__ = "qe_structure";
 	def __init__(self, data={}, **kwargs):
-		self._app_atom_p = 'bohr'
-		self._app_cell_p = 'bohr'
+		if not hasattr(self,'_app_atom_p') or not self._app_atom_p:
+			self._app_atom_p = 'bohr'
+		if not hasattr(self,'_app_cell_p') or  not self._app_cell_p:
+			self._app_cell_p = 'bohr'
+		if self._direct is None or self._direct == []:
+			self._direct = np.diag([1]*3)
 
 		data.update(_data)
 		super().__init__(data=data, **kwargs)
@@ -255,10 +245,6 @@ class qe_structure(Parser_xmlschema):
 		return msg
 
 	@property
-	def _atoms_coord_cryst(self):
-		return self._atoms_coord_cart.dot(np.linalg.inv(self.direct))
-
-	@property
 	def _atom_p(self):
 		"""Conversion factor for atom coordinates to atomic units"""
 		cmp = self._app_atom_p #.strip()
@@ -281,28 +267,6 @@ class qe_structure(Parser_xmlschema):
 	@_cell_p.setter
 	def _cell_p(self, value):
 		self._app_cell_p = value
-
-	@property
-	def _direct(self):
-		res =  np.array(list(self._cell.values()))
-		if res.size != 9:
-			res = self._ibrav_to_cell_()
-			self._direct = res
-			return res
-
-		res *= self._cell_p
-		return res
-
-	@_direct.setter
-	def _direct(self, value):
-		keys =['a1','a2','a3']
-		app  = {a:b for a,b in zip(keys,value)}
-		self._cell = [] 
-		self._cell.append(app)
-
-	@property
-	def _recipr(self):
-		return utils.recipr_base(self._direct)
 	
 	@property
 	def symm_matrix(self):
@@ -322,26 +286,6 @@ class qe_structure(Parser_xmlschema):
 	def symm_name(self):
 		"""List of symmetry operation names"""
 		return list([a['name'] for a in self._symm])
-
-	@property
-	def fft_dense_grid(self):
-		"""FFT Grid shape: np.ndarray of shape (3,)"""
-		return np.array([
-			self._fft_dense_grid[0]['nr1'], 
-			self._fft_dense_grid[0]['nr2'], 
-			self._fft_dense_grid[0]['nr3']], dtype='int')
-
-	@property
-	def fft_smooth_grid(self):
-		"""FFT Grid shape: np.ndarray of shape (3,)"""
-		try:
-			res = np.array([
-				self._fft_smooth_grid[0]['nr1'], 
-				self._fft_smooth_grid[0]['nr2'], 
-				self._fft_smooth_grid[0]['nr3']], dtype='int')
-		except:
-			res = self.fft_dense_grid
-		return res
 
 	def validate(self):
 		if self.ibrav == None:

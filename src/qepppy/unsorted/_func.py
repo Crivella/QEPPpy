@@ -60,7 +60,7 @@ def read_rhotw( fname='out.rhotw'):
 
 	return nt, nqpol, rhotw, vcol, FAQ
 
-def read_trans( fname='exc.out'):
+def read_trans(fname='exc.out'):
 	"""
 	Read from the dpforexc main output.
 	Use regex syntax to extract the information about the transitions.
@@ -71,7 +71,7 @@ def read_trans( fname='exc.out'):
 			contains the fact (f_i - f_j) for every transition
 	"""
 	r = re.compile( r'\sis,ikp,iv,ik,ic,it,fact,gwten =\s+(?P<is>[\d]+)\s+(?P<kpt>[\d]+)\s+(?P<iv>[\d]+)\s+(?P<ik>[\d]+)\s+(?P<ic>[\d]+)\s+(?P<num>[\d]+)\s+(?P<fact>[\d\.]+)\s+(?P<en>[\d\.]+)')
-	with open( 'exc.out', 'r') as f:
+	with open(fname, 'r') as f:
 		trans = [a.groupdict() for a in  r.finditer( f.read())]
 	en   = np.array([a['en']   for a in trans], dtype=float)/HARTREE
 	fact = np.array([a['fact'] for a in trans], dtype=float)

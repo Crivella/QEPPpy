@@ -43,8 +43,13 @@ class pw_in(inp_f, structure, system):
 
 	@property
 	def _atoms_coord_cart(self):
-		x, y, z = self._find("x", "y", "z", up="ATOMIC_POSITIONS")
+		try:
+			x, y, z = self._find("x", "y", "z", up="ATOMIC_POSITIONS")
+		except:
+			return []
 		coord = np.array(list(zip(x, y, z))) * self._atom_p
+		if self._app_atom_p == 'cryst':
+			coord = coord.dot(self.direct)
 		return coord
 
 	@_atoms_coord_cart.setter
@@ -56,11 +61,12 @@ class pw_in(inp_f, structure, system):
 
 		self._app_atom_p = 'alat'
 
-	# @property
-	# def _atoms_coord_cryst(self):
-	# 	return self._atoms_coord_cart.dot(np.linalg.inv(self.direct))
+	@property
+	def _atoms_coord_cryst(self):
+		coord = self.atoms_coord_cart
+		return coord.dot(np.linalg.inv(self.direct))
 
-	@structure._atoms_coord_cryst.setter
+	@_atoms_coord_cryst.setter
 	def _atoms_coord_cryst(self, value):
 		value = np.array(value)
 
@@ -71,7 +77,10 @@ class pw_in(inp_f, structure, system):
 
 	@property
 	def _atoms_typ(self):
-		name = self._find("X", up="ATOMIC_POSITIONS")
+		try:
+			name = self._find("X", up="ATOMIC_POSITIONS")
+		except:
+			name = []
 
 		return name
 	
@@ -131,12 +140,24 @@ class pw_in(inp_f, structure, system):
 
 		self['ATOMIC_SPECIES/PseudoPot_X'] = value
 
-	@property
-	def _cell(self):
-		a1, a2, a3 = self._find("v1", "v2", "v3")
-		return {'a1':a1, 'a2':a2, 'a3':a3}
+	# @property
+	# def _cell(self):
+	# 	a1, a2, a3 = self._find("v1", "v2", "v3")
+	# 	return {'a1':a1, 'a2':a2, 'a3':a3}ty
 
-	@structure._direct.setter
+	@property
+	def _direct(self):
+		a1, a2, a3 = self._find("v1", "v2", "v3")
+		if a1 is None:
+			try:
+				a1, a2, a3 = self._ibrav_to_cell_()
+			except:
+				return []
+			self._direct = (a1,a2,a3)
+
+		return np.array([a1,a2,a3])
+
+	@_direct.setter
 	def _direct(self, value):
 		# if self.ibrav != 0:
 		# 	raise ValueError("CELL can be set only if ibrav == 0.")
@@ -181,7 +202,8 @@ class pw_in(inp_f, structure, system):
 		if possib and not value in possib:
 			raise ValueError("ATOMIC_POSITIONS card value must be one of {} not '{}'.".format(
 				possib, value))
-		self["ATOMIC_POSITIONS"].value = value
+		self['ATOMIC_POSITIONS/'] = value
+		# self["ATOMIC_POSITIONS"].value = value
 
 	@property
 	def _app_cell_p(self):
@@ -239,8 +261,8 @@ class pw_in(inp_f, structure, system):
 		# 	msg += structure.__str__(self)
 		return msg
 
-	def validate(self):
-		super().validate()
+	# def validate(self):
+	# 	super().validate()
 
 
 

@@ -12,12 +12,13 @@ out_files = [a[:-4] for a in os.listdir(test_dir) if a.endswith('.out')]
 cmp_list = [
 	'direct', 'recipr',
 	'ibrav', 'alat',
-	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 'atoms_typ', 'unique_atoms_mass', # 'atoms_pseudo',
-	'n_kpt', 'kpt_cart', 'kpt_cryst', 'weight',
+	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 
+	'atoms_typ', 'unique_atoms_mass', # 'atoms_pseudo',
+	'n_kpt', 'kpt_cart', #'kpt_cryst', 'weight',
 	'egv',
 	# 'symm_matrix', 'symm_name',
 	'E_tot', 'cb', 'vb',
-	'fft_dense_grid', 'fft_smooth_grid',
+	# 'fft_dense_grid', 'fft_smooth_grid',
 	]
 
 
@@ -41,6 +42,21 @@ def outputs_xml(request):
 
 	with open(pkl_name, 'rb') as f:
 		pkl = pickle.load(f)
+
+	# print()
+	# print(xml.kpt_cart[:3])
+	# print(pkl['kpt_cart'][:3])
+	# print()
+	# print(xml.recipr)
+	# print(pkl['recipr'])
+	# print()
+	# print(xml.kpt_cryst[:3])
+	# print(pkl['kpt_cryst'][:3])
+	# xml.kpt_cart = xml.kpt_cart
+	# print()
+	# import numpy as np
+	# print(xml.kpt_cart.dot(np.linalg.inv(xml.recipr))[:3])
+	# print(pkl['kpt_cryst'][:3])
 
 	return xml, pkl
 

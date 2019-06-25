@@ -1,3 +1,4 @@
+import re
 import xmlschema
 import numpy as np
 
@@ -6,15 +7,17 @@ def dbg(*args, **kwargs):
 	print(*args, **kwargs)
 
 class Parser_xmlschema():
-	def __init__(self, xml=None, schema=None, data={}):
+	def __init__(self, *args, xml=None, schema=None, data={}, **kwargs):
 		self.xml    = xml
 		self.schema = schema
 		self.data   = data
 
 		if xml:
 			self.xml_parse()
-		if data:
-			self.load_data()
+			if data:
+				self.load_data()
+
+		super().__init__(*args, **kwargs)
 
 	# def xml_parse(self, path):
 	def xml_parse(self):
@@ -84,30 +87,61 @@ class Parser_xmlschema():
 		return ptr
 
 	@staticmethod
-	def get_attr(l, attr):
-		if not isinstance(l, list):
-			if isinstance(l, dict):
-				return l['@' + attr]
-			else:
-				raise ValueError("Unexpected behavior!!")
-
+	def _get_dict_attr(dct, attr):
 		res = []
-		for e in l:
-			res.append(e['@' + attr])
+		for k,v in dct.items():
+			if not k.startswith('@'):
+				continue
+			if re.match('@' + attr, k):
+				res.append(v)
 
 		return res
+
+	@staticmethod
+	def get_attr(l, attr):
+		# attr = attr.split(',')
+		if not isinstance(l, list):
+			if isinstance(l, dict):
+				res = Parser_xmlschema._get_dict_attr(l, attr)
+			else:
+				raise ValueError("Unexpected behavior!!")
+		else:
+			res = []
+			for e in l:
+				if isinstance(e, dict):
+					res += Parser_xmlschema._get_dict_attr(e, attr)
+
+		if len(res) == 1:
+			res = res[0]
+
+		return res
+
+	@staticmethod
+	def _get_dict_value(dct):
+		if '$' in dct:
+			return [dct['$'],]
+		res = []
+		for k,v in dct.items():
+			if isinstance(v, dict):
+				continue
+			if isinstance(v, list) and isinstance(v[0], dict):
+				continue
+			res.append(v)
+		return res
+
 
 	@staticmethod
 	def get_value(l):
 		if not isinstance(l, list):
 			if isinstance(l, dict):
-				return l['$']
+				return Parser_xmlschema._get_dict_value(l)
 			else:
 				raise ValueError("Unexpected behavior!!")
 
 		res = []
 		for e in l:
-			res.append(e['$'])
+			res += Parser_xmlschema._get_dict_value(e)
+			# res.append(e['$'])
 
 		return res
 
@@ -115,8 +149,9 @@ class Parser_xmlschema():
 		for k,v in self.data.items():
 			dbg("-"*40)
 			dbg(f"Setting attribute '{k}'")
-			mode = v.get('mode', 'all')
-			typ  = v.get('typ',   None)
+			mode    = v.get('mode',     'all')
+			typ     = v.get('typ',      None)
+			modifier = v.get('modifier', lambda x: x)
 
 			if not any(mode.startswith(a) for a in ['all','attr','value']):
 				raise ValueError(f"Mode = {mode}  is not a valid value.")
@@ -140,6 +175,7 @@ class Parser_xmlschema():
 						val = val.reshape(-1)
 				else:
 					val = typ(val)
+			val = modifier(val)
 			dbg(f'Assigning:  {val}')
 			# if hasattr(self, k):
 			# 	print(f'WARNING self already has attribute "{k}" of type "{type(getattr(self,k))}')

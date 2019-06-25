@@ -6,13 +6,15 @@ class ElementMismatch(Exception):
 
 def compare_element(a,b):
 	if type(a) != type(b):
-		if all(isinstance(c, (list, np.ndarray)) for c in [a,b]):
+		if any(isinstance(c, np.ndarray) for c in [a,b]) and any(isinstance(c, list) for c in [a,b]):
 			a = np.array(a)
 			b = np.array(b)
 		else:
 			raise ElementMismatch("Type of the two elements are different")
 	if isinstance(a, np.ndarray):
-		if len(a) == len(b) == 0:
+		if a.shape != b.shape:
+			raise ElementMismatch("The shape of the two array does not match: '{}' vs '{}'.".format(a.shape, b.shape))
+		if len(a) == 0:
 			return
 		if isinstance(a.flatten()[0], np.number):
 			if not np.allclose(a,b, atol=1e-4):
@@ -22,12 +24,12 @@ def compare_element(a,b):
 				raise ElementMismatch("The two array are different.")
 	elif isinstance(a, list):
 		if len(a) != len(b):
-			raise ElementMismatch("Two lists of different lenghts.")
+			raise ElementMismatch("Two lists of different lenghts: '{}' vs '{}'.".format(len(a), len(b)))
 		for c1,c2 in zip(a,b):
 			compare_element(c1,c2)
 	elif isinstance(a, dict):
 		if len(a) != len(b):
-			raise ElementMismatch("Two lists of different lenghts.")
+			raise ElementMismatch("Two lists of different lenghts: '{}' vs '{}'.".format(len(a), len(b)))
 		for k,v in a.items():
 			if not k in b:
 				raise ElementMismatch(f"dict is missing key '{k}'")
@@ -41,7 +43,7 @@ def compare_std(cls, std, cmp_list=[]):
 		try:
 			compare_element(c1, c2)
 		except ElementMismatch as e:
-			raise ValueError(f"While comparing '{name}': {e}")
+			raise ElementMismatch(f"While comparing '{name}': \n\t{e}")
 		except Exception as e:
 			raise type(e)(f"UNEXPECTED!!!: While comparing '{name}': {e}")
 

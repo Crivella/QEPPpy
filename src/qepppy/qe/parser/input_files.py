@@ -479,6 +479,8 @@ class qe_card(OrderedDict):
 			self.syntax.validate(self)
 		except ValidateError as e:
 			raise ValidateError("ERROR in card '{}':\n".format(self.name), str(e))
+		except Exception as e:
+			raise ValueError("UNEXPECTED!!! ERROR in card '{}': '{} {}'".format(self.name, type(e), e))
 
 class input_files():
 	"""
@@ -488,14 +490,16 @@ class input_files():
 	 - input_file        = Name of the file to parse
 	"""
 	templ_file = None
-	def __init__(self, input_file=None, **kwargs):
+	def __init__(self, *args, input_file=None, input_data={}, **kwargs):
 		if not self.templ_file:
 			raise ParseInputError("Must give a template file.\n")
 	
-		self.namelist_c = qe_namelist_collection(tpl=self.templ_file, **kwargs)
+		self.namelist_c = qe_namelist_collection(tpl=self.templ_file, input_data=input_data, **kwargs)
 		self.card_c     = qe_card_collection(self.namelist_c, **kwargs)
 		if input_file:
 			self.parse_input(input_file)
+
+		super().__init__(*args, **kwargs)
 
 	def __getitem__(self, key):
 		return self.card_c.__getitem__(key)

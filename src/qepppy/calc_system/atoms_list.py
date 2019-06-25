@@ -72,7 +72,7 @@ class atoms_list(metaclass=PropertyCreator):
 		}
 
 	atoms_typ={
-		'typ':(list,),
+		'typ':(list,np.ndarray),
 		'sub_typ':(str,np.ndarray,),
 		# 'shape':('n_atoms',),
 		'post_set_name':'_unique_atoms_typ',

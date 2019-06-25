@@ -121,17 +121,18 @@ _data={
 		'mode':'attr=weight',
 		'typ':np.ndarray
 		},
-	'_kpt':{
+	'kpt_cart':{
 		'xml_search_string':'output//ks_energies/k_point', 
 		'mode':'value',
-		'typ':np.ndarray
+		'typ':np.ndarray,
 		},
-	'_egv':{
+	'egv':{
 		'xml_search_string':'output//ks_energies/eigenvalues', 
 		'mode':'value',
-		'typ':np.ndarray
+		'typ':np.ndarray,
+		'modifier':lambda x: x*HA_to_eV
 		},
-	'_occ':{
+	'occ':{
 		'xml_search_string':'output//ks_energies/occupations', 
 		'mode':'value',
 		'typ':np.ndarray
@@ -180,78 +181,12 @@ class qe_bands(Parser_xmlschema):
 				raise KeyError("Index '{}' out of range {}-{}".format(key, 0, self._n_kpt - 1))
 		return super().__getitem__(key)
 
-	# @property
-	# def E_tot(self):
-	# 	"""Total energy"""
-	# 	if self._E_tot == 0.0:
-	# 		return None
-	# 	return self._E_tot
-	
-
-	# @property
-	# def _kpt_cart(self):
-	# 	"""
-	# 	np.ndarray of shape(nkpt, 3).
-	# 	Contains the coordinates in cartesian units of all k-points.
-	# 	"""
-	# 	kpt = np.array([a['kpt'] for a in self._kpt])
-	# 	kpt = kpt[:self._n_kpt,:]
-	# 	return kpt
-
-	# @property
-	# def _kpt_cryst(self):
-	# 	"""
-	# 	np.ndarray of shape(nkpt, 3).
-	# 	Contains the coordinates in crystal units of all k-points.
-	# 	"""
-	# 	n = self.n_kpt
-	# 	kpt = np.array([a['kpt'] for a in self._kpt])
-	# 	if kpt.shape[0] > n:
-	# 		kpt = kpt[n:2*n,:]
-	# 	else:
-	# 		kpt = kpt.dot(np.linalg.inv(self.recipr * self.alat / (2*np.pi)))
-	# 		# raise NotImplementedError()
-	# 	return kpt
-
-	# @property
-	# def _weight(self):
-	# 	"""
-	# 	np.ndarray of shape (nkpt,)
-	# 	Contains the weights for all k-points.
-	# 	"""
-	# 	n = self._n_kpt
-	# 	occ = np.array([a['weight'] for a in self._kpt])
-	# 	if occ.shape[0] > n:
-	# 		occ = occ[:n]
-	# 	return occ
-
-	# @property
-	# def _egv(self):
-	# 	"""
-	# 	np.ndarray of shape (nkpt,nbnd).
-	# 	Contains all the eigenvalues for the bands.
-	# 	"""
-	# 	app = np.array([a['egv'] for a in self._app_egv]) * self.e_units
-	# 	num = app.shape[0]
-	# 	if num > self._n_kpt:
-	# 		if num % self.n_kpt != 0:
-	# 			raise NotImplemented("Read egv #{} is not a multiple of n_kpt #{}".format(num, self._n_kpt))
-	# 		app = app[-self._n_kpt:]
-	# 	return app
-
-	# @property
-	# def _occ(self):
-	# 	"""
-	# 	np.ndarray of shape (nkpt,nbnd).
-	# 	Contains the occupation number of all the bands.
-	# 	"""
-	# 	app = np.array([a['occ'] for a in self._app_occ])
-	# 	num = app.shape[0]
-	# 	if num > self._n_kpt:
-	# 		if num % self._n_kpt != 0:
-	# 			raise NotImplemented("Read occ #{} is not a multiple of n_kpt #{}".format(num, self._n_kpt))
-	# 		app = app[-self._n_kpt:]
-	# 	return app
+	@property
+	def E_tot(self):
+		"""Total energy"""
+		if self._E_tot == 0.0:
+			return None
+		return self._E_tot
 
 	@property
 	def vb(self):
