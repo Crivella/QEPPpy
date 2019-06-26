@@ -15,9 +15,10 @@ cmp_list = [
 	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 
 	'atoms_typ', 'unique_atoms_mass', # 'atoms_pseudo',
 	'n_kpt', 'kpt_cart', #'kpt_cryst', 'weight',
-	'egv',
+	# 'egv',
 	# 'symm_matrix', 'symm_name',
-	'E_tot', 'cb', 'vb',
+	# 'E_tot',
+	'cb', 'vb',
 	# 'fft_dense_grid', 'fft_smooth_grid',
 	]
 
@@ -43,21 +44,6 @@ def outputs_xml(request):
 	with open(pkl_name, 'rb') as f:
 		pkl = pickle.load(f)
 
-	# print()
-	# print(xml.kpt_cart[:3])
-	# print(pkl['kpt_cart'][:3])
-	# print()
-	# print(xml.recipr)
-	# print(pkl['recipr'])
-	# print()
-	# print(xml.kpt_cryst[:3])
-	# print(pkl['kpt_cryst'][:3])
-	# xml.kpt_cart = xml.kpt_cart
-	# print()
-	# import numpy as np
-	# print(xml.kpt_cart.dot(np.linalg.inv(xml.recipr))[:3])
-	# print(pkl['kpt_cryst'][:3])
-
 	return xml, pkl
 
 @pytest.fixture(
@@ -76,7 +62,7 @@ def outputs_outfile(request):
 	out_name = name + '.out'
 	pkl_name = name + '.pickle'
 
-	out = qepppy.qe.pw_out(outfile=out_name)
+	out = qepppy.qe.pw_out(file=out_name)
 
 	with open(pkl_name, 'rb') as f:
 		pkl = pickle.load(f)

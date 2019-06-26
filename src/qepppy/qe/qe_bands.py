@@ -1,7 +1,7 @@
 import numpy as np
 from ..errors import ValidateError
 # from .parser.data_file_parser import data_file_parser as dfp
-from ..parsers import Parser_xml
+from ..parsers import Parser_xml, Parser_regex
 
 HA_to_eV = 27.21138602
 
@@ -91,7 +91,49 @@ HA_to_eV = 27.21138602
 # 		}
 # 	}
 
-_data={
+data_regex={
+	'_n_kpt':{
+		'rstring':r'number of k points[\s]*=',
+		'typ':int,
+		},
+	'_n_bnd':{
+		'rstring':r'number of Kohn-Sham states[\s]*=',
+		'typ':int,
+		},
+	'_n_el':{
+		'rstring':r'number of electrons[\s]*=',
+		'typ':int,
+		},
+	'fermi':{
+		'rstring':r'the Fermi energy is',
+		'typ':int,
+		},
+	'noncolin':{
+		'rstring':r'spin',
+		'typ':bool,
+		},
+	'kpt_cart,weight':{
+		'rstring':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)',
+		'typ':np.ndarray,
+		'max_num':'_n_kpt'
+		},
+	'egv':{
+		'rstring':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
+		'typ':np.ndarray,
+		'max_num':'_n_kpt',
+		# 'scale_fact':1/HA_to_eV,
+		},
+	'occ':{
+		'rstring':r'occupation numbers(?P<occ>[\s\d\.]+)',
+		'typ':np.ndarray,
+		},
+	'_E_tot':{
+		'rstring':r'\!\s*total energy\s*=',
+		'typ':int,	
+		}
+	}
+
+data_xml={
 	'_n_kpt':{
 		'xml_search_string':'output//nks',
 		'typ':int,
@@ -150,7 +192,7 @@ _data={
 
 # @logger()
 # class qe_bands(dfp):
-class qe_bands(Parser_xml):
+class qe_bands(Parser_xml, Parser_regex):
 	"""
 	Instance used for QE eigenvalues/vector(k-points) and occupations numbers.
 	Uses the internal "data_file_parser" to read from a "data-file-schema.xml"
@@ -164,9 +206,10 @@ class qe_bands(Parser_xml):
 	"""
 	__name__ = "bands"
 	e_units = HA_to_eV
-	def __init__(self, data={}, **kwargs):
-		data.update(_data)
-		super().__init__(data=data, **kwargs)
+	def __init__(self, xml_data={}, regex_data={}, **kwargs):
+		xml_data.update(data_xml)
+		regex_data.update(data_regex)
+		super().__init__(xml_data=xml_data, regex_data=regex_data, **kwargs)
 
 	def __str__(self):
 		msg = super().__str__()

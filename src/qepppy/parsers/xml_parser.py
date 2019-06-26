@@ -5,14 +5,15 @@ import numpy as np
 
 class xmltodict():
 	@staticmethod
-	def parse(file, **kwargs):
+	def parse(file, attrib=True):
 		from xml.etree import ElementTree as ET
 		tree = ET.parse(file)
 		root = tree.getroot()
 
-		res = xmltodict._parse_childrens(root, **kwargs)
-		for k,v in root.attrib.items():
-			res['@' + k] = v
+		res = xmltodict._parse_childrens(root, attrib=attrib)
+		if attrib:
+			for k,v in root.attrib.items():
+				res['@' + k] = v
 
 		return res
 
@@ -53,10 +54,10 @@ def dbg2(*args, **kwargs):
 	print(*args, **kwargs)
 
 class Parser_xml():
-	def __init__(self, *args, xml=None, schema=None, data={}, **kwargs):
-		self.xml    = xml
-		self.schema = schema
-		self.data   = data
+	def __init__(self, *args, xml=None, schema=None, xml_data={}, **kwargs):
+		self.xml      = xml
+		self.schema   = schema
+		self.xml_data = xml_data
 
 		if xml:
 			self.xml_parse()
@@ -70,7 +71,7 @@ class Parser_xml():
 		with open(self.xml, 'rb') as f:
 			self.xml_dict = xmltodict.parse(f)
 
-		if self.data:
+		if self.xml_data:
 			self.load_data()
 
 	def _find_xpath(self, to_find, dct={}, deep=False):
@@ -223,7 +224,7 @@ class Parser_xml():
 		return val
 
 	def load_data(self):
-		for k,v in self.data.items():
+		for k,v in self.xml_data.items():
 			dbg("-"*40)
 			dbg(f"Setting attribute '{k}'")
 			mode    = v.get('mode',     'value')

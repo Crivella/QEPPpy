@@ -1,5 +1,5 @@
 import numpy as np
-from ..parsers import Parser_xml
+from ..parsers import Parser_xml, Parser_regex
 # from .parser.data_file_parser import data_file_parser as dfp
 from ..errors import ValidateError
 # from ..calc_system.structure import structure as structure
@@ -35,39 +35,39 @@ bravais_index={
 # 		'xml_search_string':'output//atomic_structure', 
 # 		'extra_name':'nat', 
 # 		'res_type':int,
-# 		'outfile_regex':r'number of atoms/cell\s*=\s*'
+# 		'rstring':r'number of atoms/cell\s*=\s*'
 # 		},
 # 	'_n_types':{
 # 		'xml_ptype':'attr', 
 # 		'xml_search_string':'output//atomic_species', 
 # 		'extra_name':'ntyp', 
 # 		'res_type':int,
-# 		'outfile_regex':r'number of atomic types\s*=\s*'
+# 		'rstring':r'number of atomic types\s*=\s*'
 # 		},
 # 	'ibrav':{
 # 		'xml_ptype':'attr', 
 # 		'xml_search_string':'output//atomic_structure', 
 # 		'extra_name':'bravais_index', 
 # 		'res_type':int,
-# 		'outfile_regex':r'bravais-lattice index\s*='
+# 		'rstring':r'bravais-lattice index\s*='
 # 		},
 # 	'alat':{
 # 		'xml_ptype':'attr', 
 # 		'xml_search_string':'output//atomic_structure', 
 # 		'extra_name':'alat', 
 # 		'res_type':float,
-# 		'outfile_regex':r'lattice parameter \(alat\)\s*='
+# 		'rstring':r'lattice parameter \(alat\)\s*='
 # 		},
 # 	'_app_cell_p':{
 # 		'res_type':str,
-# 		'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
+# 		'rstring':r'cart\. coord\. in units of (?P<flag>.*)\)'
 # 		},
 # 	'_cell':{
 # 		'xml_ptype':'nodelist', 
 # 		'xml_search_string':'output//cell', 
 # 		'extra_name':None, 
 # 		'res_type':list,
-# 		'outfile_regex':
+# 		'rstring':
 # 			r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' + 
 # 			r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' + 
 # 			r'\s*a\(3\) = \((?P<a3>[\s\d.\-]*)\)\s*\n'
@@ -77,29 +77,29 @@ bravais_index={
 # 		'xml_search_string':'output//reciprocal_lattice', 
 # 		'extra_name':None, 
 # 		'res_type':list,
-# 		'outfile_regex':
+# 		'rstring':
 # 			r'\s*b\(1\) = \((?P<b1>[\s\d.\-]*)\)\s*\n' + 
 # 			r'\s*b\(2\) = \((?P<b2>[\s\d.\-]*)\)\s*\n' + 
 # 			r'\s*b\(3\) = \((?P<b3>[\s\d.\-]*)\)\s*\n'
 # 		},
 # 	'_app_atom_p':{
 # 		'res_type':str,
-# 		'outfile_regex':r'positions \((?P<flag>.*) units\)'
+# 		'rstring':r'positions \((?P<flag>.*) units\)'
 # 		},
 # 	'_atoms':{
 # 		'xml_ptype':'nodelist', 
 # 		'xml_search_string':'input//atom', 
 # 		'extra_name':'coord', 
 # 		'res_type':list,
-# 		'outfile_regex':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
+# 		'rstring':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
 # 		},
 # 	'_atom_spec':{
 # 		'xml_ptype':'nodelist', 
 # 		'xml_search_string':'input//species', 
 # 		'extra_name':None, 
 # 		'res_type':list,
-# 		'outfile_regex':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
-# 		# 'outfile_regex':
+# 		'rstring':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
+# 		# 'rstring':
 # 		# 	r'PseudoPot. \#.*\s+(.*/)*(?P<pseudo_file>.+(\.UPF|\.upf))' +
 # 		# 	r'(.*\n)+\s*atomic species.*' +
 # 		# 	r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)'
@@ -109,7 +109,7 @@ bravais_index={
 # 		'xml_search_string':'output//symmetry', 
 # 		'extra_name':None, 
 # 		'res_type':list,
-# 		'outfile_regex':
+# 		'rstring':
 # 			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
 # 			r'cryst.\s*s\([\s\d]{2}\) = ' +
 # 			r'(?P<rotation>(\(.*\)\s*){3})'
@@ -119,7 +119,7 @@ bravais_index={
 # 		'xml_search_string':'output//fft_grid', 
 # 		'extra_name':None, 
 # 		'res_type':list,
-# 		'outfile_regex':
+# 		'rstring':
 # 			r'Dense.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
 # 		},
 # 	'_fft_smooth_grid':{
@@ -127,12 +127,77 @@ bravais_index={
 # 		'xml_search_string':'output//fft_smooth', 
 # 		'extra_name':None, 
 # 		'res_type':list,
-# 		'outfile_regex':
+# 		'rstring':
 # 			r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
 # 		}
 # 	}
 
-_data={
+data_regex={
+	'_n_atoms':{
+		'rstring':r'number of atoms/cell\s*=\s*',
+		'typ':int
+		},
+	'_n_types':{
+		'rstring':r'number of atomic types\s*=\s*',
+		'typ':int
+		},
+	'ibrav':{
+		'rstring':r'bravais-lattice index\s*=',
+		'typ':int
+		},
+	'alat':{
+		'rstring':r'lattice parameter \(alat\)\s*=',
+		'typ':float
+		},
+	'_app_cell_p':{
+		'rstring':r'cart\. coord\. in units of (?P<flag>.*)\)',
+		'typ':str
+		},
+	'direct':{
+		'rstring':
+			r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' + 
+			r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' + 
+			r'\s*a\(3\) = \((?P<a3>[\s\d.\-]*)\)\s*\n',
+		'typ':np.ndarray,
+		'mode':'get_all',
+		'scale_fact':'_cell_p'
+		},
+	'_app_atom_p':{
+		'rstring':r'positions \((?P<flag>.*) units\)',
+		'typ':str
+		},
+	'atoms_typ,_,atoms_coord_cart':{
+		'rstring':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)',
+		'typ':np.ndarray,
+		'max_num':'_n_atoms',
+		'scale_fact':'_atom_p'
+		},
+	'unique_atoms_typ,_,unique_atoms_mass,unique_atoms_pseudo':{
+		'rstring':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))',
+		'typ':np.ndarray
+		},
+	'_symm':{
+		'rstring':
+			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
+			r'cryst.\s*s\([\s\d]{2}\) = ' +
+			r'(?P<rotation>(\(.*\)\s*){3})',
+		'typ':np.ndarray
+		},
+	'fft_dense_grid':{
+		'rstring':
+			r'Dense.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)',
+		'typ':np.ndarray,
+		'mode':'get_all'
+		},
+	'fft_smooth_grid':{
+		'rstring':
+			r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)',
+		'typ':np.ndarray,
+		'mode':'get_all'
+		}
+	}
+
+data_xml={
 	'_n_atoms':{
 		'xml_search_string':'output//atomic_structure',
 		'mode':'attr=nat',
@@ -154,7 +219,7 @@ _data={
 		'typ':float
 		},
 	# '_app_cell_p':{
-	# 	'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
+	# 	'rstring':r'cart\. coord\. in units of (?P<flag>.*)\)'
 	# 	},
 	'direct':{
 		'xml_search_string':'output//cell',
@@ -162,7 +227,7 @@ _data={
 		},
 	# '_app_atom_p':{
 	# 	'res_type':str,
-	# 	'outfile_regex':r'positions \((?P<flag>.*) units\)'
+	# 	'rstring':r'positions \((?P<flag>.*) units\)'
 	# 	},
 	'atoms_coord_cart':{
 		'xml_search_string':'input//atomic_positions/atom', 
@@ -199,9 +264,9 @@ _data={
 		}
 	}
 
-class qe_structure(Parser_xml):
+class qe_structure(Parser_xml, Parser_regex):
 	__name__ = "qe_structure";
-	def __init__(self, data={}, **kwargs):
+	def __init__(self, xml_data={}, regex_data={}, **kwargs):
 		if not hasattr(self,'_app_atom_p') or not self._app_atom_p:
 			self._app_atom_p = 'bohr'
 		if not hasattr(self,'_app_cell_p') or  not self._app_cell_p:
@@ -209,8 +274,9 @@ class qe_structure(Parser_xml):
 		if self._direct is None or self._direct == []:
 			self._direct = np.diag([1]*3)
 
-		data.update(_data)
-		super().__init__(data=data, **kwargs)
+		xml_data.update(data_xml)
+		regex_data.update(data_regex)
+		super().__init__(xml_data=xml_data, regex_data=regex_data, **kwargs)
 
 	def _format_cell_(self, info):
 		if self.ibrav and info == 0:
