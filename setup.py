@@ -27,12 +27,11 @@ REQUIRED = [
 	'matplotlib',
     'scipy',
     'decorator',
-    'xmlschema'
 ]
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    # 'xml_parsing':['xmltodict', 'xmlschema'],
 }
 
 SCRIPTS = [

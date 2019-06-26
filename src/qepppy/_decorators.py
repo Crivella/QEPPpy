@@ -1,7 +1,6 @@
 import re
 import functools
 import numpy as np
-from decorator import decorator
 
 def join_doc(func, add):
 	tabs='\t'
@@ -176,57 +175,89 @@ def set_self(_name, _default=True):
 		return wrapped
 	return decorator
 
-@decorator
-def store_property(func, *args, **kwargs):
+def store_property(func):	
 	"""
 	The first time the property value is accessed, generate it and store the 
 	result in the object's __dict__ for future calls.
 	"""
-	name = func.__name__
-	cls=args[0]
-	if name in cls.__dict__:
-		return cls.__dict__[name]
+	@functools.wraps(func)
+	def wrapped(*args, **kwargs):
+		name = func.__name__
+		cls=args[0]
+		if name in cls.__dict__:
+			return cls.__dict__[name]
 
-	res = func(*args, **kwargs)
-	cls.__dict__[name] = res
-	return res
+		res = func(*args, **kwargs)
+		cls.__dict__[name] = res
+		return res
+	return wrapped
 
-@decorator
-def IO_stdout_redirect(
-	func,
-	_outfile=None,
-	*args,
-	outfile=None,
-	**kwargs
-	):
+def IO_stdout_redirect(_outfile=None):
 	"""
 	Decorator factory to catch and redirect stdout from a function call.
 	If not output file is given, the stdout will not be redirected
 	params:
 	  - _outfile: Default output filename
 	"""
-	import sys
-	from contextlib import redirect_stdout
+	def decorator(func):	
+		@functools.wraps(func)
+		def wrapped(*args, outfile=_outfile, **kwargs):
+			import sys
+			from contextlib import redirect_stdout
 
-	if outfile is None:
-		outfile = _outfile
+			f = None
+			if isinstance(outfile, str):
+				f = open(outfile, "w")
+			elif not outfile is None and hasattr(outfile, 'close') and not outfile is sys.stdout:
+				f = outfile
 
-	f = None
-	if isinstance(outfile, str):
-		f = open(outfile, "w")
-	elif not outfile is None and hasattr(outfile, 'close') and not outfile is sys.stdout:
-		f = outfile
+			if f:
+				with redirect_stdout(f):
+					res = func(*args, **kwargs)
+			else:
+				res = func(*args, **kwargs)
 
-	if f:
-		with redirect_stdout(f):
-			res = func(*args, **kwargs)
-	else:
-		res = func(*args, **kwargs)
+			if f:
+				f.close()
 
-	if f:
-		f.close()
+			return res
 
-	return res
+		return wrapped
+	return decorator
+
+def IO_stderr_redirect(_errfile=None):
+	"""
+	Decorator factory to catch and redirect stderr from a function call.
+	If not output file is given, the stdout will not be redirected
+	params:
+	  - _errfile: Default output filename
+	"""
+	def decorator(func):
+		@functools.wraps(func)
+		def wrapped(*args, errfile=_errfile, **kwargs):
+			import sys
+			from contextlib import redirect_stderr
+
+			f = None
+			if isinstance(errfile, str):
+				f = open(errfile, "w")
+			elif not errfile is None and hasattr(errfile, 'close') and not errfile is sys.stdout:
+				f = errfile
+
+			if f:
+				with redirect_stderr(f):
+					res = func(*args, **kwargs)
+			else:
+				res = func(*args, **kwargs)
+
+			if f:
+				f.close()
+
+			return res
+
+		return wrapped
+	return decorator
+
 
 
 def file_name_handle(

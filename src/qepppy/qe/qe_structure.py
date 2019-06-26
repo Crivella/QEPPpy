@@ -1,5 +1,5 @@
 import numpy as np
-from ..parsers import Parser_xmlschema
+from ..parsers import Parser_xml
 # from .parser.data_file_parser import data_file_parser as dfp
 from ..errors import ValidateError
 # from ..calc_system.structure import structure as structure
@@ -135,26 +135,30 @@ bravais_index={
 _data={
 	'_n_atoms':{
 		'xml_search_string':'output//atomic_structure',
-		'mode':'attr=nat'
+		'mode':'attr=nat',
+		'typ':int
 		},
 	'_n_types':{
 		'xml_search_string':'output//atomic_species', 
-		'mode':'attr=ntyp'
+		'mode':'attr=ntyp',
+		'typ':int
 		},
 	'ibrav':{
 		'xml_search_string':'output//atomic_structure', 
-		'mode':'attr=bravais_index'
+		'mode':'attr=bravais_index',
+		'typ':int
 		},
 	'alat':{
 		'xml_search_string':'output//atomic_structure', 
-		'mode':'attr=alat'
+		'mode':'attr=alat',
+		'typ':float
 		},
 	# '_app_cell_p':{
 	# 	'outfile_regex':r'cart\. coord\. in units of (?P<flag>.*)\)'
 	# 	},
 	'direct':{
-		'xml_search_string':'output//cell', 
-		'mode':'value'
+		'xml_search_string':'output//cell',
+		'typ':np.ndarray
 		},
 	# '_app_atom_p':{
 	# 	'res_type':str,
@@ -162,7 +166,6 @@ _data={
 	# 	},
 	'atoms_coord_cart':{
 		'xml_search_string':'input//atomic_positions/atom', 
-		'mode':'value',
 		'typ':np.ndarray
 		},
 	'atoms_typ':{
@@ -174,7 +177,7 @@ _data={
 	# 	'xml_search_string':'input//species', 
 	# 	},
 	'unique_atoms_mass':{
-		'xml_search_string':'input//atomic_species//mass', 
+		'xml_search_string':'input//atomic_species//mass',
 		'typ':np.ndarray
 		},
 	'unique_atoms_pseudo':{
@@ -186,15 +189,17 @@ _data={
 	# 	},
 	'fft_dense_grid':{
 		'xml_search_string':'output//fft_grid',
-		'mode':r'attr=nr\d'
+		'mode':r'attr=nr\d',
+		'typ':np.ndarray
 		},
 	'fft_smooth_grid':{
 		'xml_search_string':'output//fft_smooth', 
-		'mode':r'attr=nr\d'
+		'mode':r'attr=nr\d',
+		'typ':np.ndarray
 		}
 	}
 
-class qe_structure(Parser_xmlschema):
+class qe_structure(Parser_xml):
 	__name__ = "qe_structure";
 	def __init__(self, data={}, **kwargs):
 		if not hasattr(self,'_app_atom_p') or not self._app_atom_p:
@@ -305,7 +310,10 @@ class qe_structure(Parser_xmlschema):
 			if self.direct is None:
 				raise ValidateError("Cell structure is not set with 'ibrav = 0'.")
 
-		super().validate()
+		try:
+			super().validate()
+		except AttributeError:
+			pass
 
 
 	def _ibrav_to_cell_(self):

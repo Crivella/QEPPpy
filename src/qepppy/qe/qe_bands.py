@@ -1,7 +1,7 @@
 import numpy as np
 from ..errors import ValidateError
 # from .parser.data_file_parser import data_file_parser as dfp
-from ..parsers import Parser_xmlschema
+from ..parsers import Parser_xml
 
 HA_to_eV = 27.21138602
 
@@ -93,28 +93,36 @@ HA_to_eV = 27.21138602
 
 _data={
 	'_n_kpt':{
-		'xml_search_string':'output//nks', 
+		'xml_search_string':'output//nks',
+		'typ':int,
 		},
 	'_n_bnd':{
-		'xml_search_string':'output//nbnd', 
+		'xml_search_string':'output//nbnd',
+		'typ':int,
 		},
 	'_n_el':{
-		'xml_search_string':'output//nelec', 
+		'xml_search_string':'output//nelec',
+		'typ':float,
 		},
 	'fermi':{
-		'xml_search_string':'output//fermi_energy', 
+		'xml_search_string':'output//fermi_energy',
+		'typ':float,
 		},
 	'fermi_s':{ 
-		'xml_search_string':'output//two_fermi_energies', 
+		'xml_search_string':'output//two_fermi_energies',
+		'typ':np.ndarray,
 		},
 	'homo':{
-		'xml_search_string':'output//highestOccupiedLevel', 
+		'xml_search_string':'output//highestOccupiedLevel',
+		'typ':float,
 		},
 	'lsda':{
-		'xml_search_string':'output//magnetization/lsda', 
+		'xml_search_string':'output//magnetization/lsda',
+		'typ':bool,
 		},
 	'noncolin':{
-		'xml_search_string':'output//magnetization/noncolin', 
+		'xml_search_string':'output//magnetization/noncolin',
+		'typ':bool,
 		},
 	'_weight':{
 		'xml_search_string':'output//ks_energies/k_point',
@@ -123,28 +131,26 @@ _data={
 		},
 	'kpt_cart':{
 		'xml_search_string':'output//ks_energies/k_point', 
-		'mode':'value',
 		'typ':np.ndarray,
 		},
 	'egv':{
 		'xml_search_string':'output//ks_energies/eigenvalues', 
-		'mode':'value',
 		'typ':np.ndarray,
 		'modifier':lambda x: x*HA_to_eV
 		},
 	'occ':{
 		'xml_search_string':'output//ks_energies/occupations', 
-		'mode':'value',
 		'typ':np.ndarray
 		},
 	'_E_tot':{
-		'xml_search_string':'output//total_energy/etot', 
+		'xml_search_string':'output//total_energy/etot',
+		'typ':float,
 		}
 	}
 
 # @logger()
 # class qe_bands(dfp):
-class qe_bands(Parser_xmlschema):
+class qe_bands(Parser_xml):
 	"""
 	Instance used for QE eigenvalues/vector(k-points) and occupations numbers.
 	Uses the internal "data_file_parser" to read from a "data-file-schema.xml"
