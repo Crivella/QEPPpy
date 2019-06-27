@@ -29,218 +29,61 @@ bravais_index={
 	'14':'triclinic'
 	}
 
-# _data={
-# 	'_n_atoms':{
-# 		'xml_ptype':'attr', 
-# 		'xml_search_string':'output//atomic_structure', 
-# 		'extra_name':'nat', 
-# 		'res_type':int,
-# 		'rstring':r'number of atoms/cell\s*=\s*'
-# 		},
-# 	'_n_types':{
-# 		'xml_ptype':'attr', 
-# 		'xml_search_string':'output//atomic_species', 
-# 		'extra_name':'ntyp', 
-# 		'res_type':int,
-# 		'rstring':r'number of atomic types\s*=\s*'
-# 		},
-# 	'ibrav':{
-# 		'xml_ptype':'attr', 
-# 		'xml_search_string':'output//atomic_structure', 
-# 		'extra_name':'bravais_index', 
-# 		'res_type':int,
-# 		'rstring':r'bravais-lattice index\s*='
-# 		},
-# 	'alat':{
-# 		'xml_ptype':'attr', 
-# 		'xml_search_string':'output//atomic_structure', 
-# 		'extra_name':'alat', 
-# 		'res_type':float,
-# 		'rstring':r'lattice parameter \(alat\)\s*='
-# 		},
-# 	'_app_cell_p':{
-# 		'res_type':str,
-# 		'rstring':r'cart\. coord\. in units of (?P<flag>.*)\)'
-# 		},
-# 	'_cell':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//cell', 
-# 		'extra_name':None, 
-# 		'res_type':list,
-# 		'rstring':
-# 			r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' + 
-# 			r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' + 
-# 			r'\s*a\(3\) = \((?P<a3>[\s\d.\-]*)\)\s*\n'
-# 		},
-# 	'_recip':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//reciprocal_lattice', 
-# 		'extra_name':None, 
-# 		'res_type':list,
-# 		'rstring':
-# 			r'\s*b\(1\) = \((?P<b1>[\s\d.\-]*)\)\s*\n' + 
-# 			r'\s*b\(2\) = \((?P<b2>[\s\d.\-]*)\)\s*\n' + 
-# 			r'\s*b\(3\) = \((?P<b3>[\s\d.\-]*)\)\s*\n'
-# 		},
-# 	'_app_atom_p':{
-# 		'res_type':str,
-# 		'rstring':r'positions \((?P<flag>.*) units\)'
-# 		},
-# 	'_atoms':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'input//atom', 
-# 		'extra_name':'coord', 
-# 		'res_type':list,
-# 		'rstring':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)'
-# 		},
-# 	'_atom_spec':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'input//species', 
-# 		'extra_name':None, 
-# 		'res_type':list,
-# 		'rstring':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))'
-# 		# 'rstring':
-# 		# 	r'PseudoPot. \#.*\s+(.*/)*(?P<pseudo_file>.+(\.UPF|\.upf))' +
-# 		# 	r'(.*\n)+\s*atomic species.*' +
-# 		# 	r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)'
-# 		},
-# 	'_symm':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//symmetry', 
-# 		'extra_name':None, 
-# 		'res_type':list,
-# 		'rstring':
-# 			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
-# 			r'cryst.\s*s\([\s\d]{2}\) = ' +
-# 			r'(?P<rotation>(\(.*\)\s*){3})'
-# 		},
-# 	'_fft_dense_grid':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//fft_grid', 
-# 		'extra_name':None, 
-# 		'res_type':list,
-# 		'rstring':
-# 			r'Dense.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
-# 		},
-# 	'_fft_smooth_grid':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//fft_smooth', 
-# 		'extra_name':None, 
-# 		'res_type':list,
-# 		'rstring':
-# 			r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)'
-# 		}
-# 	}
-
-data_regex={
+data ={
 	'_n_atoms':{
+		'xml_search_string':'output//atomic_structure',
 		'rstring':r'number of atoms/cell\s*=\s*',
+		'mode':'attr=nat',
 		'typ':int
 		},
 	'_n_types':{
+		'xml_search_string':'output//atomic_species', 
 		'rstring':r'number of atomic types\s*=\s*',
+		'mode':'attr=ntyp',
 		'typ':int
 		},
 	'ibrav':{
+		'xml_search_string':'output//atomic_structure', 
 		'rstring':r'bravais-lattice index\s*=',
+		'mode':'attr=bravais_index',
 		'typ':int
 		},
 	'alat':{
+		'xml_search_string':'output//atomic_structure', 
 		'rstring':r'lattice parameter \(alat\)\s*=',
-		'typ':float
+		'mode':'attr=alat',
+		'typ':float,
+		're_scale_fact':'_cell_p'
 		},
 	'_app_cell_p':{
 		'rstring':r'cart\. coord\. in units of (?P<flag>.*)\)',
 		'typ':str
 		},
 	'direct':{
+		'xml_search_string':'output//cell',
 		'rstring':
 			r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' + 
 			r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' + 
 			r'\s*a\(3\) = \((?P<a3>[\s\d.\-]*)\)\s*\n',
 		'typ':np.ndarray,
-		'mode':'get_all',
-		'scale_fact':'_cell_p'
+		're_scale_fact':'_cell_p'
 		},
 	'_app_atom_p':{
 		'rstring':r'positions \((?P<flag>.*) units\)',
 		'typ':str
 		},
-	'atoms_typ,_,atoms_coord_cart':{
-		'rstring':r'\d[\t ]+(?P<name>[\w]+).*\((?P<index>[ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)',
+	'atoms_typ,atoms_coord_cart':{
+		'xml_search_string':'input//atomic_positions/atom', 
+		'mode':'attr=name,value',
 		'typ':np.ndarray,
+		'rstring':r'\d[\t ]+(?P<name>[\w]+).*\(([ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)',
 		'max_num':'_n_atoms',
-		'scale_fact':'_atom_p'
+		're_scale_fact':'_atom_p'
 		},
 	'unique_atoms_typ,_,unique_atoms_mass,unique_atoms_pseudo':{
 		'rstring':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))',
 		'typ':np.ndarray
 		},
-	'_symm':{
-		'rstring':
-			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
-			r'cryst.\s*s\([\s\d]{2}\) = ' +
-			r'(?P<rotation>(\(.*\)\s*){3})',
-		'typ':np.ndarray
-		},
-	'fft_dense_grid':{
-		'rstring':
-			r'Dense.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)',
-		'typ':np.ndarray,
-		'mode':'get_all'
-		},
-	'fft_smooth_grid':{
-		'rstring':
-			r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)',
-		'typ':np.ndarray,
-		'mode':'get_all'
-		}
-	}
-
-data_xml={
-	'_n_atoms':{
-		'xml_search_string':'output//atomic_structure',
-		'mode':'attr=nat',
-		'typ':int
-		},
-	'_n_types':{
-		'xml_search_string':'output//atomic_species', 
-		'mode':'attr=ntyp',
-		'typ':int
-		},
-	'ibrav':{
-		'xml_search_string':'output//atomic_structure', 
-		'mode':'attr=bravais_index',
-		'typ':int
-		},
-	'alat':{
-		'xml_search_string':'output//atomic_structure', 
-		'mode':'attr=alat',
-		'typ':float
-		},
-	# '_app_cell_p':{
-	# 	'rstring':r'cart\. coord\. in units of (?P<flag>.*)\)'
-	# 	},
-	'direct':{
-		'xml_search_string':'output//cell',
-		'typ':np.ndarray
-		},
-	# '_app_atom_p':{
-	# 	'res_type':str,
-	# 	'rstring':r'positions \((?P<flag>.*) units\)'
-	# 	},
-	'atoms_coord_cart':{
-		'xml_search_string':'input//atomic_positions/atom', 
-		'typ':np.ndarray
-		},
-	'atoms_typ':{
-		'xml_search_string':'input//atomic_positions/atom',
-		'mode':'attr=name',
-		'typ':np.ndarray
-		},
-	# '_atom_spec':{
-	# 	'xml_search_string':'input//species', 
-	# 	},
 	'unique_atoms_mass':{
 		'xml_search_string':'input//atomic_species//mass',
 		'typ':np.ndarray
@@ -249,16 +92,32 @@ data_xml={
 		'xml_search_string':'input//atomic_species//pseudo_file',
 		'typ':np.ndarray
 		},
-	# '_symm':{
-	# 	'xml_search_string':'output//symmetry', 
-	# 	},
+	'symm_name,symm_matrix':{
+		'rstring':
+			r'isym =\s*\d{1,2}\s*(?P<name>[\S ]*)\n\s*' +
+			r'cryst.\s*s\([\s\d]{2}\) = ' +
+			r'(?P<rotation>(\(.*\)\s*){3})',
+		'typ':np.ndarray
+		},
+	'symm_matrix':{
+		'xml_search_string':'output//symmetry/rotation',
+		'typ':np.ndarray
+		},
+	'symm_name':{
+		'xml_search_string':'output//symmetry/info', 
+		'mode':'attr=name'
+		},
 	'fft_dense_grid':{
 		'xml_search_string':'output//fft_grid',
+		'rstring':
+			r'Dense.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)',
 		'mode':r'attr=nr\d',
 		'typ':np.ndarray
 		},
 	'fft_smooth_grid':{
 		'xml_search_string':'output//fft_smooth', 
+		'rstring':
+			r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)',
 		'mode':r'attr=nr\d',
 		'typ':np.ndarray
 		}
@@ -274,8 +133,8 @@ class qe_structure(Parser_xml, Parser_regex):
 		if self._direct is None or self._direct == []:
 			self._direct = np.diag([1]*3)
 
-		xml_data.update(data_xml)
-		regex_data.update(data_regex)
+		xml_data.update(data)
+		regex_data.update(data)
 		super().__init__(xml_data=xml_data, regex_data=regex_data, **kwargs)
 
 	def _format_cell_(self, info):
@@ -318,20 +177,18 @@ class qe_structure(Parser_xml, Parser_regex):
 	@property
 	def _atom_p(self):
 		"""Conversion factor for atom coordinates to atomic units"""
-		cmp = self._app_atom_p #.strip()
-		if cmp == 'alat':
+		if self._app_atom_p == 'alat':
 			return self.alat
-		if cmp == 'angstrom':
+		if self._app_atom_p == 'angstrom':
 			return 1./0.529177
 		return 1.
 
 	@property
 	def _cell_p(self):
 		"""Conversion factor for cell vetors to atomic units"""
-		cmp =  self._app_cell_p
-		if cmp == 'alat':
+		if self._app_cell_p == 'alat':
 			return self.alat
-		if cmp == 'angstrom':
+		if self._app_cell_p == 'angstrom':
 			return 1./0.529177
 		return 1.
 
@@ -339,24 +196,24 @@ class qe_structure(Parser_xml, Parser_regex):
 	def _cell_p(self, value):
 		self._app_cell_p = value
 	
-	@property
-	def symm_matrix(self):
-		"""List of symmetry operation matrices"""
-		t = type(self._symm[0]['rotation'])
-		if t == np.ndarray:
-			res = np.array([a['rotation'].reshape(3,3) for a in self._symm])
-		elif t == str:
-			f = lambda x: ' '.join([a.split('(')[1] for a in x.split('\n')])
-			g = lambda x: f(x).replace('(',' ').replace(')',' ').replace('\n',' ').replace('f =', ' ')
-			res = np.array([np.fromstring(g(a['rotation']), sep=' ').reshape(3,3) for a in self._symm])
-		else:
-			raise NotImplementedError()
-		return res
+	# @property
+	# def symm_matrix(self):
+	# 	"""List of symmetry operation matrices"""
+	# 	t = type(self._symm[0]['rotation'])
+	# 	if t == np.ndarray:
+	# 		res = np.array([a['rotation'].reshape(3,3) for a in self._symm])
+	# 	elif t == str:
+	# 		f = lambda x: ' '.join([a.split('(')[1] for a in x.split('\n')])
+	# 		g = lambda x: f(x).replace('(',' ').replace(')',' ').replace('\n',' ').replace('f =', ' ')
+	# 		res = np.array([np.fromstring(g(a['rotation']), sep=' ').reshape(3,3) for a in self._symm])
+	# 	else:
+	# 		raise NotImplementedError()
+	# 	return res
 
-	@property
-	def symm_name(self):
-		"""List of symmetry operation names"""
-		return list([a['name'] for a in self._symm])
+	# @property
+	# def symm_name(self):
+	# 	"""List of symmetry operation names"""
+	# 	return list([a['name'] for a in self._symm])
 
 	def validate(self):
 		if self.ibrav == None:

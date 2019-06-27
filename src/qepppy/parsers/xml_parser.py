@@ -3,6 +3,13 @@ import re
 # import xmlschema
 import numpy as np
 
+def dbg(*args, **kwargs):
+	return
+	print(*args, **kwargs)
+def dbg2(*args, **kwargs):
+	return
+	print(*args, **kwargs)
+
 class xmltodict():
 	@staticmethod
 	def parse(file, attrib=True):
@@ -45,13 +52,6 @@ class xmltodict():
 				res[tag] = new
 
 		return res
-
-def dbg(*args, **kwargs):
-	return
-	print(*args, **kwargs)
-def dbg2(*args, **kwargs):
-	return
-	print(*args, **kwargs)
 
 class Parser_xml():
 	def __init__(self, *args, xml=None, schema=None, xml_data={}, **kwargs):
@@ -196,10 +196,10 @@ class Parser_xml():
 	def typ_conversion(val, typ):
 		if typ == np.ndarray:
 			if isinstance(val, str):
-				val = list(filter(None, val.split(' ')))
+				val = list(filter(None, re.split(r'\s+', val)))
 			elif isinstance(val, list):
 				if len(val) > 0:
-					val = [list(filter(None, a.split(' '))) for a in val]
+					val = [list(filter(None, re.split(r'\s+', a))) for a in val]
 					val = [a[0] if len(a) == 1 else a for a in val]
 			try:
 				val = np.array(val, dtype=np.float)
@@ -223,37 +223,59 @@ class Parser_xml():
 
 		return val
 
+	def scale(self, val, fact):
+		if not fact is None:
+			if isinstance(fact, str):
+				fact = getattr(self, fact)
+			if len(val)>0 and isinstance(val.flatten()[0], (int,float,np.number)):
+				val *= fact
+
+		return val
+
 	def load_data(self):
 		for k,v in self.xml_data.items():
+			if not 'xml_search_string' in v:
+				continue
 			dbg("-"*40)
 			dbg(f"Setting attribute '{k}'")
-			mode    = v.get('mode',     'value')
-			typ     = v.get('typ',      None)
-			modifier = v.get('modifier', lambda x: x)
 
-			if not any(mode.startswith(a) for a in ['all','attr','value']):
-				raise ValueError(f"Mode = {mode}  is not a valid value.")
+			xml_string = v.get('xml_search_string')
+			modes      = v.get('mode',     'value')
+			typ        = v.get('typ',      None)
+			# modifier = v.get('modifier', lambda x: x)
+			scale_fact = v.get('xml_scale_fact', None)
+
+			params = k.split(',')
+			lmodes = modes.split(',')
+
+			if len(params) != len(lmodes):
+				raise ValueError("Must give the same number of assign names and modes!!")
+
+			if not all(any(mode.startswith(a) for a in ['all','attr','value']) for mode in lmodes):
+				raise ValueError(f"Mode = {modes}  is not a valid value.")
 
 			try:
-				val = self.find(v['xml_search_string'])
+				val = self.find(xml_string)
 			except Exception as e:
 				raise type(e)(f'While finding {k}:' + str(e))
 			dbg(f'Found value: {val}')
 
-			if mode.startswith('attr'):
-				attr = mode.split('=')[1]
-				val  = self.get_attr(val, attr)
-			elif mode.startswith('value'):
-				val  = self.get_value(val)
+			for num,(name,mode) in enumerate(zip(params,lmodes)):
+				if mode.startswith('attr'):
+					attr = mode.split('=')[1]
+					app  = self.get_attr(val, attr)
+				elif mode.startswith('value'):
+					app  = self.get_value(val)
 
-			dbg(f'pretyp:', val)
-			if not typ is None:
-				val = self.typ_conversion(val, typ)
+				dbg(f'pretyp:', app)
+				if not typ is None:
+					app = self.typ_conversion(app, typ)
 
-			val = modifier(val)
-			dbg(f'Assigning:  {val}')
+				# val = modifier(val)
+				app = self.scale(app, scale_fact)
+				dbg(f'Assigning:  {app}')
 
-			setattr(self, k, val)
+				setattr(self, name, app)
 
 	# def validate_schema(self):
 	# 	xmlschema.validate(self.xml, schema=self.schema)

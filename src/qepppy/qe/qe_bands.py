@@ -5,149 +5,25 @@ from ..parsers import Parser_xml, Parser_regex
 
 HA_to_eV = 27.21138602
 
-
-# data={
-# 	'_n_kpt':{
-# 		'xml_ptype':'text', 
-# 		'xml_search_string':'output//nks', 
-# 		'extra_name':None, 
-# 		'res_type':int,
-# 		'outfile_regex':r'number of k points[\s]*='
-# 		},
-# 	'_n_bnd':{
-# 		'xml_ptype':'attr', 
-# 		'xml_search_string':'output//ks_energies/eigenvalues', 
-# 		'extra_name':'size', 
-# 		'res_type':int,
-# 		'outfile_regex':r'number of Kohn-Sham states[\s]*='
-# 		},
-# 	'_n_el':{
-# 		'xml_ptype':'text', 
-# 		'xml_search_string':'output//nelec', 
-# 		'extra_name':None, 
-# 		'res_type':float,
-# 		'outfile_regex':r'number of electrons[\s]*='
-# 		},
-# 	'fermi':{
-# 		'xml_ptype':'text', 
-# 		'xml_search_string':'output//fermi_energy', 
-# 		'extra_name':None, 
-# 		'res_type':float,
-# 		'outfile_regex':r'the Fermi energy is'
-# 		},
-# 	'fermi_s':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//two_fermi_energies', 
-# 		'extra_name':'fermi', 
-# 		'res_type':list
-# 		},
-# 	'homo':{
-# 		'xml_ptype':'text', 
-# 		'xml_search_string':'output//highestOccupiedLevel', 
-# 		'extra_name':None, 
-# 		'res_type':float
-# 		},
-# 	'lsda':{
-# 		'xml_ptype':'text', 
-# 		'xml_search_string':'output//lsda', 
-# 		'extra_name':None, 
-# 		'res_type':bool
-# 		},
-# 	'noncolin':{
-# 		'xml_ptype':'text', 
-# 		'xml_search_string':'output//noncolin', 
-# 		'extra_name':None, 
-# 		'res_type':bool,
-# 		'outfile_regex':r'spin'
-# 		},
-# 	'_kpt':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//ks_energies/k_point', 
-# 		'extra_name':'kpt', 
-# 		'res_type':list,
-# 		'outfile_regex':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)'
-# 		},
-# 	'_app_egv':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//ks_energies/eigenvalues', 
-# 		'extra_name':'egv', 
-# 		'res_type':list,
-# 		'outfile_regex':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
-# 		'modifier':1/HA_to_eV
-# 		},
-# 	'_app_occ':{
-# 		'xml_ptype':'nodelist', 
-# 		'xml_search_string':'output//ks_energies/occupations', 
-# 		'extra_name':'occ', 
-# 		'res_type':list,
-# 		'outfile_regex':r'occupation numbers(?P<occ>[\s\d\.]+)'
-# 		},
-# 	'_E_tot':{
-# 		'xml_ptype':'text', 
-# 		'xml_search_string':'output//total_energy/etot', 
-# 		'extra_name':None, 
-# 		'res_type':float,
-# 		'outfile_regex':r'\!\s*total energy\s*='	
-# 		}
-# 	}
-
-data_regex={
+data ={
 	'_n_kpt':{
+		'xml_search_string':'output//nks',
 		'rstring':r'number of k points[\s]*=',
 		'typ':int,
 		},
 	'_n_bnd':{
+		'xml_search_string':'output//nbnd',
 		'rstring':r'number of Kohn-Sham states[\s]*=',
 		'typ':int,
 		},
 	'_n_el':{
-		'rstring':r'number of electrons[\s]*=',
-		'typ':int,
-		},
-	'fermi':{
-		'rstring':r'the Fermi energy is',
-		'typ':int,
-		},
-	'noncolin':{
-		'rstring':r'spin',
-		'typ':bool,
-		},
-	'kpt_cart,weight':{
-		'rstring':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)',
-		'typ':np.ndarray,
-		'max_num':'_n_kpt'
-		},
-	'egv':{
-		'rstring':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
-		'typ':np.ndarray,
-		'max_num':'_n_kpt',
-		# 'scale_fact':1/HA_to_eV,
-		},
-	'occ':{
-		'rstring':r'occupation numbers(?P<occ>[\s\d\.]+)',
-		'typ':np.ndarray,
-		},
-	'_E_tot':{
-		'rstring':r'\!\s*total energy\s*=',
-		'typ':int,	
-		}
-	}
-
-data_xml={
-	'_n_kpt':{
-		'xml_search_string':'output//nks',
-		'typ':int,
-		},
-	'_n_bnd':{
-		'xml_search_string':'output//nbnd',
-		'typ':int,
-		},
-	'_n_el':{
 		'xml_search_string':'output//nelec',
+		'rstring':r'number of electrons[\s]*=',
 		'typ':float,
 		},
 	'fermi':{
 		'xml_search_string':'output//fermi_energy',
+		'rstring':r'the Fermi energy is',
 		'typ':float,
 		},
 	'fermi_s':{ 
@@ -164,7 +40,13 @@ data_xml={
 		},
 	'noncolin':{
 		'xml_search_string':'output//magnetization/noncolin',
+		'rstring':r'spin',
 		'typ':bool,
+		},
+	'kpt_cart,weight':{
+		'rstring':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)',
+		'typ':np.ndarray,
+		'max_num':'_n_kpt'
 		},
 	'_weight':{
 		'xml_search_string':'output//ks_energies/k_point',
@@ -177,15 +59,20 @@ data_xml={
 		},
 	'egv':{
 		'xml_search_string':'output//ks_energies/eigenvalues', 
+		'rstring':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
 		'typ':np.ndarray,
-		'modifier':lambda x: x*HA_to_eV
+		'xml_scale_fact':HA_to_eV,
+		'max_num':'_n_kpt',
+		# 'modifier':lambda x: x*HA_to_eV
 		},
 	'occ':{
 		'xml_search_string':'output//ks_energies/occupations', 
+		'rstring':r'occupation numbers(?P<occ>[\s\d\.]+)',
 		'typ':np.ndarray
 		},
 	'_E_tot':{
 		'xml_search_string':'output//total_energy/etot',
+		'rstring':r'\!\s*total energy\s*=',
 		'typ':float,
 		}
 	}
@@ -207,8 +94,8 @@ class qe_bands(Parser_xml, Parser_regex):
 	__name__ = "bands"
 	e_units = HA_to_eV
 	def __init__(self, xml_data={}, regex_data={}, **kwargs):
-		xml_data.update(data_xml)
-		regex_data.update(data_regex)
+		xml_data.update(data)
+		regex_data.update(data)
 		super().__init__(xml_data=xml_data, regex_data=regex_data, **kwargs)
 
 	def __str__(self):
