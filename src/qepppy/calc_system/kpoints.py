@@ -164,7 +164,7 @@ class kpoints(lattice):
 		symm.append(np.diag([1]*3))
 		symm.append(np.diag([-1]*3))
 
-		ind, red_kpts = symm.reduce(new)
+		ind, red_kpts, _ = symm.reduce(new)
 
 		if return_all:
 			return ind, full_kpts, red_kpts
@@ -210,7 +210,7 @@ class kpoints(lattice):
 
 		self.full_kpt_cryst = kpts
 
-		ind, kpts = self.symmetries.reduce(kpts)
+		ind, kpts, _ = self.symmetries.reduce(kpts)
 		self.irrep_mapping  = ind
 
 		unique, counts = np.unique(ind, return_counts=True)
