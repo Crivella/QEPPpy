@@ -41,7 +41,7 @@ class kpoints(lattice):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape':('n_kpt',),
-		'conv_func':lambda x: np.array(x, dtype=np.float)/np.array(x, dtype=np.float).sum(),
+		'conv_func':lambda x: np.array(x, dtype=np.float),#/np.array(x, dtype=np.float).sum(),
 		'doc':"""List of k-points weights."""
 		}
 	kpt_mesh={
@@ -89,7 +89,10 @@ class kpoints(lattice):
 
 	@property
 	def n_kpt(self):
-		return len(self.kpt_cart)
+		if hasattr(self, '_n_kpt'):
+			return self._n_kpt
+		else:
+			return len(self.kpt_cart)
 
 	def generate_kpath(
 		self, 
@@ -213,7 +216,20 @@ class kpoints(lattice):
 		unique, counts = np.unique(ind, return_counts=True)
 		weight = counts[np.argsort(unique)]
 
+		weight = self._normalize_weight(weight, 1)
+
 		return kpts, weight
+
+	@staticmethod
+	def _normalize_weight(weight, norm=1):
+		weight = np.array(weight, dtype=np.float)
+
+		return norm * weight / weight.sum()
+
+	@set_self('weight')
+	def normalize_weight(self, norm=1):
+		return self._normalize_weight(self.weight, norm=norm)
+
 
 
 	@set_self('kpt_cart,weight')
@@ -242,7 +258,12 @@ class kpoints(lattice):
 			print(f"# Cropping k-points around {center} with radius {radius}")
 			print(f"# Cropped {len(w)} k-points out of {self.n_kpt}")
 
-		return self.kpt_cart[w], self.weight[w]/np.sum(self.weight[w])
+		res_kpt    = self.kpt_cart[w]
+		res_weight = self.weight[w]
+
+		res_weight = self._normalize_weight(res_weight)
+
+		return res_kpt, res_weight
 
 	def _kpt_plot(self, ax, edges_name=[]):
 		self.draw_Wigner_Seitz(ax)

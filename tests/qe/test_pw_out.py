@@ -14,10 +14,10 @@ cmp_list = [
 	'ibrav', 'alat',
 	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 
 	'atoms_typ', 'unique_atoms_mass', # 'atoms_pseudo',
-	'n_kpt', 'kpt_cart', #'kpt_cryst', 'weight',
-	# 'egv',
+	'n_kpt', 'kpt_cart', 'kpt_cryst', 'weight',
+	'egv',
 	# 'symm_matrix', 'symm_name',
-	# 'E_tot',
+	'E_tot',
 	'cb', 'vb',
 	# 'fft_dense_grid', 'fft_smooth_grid',
 	]
@@ -85,8 +85,8 @@ if __name__ == '__main__':
 	To be run with a stable pre-tested version.
 	"""
 	for out_name in out_files:
-		xml_name = out_name + '.xml'
-		pkl_name = out_name + '.pickle'
+		xml_name = os.path.join(test_dir, out_name + '.xml')
+		pkl_name = os.path.join(test_dir, out_name + '.pickle')
 
 		xml = qepppy.qe.pw_out(xml=xml_name)
 

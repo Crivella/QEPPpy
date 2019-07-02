@@ -48,7 +48,7 @@ data ={
 		'typ':np.ndarray,
 		'max_num':'_n_kpt'
 		},
-	'_weight':{
+	'weight':{
 		'xml_search_string':'output//ks_energies/k_point',
 		'mode':'attr=weight',
 		'typ':np.ndarray
@@ -62,8 +62,7 @@ data ={
 		'rstring':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
 		'typ':np.ndarray,
 		'xml_scale_fact':HA_to_eV,
-		'max_num':'_n_kpt',
-		# 'modifier':lambda x: x*HA_to_eV
+		'max_num':'-_n_kpt',
 		},
 	'occ':{
 		'xml_search_string':'output//ks_energies/occupations', 

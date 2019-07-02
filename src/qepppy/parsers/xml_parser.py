@@ -3,12 +3,12 @@ import re
 # import xmlschema
 import numpy as np
 
-def dbg(*args, **kwargs):
-	return
-	print(*args, **kwargs)
-def dbg2(*args, **kwargs):
-	return
-	print(*args, **kwargs)
+# def dbg(*args, **kwargs):
+# 	return
+# 	print(*args, **kwargs)
+# def dbg2(*args, **kwargs):
+# 	return
+# 	print(*args, **kwargs)
 
 class xmltodict():
 	@staticmethod
@@ -75,22 +75,22 @@ class Parser_xml():
 			self.load_data()
 
 	def _find_xpath(self, to_find, dct={}, deep=False):
-		dbg2("    ", to_find, str(dct)[:80])
+		# dbg2("    ", to_find, str(dct)[:80])
 		if to_find == '':
 			return dct
 		if not isinstance(dct, list):
 			dct = [dct,]
 		res = []
 		for elem in dct:
-			dbg2('       deep:', deep)
-			dbg2('       elem: ', str(elem)[:80])
+			# dbg2('       deep:', deep)
+			# dbg2('       elem: ', str(elem)[:80])
 			if not isinstance(elem, dict):
-				dbg2(str(elem)[:80])
+				# dbg2(str(elem)[:80])
 				raise ValueError("Unexpected behavior. All elements should be dicts.")
 
-			dbg2('       keys: ', elem.keys())
+			# dbg2('       keys: ', elem.keys())
 			if to_find in elem:
-				dbg2("         FOUND!!!!!", str(elem[to_find])[:80])
+				# dbg2("         FOUND!!!!!", str(elem[to_find])[:80])
 				app = elem[to_find]
 				if isinstance(app, list):
 					res += app
@@ -236,8 +236,8 @@ class Parser_xml():
 		for k,v in self.xml_data.items():
 			if not 'xml_search_string' in v:
 				continue
-			dbg("-"*40)
-			dbg(f"Setting attribute '{k}'")
+			# dbg("-"*40)
+			# dbg(f"Setting attribute '{k}'")
 
 			xml_string = v.get('xml_search_string')
 			modes      = v.get('mode',     'value')
@@ -258,7 +258,7 @@ class Parser_xml():
 				val = self.find(xml_string)
 			except Exception as e:
 				raise type(e)(f'While finding {k}:' + str(e))
-			dbg(f'Found value: {val}')
+			# dbg(f'Found value: {val}')
 
 			for num,(name,mode) in enumerate(zip(params,lmodes)):
 				if mode.startswith('attr'):
@@ -267,13 +267,13 @@ class Parser_xml():
 				elif mode.startswith('value'):
 					app  = self.get_value(val)
 
-				dbg(f'pretyp:', app)
+				# dbg(f'pretyp:', app)
 				if not typ is None:
 					app = self.typ_conversion(app, typ)
 
 				# val = modifier(val)
 				app = self.scale(app, scale_fact)
-				dbg(f'Assigning:  {app}')
+				# dbg(f'Assigning:  {app}')
 
 				setattr(self, name, app)
 
