@@ -143,6 +143,29 @@ class kpoints(lattice):
 
 		return path
 
+	def reindex_unkown_kpoints(self, unk, mode='crystal', thr=1e-4):
+		from scipy.spatial import KDTree
+
+		if mode == 'crystal':
+			kpt = self.kpt_cryst
+		elif mode == 'cart':
+			kpt = self.kpt_cart
+		tree = KDTree(kpt)
+
+		ind = tree.query_ball_point(unk, thr)
+
+		res = []
+		for n,p in enumerate(ind):
+			l = len(p)
+			if l == 0:
+				raise ValueError(f"No correspondence found for point {unk[n]}")
+			if l > 1:
+				raise ValueError(f"Multiple points correspond to {unk[n]}, try reducing the threshold.")
+			res.append(p[0])
+
+		return res
+
+
 	def generate_unfolding_path(self, SC_rec, mode='cryst', return_all=False):
 		from .symmetry import symmetries
 
