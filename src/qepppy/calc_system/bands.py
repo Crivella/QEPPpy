@@ -85,11 +85,16 @@ class bands(kpoints):
 		deltaE = kwargs.pop('deltaE', 0.05)
 		N      = int((Emax - Emin)/deltaE + 1)
 
-
 		PC_rec   = self.recipr
 		PC_path  = self.kpt_cryst
 		unf      = self.generate_unfolding_path(SC_rec, return_all=True)
 		ri, SC_path, SC_path_red = unf
+
+		# calc_kpt = np.array([a.kpt for a in wavefunctions])
+		# print(SC_path.shape, SC_path_red.shape)
+		# for n in range(len(calc_kpt)):
+		# 	print(calc_kpt[n]*20.42/6.2831, '   ', SC_path_red[n], '  ->  ', calc_kpt[n]*20.42/6.2831 - SC_path_red[n])
+		# exit()
 
 		max_g       = np.max(np.abs(wavefunctions[0].gvect)) // 2 + 3
 		l           = range(-max_g, max_g+1)

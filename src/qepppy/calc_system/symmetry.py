@@ -171,7 +171,7 @@ class symmetries(list):
 			res_p = new_p
 			res_i = new_i[res_i]
 			# print(len(res_i))
-			raise NotImplementedError("NEED FIX. should use res_i nad not new_i !!!!!!!!!!!!!!!")
+			# raise NotImplementedError("NEED FIX. should use res_i nad not new_i !!!!!!!!!!!!!!!")
 			np.set_printoptions(linewidth=2000, formatter={'int':lambda x:f'{x:3d}'})
 			# print()
 			# print('-'*50)
