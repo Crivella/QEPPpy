@@ -218,7 +218,7 @@ class structure(atm, latt):
 
 	def plot_mpl(
 		self, 
-		*args, **kwargs,
+		*args, **kwargs
 		):
 		"""
 		Plot the crystal cell structure.

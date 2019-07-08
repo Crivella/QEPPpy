@@ -6,7 +6,7 @@ nl_param = r'(?P<param>[^\s\(\!]+)(\((?P<vec>[\+\d, ]+)\))?'
 nl_value = r'(?P<value>('                                                             + \
 		       r'((\'(?P<strip_single>[^\']*)\')|(\"(?P<strip_double>[^\"]*)\"))|'    + \
 		       r'(\.true\.)|(\.false\.)|'                                             + \
-		       r'([\+\-\.\d \t,]+)'                                                   + \
+		       r'([\+\-\.\deEdD \t,]+)'                                                   + \
 		     r'))'
 nl_term  = r'(?P<term>[ \t]*,?[ \t]*(?P<inline_comment>!.*\n)?)'
 nl_comm  = r'(?P<comment>\s*!.*\n)'
@@ -144,9 +144,9 @@ class fortran_namelist(OrderedDict):
 			else:
 				content = src.read()
 
-			app = [a.groupdict() for a in re.finditer(namelist_re, content)][0]
+			app = [a.groupdict() for a in re.finditer(namelist_re, content, re.IGNORECASE)][0]
 
-		r = [a.groupdict() for a in re.finditer(nl_body_line, app['body'])]
+		r = [a.groupdict() for a in re.finditer(nl_body_line, app['body'], re.IGNORECASE)]
 		self.name = app['name'].lower()
 		for a in r:
 			p = a['param']
@@ -277,15 +277,19 @@ class fortran_namelist_collection(OrderedDict):
 	def parse(self, src):
 		content = src.read()
 
-		mid = [a.groupdict() for a in re.finditer(namelist_re, content)]
+		mid = [a.groupdict() for a in re.finditer(namelist_re, content, re.IGNORECASE)]
 
+		# print('CONTENT:', content)
+		# print('-------------------\n', mid, '\n---------------------')
 		for elem in mid:
+			# print(elem)
 			new =  fortran_namelist()
 			new.parse(elem)
 
 			self[elem['name']] = new
 
 	def deep_find(self, pattern, up=None):
+		# print("SEARCHING FOR:  ", pattern, up)
 		if pattern in self:
 			return super().__getitem__(pattern.lower())
 		for elem in self.values():

@@ -8,14 +8,66 @@ tf90_to_py = {
 	'CHARACTER': str
 	}
 
-tf90_to_np = {
-	'INTEGER': 'i4',
-	'REAL': 'f8',
-	'LOGICAL': 'bool',
-	'CHARACTER': 'U64'
-	}
+# tf90_to_np = {
+# 	'INTEGER': 'i4',
+# 	'REAL': 'f8',
+# 	'LOGICAL': 'bool',
+# 	'CHARACTER': 'U64'
+# 	}
 
-class qe_namelists(fnc):
+def key_getter(key, item=None, attr=None):
+	def getter(cls):
+		if not item is None:
+			return cls[item]
+		elif not attr is None:
+			return getattr(cls, attr)
+		else:
+			raise ValueError(f"Cannot retrieve {key}")
+
+	return getter
+
+def key_setter(key, item=None, attr=None):
+	def setter(cls, key, value):
+		if not item is None:
+			cls[item] = value
+		elif not attr is None:
+			setattr(cls, attr, value)
+		else:
+			raise ValueError(f"Cannot set {key}")
+
+	return setter
+
+class VariableLinker(type):
+	def __new__(cls, clsname, base, dct):
+		new_dct = {}
+		for k,v in dct.items():
+			new_dct[k] = v
+			if not isinstance(k, str) or not k.startswith("_link__") or not isinstance(v, dict):
+				continue
+
+			k       = k[7:]
+			hk      = "_" + k
+			attrib  = v.pop('attrib',    None)
+			item    = v.pop('item',      None)
+
+			# if not (attrib or item):
+			# 	raise ValueError("Must link the variable to either an attibute or an item.")
+			if attrib and item:
+				raise ValueError("Must link the variable to only an attibute or an item, not both.")
+
+			getter = key_getter(hk, item, attrib)
+			setter = key_setter(hk, item, attrib)
+
+
+			new_dct[k] = property(getter, setter)
+
+		res = super().__new__(cls, clsname, base, new_dct)
+
+		return res
+
+class qe_namelists(fnc, metaclass=VariableLinker):
+	_link__n_atoms={'item':'SYSTEM/nat'}
+
 	def __init__(self, tpl=None, **kwargs):
 		if tpl:
 			self.load_templ(tpl)
@@ -41,58 +93,10 @@ class qe_namelists(fnc):
 		import ast
 		self._templ = ast.literal_eval(file)
 
-	# def validate(self):
-	# 	for name,nl in self.items():
-	# 		name = name.upper()
-	# 		if not name in self.templ:
-	# 			raise ValidateError("Invalid namelist '{}'.".format(name))
-	# 		for k,v in nl.items():
-	# 			if not k in self.templ[name]:
-	# 				raise ValidateError("\n\tIn namelist '{}' invalid param '{}'.".format(name,k))
-	# 			self._validate_tmpl_item(name, k, v)
-
-	# 	self._validate_default_()
-
-	# def _validate_default_(self):
-	# 	for name in self.templ['nl']:
-	# 		for elem,v in self.templ[name].items():
-	# 			if v['v'] == '***':
-	# 				raise ValidateError("\n\tMandatory param '{}/{}' is not set.".format(name, elem))
-
-	# def _validate_vec_(self, value, typ, lim):
-	# 	inf = lim[0]
-	# 	sup = lim[1]
-	# 	if isinstance(sup, str):
-	# 		sup = self.deep_find(sup)
-
-	# 	if isinstance(value, (int,float)):
-	# 		value = [value,]
-	# 	if len(value) <= sup-inf+1:
-	# 		return [tf90_to_py[typ](a) if not a is None else None for a in value]
-	# 	else:
-	# 		raise ValidateError("Too many elements.")
-
-	# def _validate_tmpl_item(self, namelist, param, value):
-	# 	if namelist is None:
-	# 		for n in self.templ['namelist']:
-	# 			if param in self.templ[n]:
-	# 				namelist = n
-	# 				break
-
-	# 	v = self.templ[namelist][param]
-
-	# 	typ    = v['t']
-	# 	possib = v['c']
-	# 	vec    = v['vec']
-
-	# 	if not vec is None:
-	# 		try:
-	# 			v['v'] = self._validate_vec_(value, typ, vec)
-	# 		except Exception as e:
-	# 			raise ValidateError("\n\t{}/{}:  invalid vec value '{}'. ".format(namelist, param, value) + str(e))
-	# 	else:
-	# 		value = tf90_to_py[typ](value)
-	# 		if possib and all(not value in a for a in possib) and value != '':
-	# 			raise ValidateError("\n\t{}/{}: '{}' not among possibilities {}".format(namelist, param, value, possib))
-	# 		v['v'] = value
-	
+from ...calc_system import system
+from ..qe_structure import qe_structure as structure
+from ...meta.property_creator import PropertyCreator
+class meta_app(PropertyCreator, VariableLinker):
+	pass
+class pw_in(qe_namelists, structure, system, metaclass=meta_app):
+	pass
