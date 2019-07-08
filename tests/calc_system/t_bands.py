@@ -12,7 +12,7 @@ class Test_bands(Test_kpoints):
 		from qepppy.qe import pw_out
 		cls     = cls_edges
 		file    = os.path.join(cwd, '../qe/test_files', 'bands_unf._out')
-		calc    = pw_out(outfile=file)
+		calc    = pw_out(file=file)
 		cls.egv = calc.egv
 
 		x,y     = cls.band_unfolding_noproject(cls.recipr/2.)

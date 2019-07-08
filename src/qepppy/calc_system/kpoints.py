@@ -143,6 +143,29 @@ class kpoints(lattice):
 
 		return path
 
+	def reindex_unkown_kpoints(self, unk, mode='crystal', thr=1e-4):
+		from scipy.spatial import KDTree
+
+		if mode == 'crystal':
+			kpt = self.kpt_cryst
+		elif mode == 'cart':
+			kpt = self.kpt_cart
+		tree = KDTree(kpt)
+
+		ind = tree.query_ball_point(unk, thr)
+
+		res = []
+		for n,p in enumerate(ind):
+			l = len(p)
+			if l == 0:
+				raise ValueError(f"No correspondence found for point {unk[n]}")
+			if l > 1:
+				raise ValueError(f"Multiple points correspond to {unk[n]}, try reducing the threshold.")
+			res.append(p[0])
+
+		return res
+
+
 	def generate_unfolding_path(self, SC_rec, mode='cryst', return_all=False):
 		from .symmetry import symmetries
 
@@ -164,7 +187,7 @@ class kpoints(lattice):
 		symm.append(np.diag([1]*3))
 		symm.append(np.diag([-1]*3))
 
-		ind, red_kpts = symm.reduce(new)
+		ind, red_kpts, _ = symm.reduce(new)
 
 		if return_all:
 			return ind, full_kpts, red_kpts
@@ -194,7 +217,7 @@ class kpoints(lattice):
 		s1,s2,s3   = shift
 
 		l1,l2,l3 = [
-			(
+			list(
 				(n+shift[i])/d for n,d in 
 					(
 						u(r+1,q) for r in range(q)
@@ -202,15 +225,21 @@ class kpoints(lattice):
 			) for i,q in enumerate(mesh)
 			]
 
-
 		kpts = np.array(list(product(l1,l2,l3)))
+		# kpts = kpts.dot(self.recipr)
 
 		# from ase.spacegroup import Spacegroup
 		# print(Spacegroup(227).unique_sites(kpts))
 
+		kpts, _ = self.translate_coord_into_FBZ(kpts, mode='cryst', num=2)
 		self.full_kpt_cryst = kpts
 
-		ind, kpts = self.symmetries.reduce(kpts)
+		if self.symmetries == [] or self.symmetries is None:
+			try:
+				self.get_symmetries()
+			except:
+				pass
+		ind, kpts, _ = self.symmetries.reduce(kpts)
 		self.irrep_mapping  = ind
 
 		unique, counts = np.unique(ind, return_counts=True)
@@ -268,7 +297,7 @@ class kpoints(lattice):
 	def _kpt_plot(self, ax, edges_name=[]):
 		self.draw_Wigner_Seitz(ax)
 		ax.scatter(*self.kpt_cart.T)
-		if not self.kpt_edges is None:
+		if not self.kpt_edges is None and self.kpt_edges != []:
 			ax.scatter(
 				*self.kpt_edges[:,:3].dot(self.recipr).T, 
 				s=10, color='r'

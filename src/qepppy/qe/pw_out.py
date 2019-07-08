@@ -19,9 +19,28 @@ class pw_out(structure, bands, system):
 	 - xml     = Name of the data-file*.xml to parse
 	"""
 	__name__ = "pw_out"
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+	def __init__(self, *args, xml=None, **kwargs):
+		self.set_data_file(xml)
+		super().__init__(*args, xml=self.xml, **kwargs)
 		self.validate()
+
+	def set_data_file(self, xml):
+		if xml is None:
+			self.xml = xml
+			return
+		if os.path.isfile(xml):
+			self.data_path = os.path.dirname(os.path.realpath(xml))
+		elif os.path.isdir(xml):
+			file = os.path.join(xml, "data-file-schema.xml")
+			if not os.path.isfile(file):
+				raise FileNotFoundError(file)
+			self.data_path = xml
+			self.xml       = file
+		else:
+			raise FileNotFoundError("The file/folder {} does not exist".format(xml))
+		if "data-file-schema.xml" in self.xml:
+			self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
+			self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
 
 	@property
 	# @store_property
@@ -29,7 +48,7 @@ class pw_out(structure, bands, system):
 		"""Iterable. Every element is of type <class wavefnc> and contains the 
 		data from the wafeunction binaries."""
 		if not hasattr(self, 'prefix'):
-			return None
+			return []
 		return tmp(self.prefix, path=self.data_path)
 
 	@property

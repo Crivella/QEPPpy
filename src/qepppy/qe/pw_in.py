@@ -48,7 +48,7 @@ class pw_in(inp_f, structure, system):
 		except:
 			return []
 		coord = np.array(list(zip(x, y, z))) * self._atom_p
-		if self._app_atom_p == 'cryst':
+		if self._app_atom_p == 'crystal':
 			coord = coord.dot(self.direct)
 		return coord
 
@@ -59,7 +59,7 @@ class pw_in(inp_f, structure, system):
 		self._check_atoms_len(value)
 		self._set_atoms_coord(value)
 
-		self._app_atom_p = 'alat'
+		# self._app_atom_p = 'bohr'
 
 	@property
 	def _atoms_coord_cryst(self):
