@@ -102,7 +102,7 @@ class lattice(metaclass=PropertyCreator):
 		Params:
 		 - coord: np.array of shape (-1,3) containing the coordinates
 		          of the k-points to translate.
-		 - mode: 'crystal'/'cart' Specify the basis for the coordinates.
+		 - mode: 'cryst'/'cart' Specify the basis for the coordinates.
 		 - num:  integer that specify the maximum number of cells on
 		         which to test.
 		"""

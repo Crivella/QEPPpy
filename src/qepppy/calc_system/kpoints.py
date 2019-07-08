@@ -226,13 +226,15 @@ class kpoints(lattice):
 			]
 
 		kpts = np.array(list(product(l1,l2,l3)))
+		# kpts = kpts.dot(self.recipr)
 
 		# from ase.spacegroup import Spacegroup
 		# print(Spacegroup(227).unique_sites(kpts))
 
+		kpts, _ = self.translate_coord_into_FBZ(kpts, mode='cryst', num=2)
 		self.full_kpt_cryst = kpts
 
-		if self.symmetries == []:
+		if self.symmetries == [] or self.symmetries is None:
 			try:
 				self.get_symmetries()
 			except:
@@ -295,7 +297,7 @@ class kpoints(lattice):
 	def _kpt_plot(self, ax, edges_name=[]):
 		self.draw_Wigner_Seitz(ax)
 		ax.scatter(*self.kpt_cart.T)
-		if not self.kpt_edges is None:
+		if not self.kpt_edges is None and self.kpt_edges != []:
 			ax.scatter(
 				*self.kpt_edges[:,:3].dot(self.recipr).T, 
 				s=10, color='r'
