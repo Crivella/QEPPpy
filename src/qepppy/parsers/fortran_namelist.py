@@ -1,5 +1,6 @@
 import re
 from collections import OrderedDict
+from .._decorators import file_name_handle
 
 nl_param = r'(?P<param>[^\s\(\!]+)(\((?P<vec>[\+\d, ]+)\))?'
 nl_value = r'(?P<value>('                                                             + \
@@ -75,7 +76,7 @@ class fortran_namelist(OrderedDict):
 	def __getitem__(self, key):
 		if not isinstance(key, str):
 			raise ValueError("Key for {} must be of string type.".format(self))
-		return super().__getitem__(key.lower())
+		return self.deep_find(key.lower())
 
 	def __setitem__(self, key, value):
 		if not isinstance(key, str):
@@ -158,6 +159,8 @@ class fortran_namelist(OrderedDict):
 
 
 	def deep_find(self, pattern, up=None):
+		if pattern in self:
+			return super().__getitem__(pattern)
 		tof_nl, tof_param, n  = _tokenize_pattern_(pattern, up)
 		if tof_nl is None or tof_nl.lower() == self.name:
 			res =  self[tof_param]
@@ -217,7 +220,7 @@ class fortran_namelist(OrderedDict):
 
 class fortran_namelist_collection(OrderedDict):
 	def __init__(self, src=None, input_data={}):
-		if isinstance(src, str):
+		if not src is None:
 			self.parse(src)
 		# super().__init__(**kwargs)
 		for k,v in input_data.items():
@@ -227,7 +230,8 @@ class fortran_namelist_collection(OrderedDict):
 	def __getitem__(self, key):
 		if not isinstance(key, str):
 			raise ValueError("Key for {} must be of string type.".format(self))
-		return super().__getitem__(key.lower())
+		return self.deep_find(key.lower())
+		# return super().__getitem__(key.lower())
 
 	def __setitem__(self, key, value):
 		if not isinstance(value, fortran_namelist):
@@ -269,12 +273,9 @@ class fortran_namelist_collection(OrderedDict):
 	def max_length_value(self):
 		return max(a.max_length_value() for a in self.values())
 
+	@file_name_handle('r')
 	def parse(self, src):
-		if isinstance(src, str):
-			with open(src) as f:
-				content = f.read()
-		else:
-			content = src.read()
+		content = src.read()
 
 		mid = [a.groupdict() for a in re.finditer(namelist_re, content)]
 
@@ -285,6 +286,8 @@ class fortran_namelist_collection(OrderedDict):
 			self[elem['name']] = new
 
 	def deep_find(self, pattern, up=None):
+		if pattern in self:
+			return super().__getitem__(pattern.lower())
 		for elem in self.values():
 			try:
 				return elem.deep_find(pattern, up)
