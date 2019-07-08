@@ -25,6 +25,9 @@ class pw_out(structure, bands, system):
 		self.validate()
 
 	def set_data_file(self, xml):
+		if xml is None:
+			self.xml = xml
+			return
 		if os.path.isfile(xml):
 			self.data_path = os.path.dirname(os.path.realpath(xml))
 		elif os.path.isdir(xml):
@@ -45,7 +48,7 @@ class pw_out(structure, bands, system):
 		"""Iterable. Every element is of type <class wavefnc> and contains the 
 		data from the wafeunction binaries."""
 		if not hasattr(self, 'prefix'):
-			return None
+			return []
 		return tmp(self.prefix, path=self.data_path)
 
 	@property
