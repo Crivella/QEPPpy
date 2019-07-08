@@ -217,14 +217,13 @@ class kpoints(lattice):
 		s1,s2,s3   = shift
 
 		l1,l2,l3 = [
-			(
+			list(
 				(n+shift[i])/d for n,d in 
 					(
 						u(r+1,q) for r in range(q)
 					)
 			) for i,q in enumerate(mesh)
 			]
-
 
 		kpts = np.array(list(product(l1,l2,l3)))
 
@@ -233,6 +232,11 @@ class kpoints(lattice):
 
 		self.full_kpt_cryst = kpts
 
+		if self.symmetries == []:
+			try:
+				self.get_symmetries()
+			except:
+				pass
 		ind, kpts, _ = self.symmetries.reduce(kpts)
 		self.irrep_mapping  = ind
 

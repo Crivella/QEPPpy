@@ -48,7 +48,7 @@ class pw_in(inp_f, structure, system):
 		except:
 			return []
 		coord = np.array(list(zip(x, y, z))) * self._atom_p
-		if self._app_atom_p == 'cryst':
+		if self._app_atom_p == 'crystal':
 			coord = coord.dot(self.direct)
 		return coord
 
