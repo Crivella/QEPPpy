@@ -233,18 +233,18 @@ class bands(kpoints):
 			'max':(np.argmax(app),app.max())
 			}
 
-	@set_self('egv,occ')
-	def kpt_crop(
-		self,
-		center=(0,0,0), radius=np.inf, **kwargs
-		):
-		center = np.array(center).reshape(3)
-		norms  = np.linalg.norm(self.kpt_cart - center, axis=1)
-		w      = np.where(norms <= radius)[0]
+	# @set_self('egv,occ')
+	# def kpt_crop(
+	# 	self,
+	# 	center=(0,0,0), radius=np.inf, **kwargs
+	# 	):
+	# 	center = np.array(center).reshape(3)
+	# 	norms  = np.linalg.norm(self.kpt_cart - center, axis=1)
+	# 	w      = np.where(norms <= radius)[0]
 
-		super().kpt_crop(center=center, radius=radius, **kwargs)
+	# 	super().kpt_crop(center=center, radius=radius, **kwargs)
 
-		return self.egv[w], self.occ[w]
+	# 	return self.egv[w], self.occ[w]
 
 	@IO_stdout_redirect()
 	def smallest_gap(self,
