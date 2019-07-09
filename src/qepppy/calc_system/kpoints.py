@@ -220,8 +220,8 @@ class kpoints(lattice):
 		if shift is None:
 			shift = self.kpt_shift
 
-		self.kpt_mesh  = mesh
-		self.kpt_shift = shift
+		self.kpt_mesh  = tuple(mesh)
+		self.kpt_shift = tuple(shift)
 		self.kpt_edges = self.kpt_mode = None
 
 		s1,s2,s3   = shift

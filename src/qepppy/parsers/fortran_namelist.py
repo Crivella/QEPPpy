@@ -220,13 +220,15 @@ class fortran_namelist(OrderedDict):
 
 
 class fortran_namelist_collection(OrderedDict):
-	def __init__(self, src=None, input_data={}):
+	def __init__(self, *args, src=None, input_data={}, **kwargs):
 		if not src is None:
 			self.parse(src)
 		# super().__init__(**kwargs)
 		for k,v in input_data.items():
 			new = fortran_namelist(v, name=k)
 			self[k] = new
+
+		super().__init__(*args, **kwargs)
 
 	def __getitem__(self, key):
 		if not isinstance(key, str):

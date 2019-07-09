@@ -151,17 +151,17 @@ class qe_structure(Parser_xml, Parser_regex):
 	def _format_atom_spec_(self):
 		msg = "ATOMIC_SPECIES\n"
 		for t,m,p in zip(self.unique_atoms_typ, self.unique_atoms_mass, self.unique_atoms_pseudo):
-			msg += "{:6}{:12.4f}  {}".format(t, m, p)
+			msg += "  {:6}{:12.4f}  {}".format(t, m, p)
 			msg += "\n"
 		msg += "\n\n"
 		return msg
 
 	def _format_atom_pos_(self):
-		msg = "ATOMIC_POSITIONS\n"
-		for coord,name in zip(self.atoms_coord_cart, self.atoms_typ):
-			msg += "{:4}  ".format(name)
+		msg = "ATOMIC_POSITIONS {crystal}\n"
+		for coord,name in zip(self.atoms_coord_cryst, self.atoms_typ):
+			msg += "  {}  ".format(name)
 			for c in coord:
-				msg += "{:10.5f}".format(c)
+				msg += "{:14.9f}".format(c)
 			msg += "\n"
 		msg += "\n"
 		return msg

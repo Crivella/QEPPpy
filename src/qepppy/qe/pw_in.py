@@ -16,13 +16,34 @@ class pw_in(qe_input, structure, system):
 	_link_test={'item':'SYSTEM/nat, SYSTEM/ntyp'}
 
 	def __init__(self, *args, input_file=None, **kwargs):
-		if input_file:
-			kwargs['src'] = input_file
-		super().__init__(*args, **kwargs)
+		input_file = kwargs.pop('src', input_file)
+
+		fnc.__init__(self, *args, src=input_file, **kwargs)
+		kwargs.pop('input_data', None)
+		structure.__init__(self, *args, **kwargs)
 
 	def __str__(self):
 		res  = fnc.__str__(self)
 		res += structure.__str__(self)
+
+		res += '\n\nK_POINTS'
+		if self.kpt_mesh != ():
+			res += ' {automatic}\n'
+			res += '   {0[0]:d} {0[1]:d} {0[2]:d}    {1[0]:d} {1[1]:d} {1[2]:d}'.format(
+				self.kpt_mesh, self.kpt_shift)
+		elif self.kpt_edges != []:
+			if 'cryst' in self.kpt_mode:
+				res += ' {crystal_b}\n'
+			else:
+				res += ' {tpiba_b}\n'
+			for e in self.kpt_edges:
+				res += '  {0[0]:9.6f} {0[1]:9.6f} {0[2]:9.6f}    {0[3]:.0f}\n'.format(e)
+		else:
+			res += '\n  {:d}\n'.format(self.n_kpt)
+			for k,w in zip(self.kpt_cart, self.kpt_weight):
+				res += '  {0[0]:9.6f} {0[1]:9.6f} {0[2]:9.6f}    {1:7.4f}\n'.format(k,w)
+
+
 		return res
 
 	def __getattr__(self, key):
