@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 from re      import split
 from qepppy._decorators import numpy_plot_opt, numpy_save_opt, join_doc
 
@@ -43,6 +42,7 @@ def _sum_pdos_(atom, path=".", deg=0.0, **kwargs):
 	return res
 
 def sum_pdos(atoms="", path=".", deg=0.0, **kwargs):
+	import matplotlib.pyplot as plt
 	if not atoms:
 		raise ValueError("Passing empty name for 'atoms'")
 
