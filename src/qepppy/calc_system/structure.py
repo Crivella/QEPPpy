@@ -243,7 +243,7 @@ class structure(atm, latt):
 		fig = plt.figure()
 		ax = fig.add_subplot(111, projection='3d')
 
-		self._plot(ax, *args, **kwargs)
+		self._plot_mpl(ax, *args, **kwargs)
 
 		plt.show()
 
