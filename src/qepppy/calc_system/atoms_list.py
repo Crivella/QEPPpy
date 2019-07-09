@@ -1,5 +1,5 @@
 import numpy as np
-from ..meta.property_creator import PropertyCreator
+from ..meta import PropertyCreator
 from ..graphics import mpl_graphics as cg
 
 import json
@@ -126,10 +126,16 @@ class atoms_list(metaclass=PropertyCreator):
 
 	@property
 	def n_atoms(self):
+		try:
+			res = len(self.atoms_coord_cart)
+		except:
+			res = None
 		if hasattr(self, '_n_atoms'):
-			return self._n_atoms
-		else:
-			return len(self.atoms_coord_cart)
+			try:
+				res = self._n_atoms
+			except:
+				self._n_atoms = res
+		return res
 
 	@n_atoms.setter
 	def n_atoms(self, value):
@@ -137,10 +143,15 @@ class atoms_list(metaclass=PropertyCreator):
 
 	@property
 	def n_types(self):
-		if hasattr(self, '_n_typess'):
-			res = self._n_types
-		else:
+		try:
 			res = len(self.unique_atoms_typ)
+		except:
+			res = None
+		if hasattr(self, '_n_types'):
+			try:
+				res = self._n_types
+			except:
+				self._n_types = res
 		return res
 
 	@n_types.setter

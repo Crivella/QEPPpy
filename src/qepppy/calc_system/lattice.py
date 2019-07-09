@@ -1,5 +1,5 @@
 import numpy as np
-from ..meta.property_creator import PropertyCreator
+from ..meta import PropertyCreator
 from ..graphics import mpl_graphics as mplg
 from .. import utils
 

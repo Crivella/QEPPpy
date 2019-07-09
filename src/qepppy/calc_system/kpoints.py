@@ -37,7 +37,7 @@ class kpoints(lattice):
 		'post_set_func':cryst_to_cart,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
 		}
-	weight={
+	kpt_weight={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape':('n_kpt',),
@@ -68,7 +68,7 @@ class kpoints(lattice):
 		'doc':"""k-path where every i-th row is the 3 coordinates + the number of point
 		between the i-th and i-th + 1  k-points."""
 		}
-	mode={
+	kpt_mode={
 		'typ':(str,),
 		'allowed':['cart','cryst', 'crystal', 'cartesian'],
 		'doc':"""Set mode for the k-path."""
@@ -89,10 +89,20 @@ class kpoints(lattice):
 
 	@property
 	def n_kpt(self):
+		try:
+			res = len(self.kpt_cart)
+		except:
+			res = None
 		if hasattr(self, '_n_kpt'):
-			return self._n_kpt
-		else:
-			return len(self.kpt_cart)
+			try:
+				res = self._n_kpt
+			except:
+				self._n_kpt = res
+		return res
+
+	@n_kpt.setter
+	def n_kpt(self, value):
+		self._n_kpt = value
 
 	def generate_kpath(
 		self, 
@@ -115,7 +125,7 @@ class kpoints(lattice):
 		 np.array of shape (edges[:-1,-1].sum(), 3), where every row is the 3D
 		 coordinate of a k-point.
 		"""
-		self.mode = mode
+		self.kpt_mode = mode
 		if edges is None:
 			edges = self.kpt_edges
 		else:
@@ -195,7 +205,7 @@ class kpoints(lattice):
 		return red_kpts
 
 
-	@set_self('kpt_cryst,weight')
+	@set_self('kpt_cryst,kpt_weight')
 	def generate_monkhorst_pack_grid(self, mesh=None, shift=None):
 		"""
 		Generate a Monkhorst-Pack grid of k-point.
@@ -212,7 +222,7 @@ class kpoints(lattice):
 
 		self.kpt_mesh  = mesh
 		self.kpt_shift = shift
-		self.kpt_edges = self.mode = None
+		self.kpt_edges = self.kpt_mode = None
 
 		s1,s2,s3   = shift
 
@@ -255,13 +265,13 @@ class kpoints(lattice):
 
 		return norm * weight / weight.sum()
 
-	@set_self('weight')
+	@set_self('kpt_weight')
 	def normalize_weight(self, norm=1):
 		return self._normalize_weight(self.weight, norm=norm)
 
 
 
-	@set_self('kpt_cart,weight')
+	@set_self('kpt_cart,kpt_weight')
 	def kpt_crop(
 		self, 
 		center=(0,0,0), radius=np.inf, 
@@ -288,7 +298,7 @@ class kpoints(lattice):
 			print(f"# Cropped {len(w)} k-points out of {self.n_kpt}")
 
 		res_kpt    = self.kpt_cart[w]
-		res_weight = self.weight[w]
+		res_weight = self.kpt_weight[w]
 
 		res_weight = self._normalize_weight(res_weight)
 
@@ -305,7 +315,7 @@ class kpoints(lattice):
 
 			for name,edge in zip(edges_name, self.kpt_edges):
 				e = edge[:3]
-				if self.mode == 'crystal':
+				if self.kpt_mode == 'crystal':
 					e = e.dot(self.recipr)
 				ax.text(*e, name, size=15)
 
