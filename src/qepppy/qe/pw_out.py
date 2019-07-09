@@ -29,6 +29,7 @@ class pw_out(structure, bands, system):
 			self.xml = xml
 			return
 		if os.path.isfile(xml):
+			self.xml = xml
 			self.data_path = os.path.dirname(os.path.realpath(xml))
 		elif os.path.isdir(xml):
 			file = os.path.join(xml, "data-file-schema.xml")

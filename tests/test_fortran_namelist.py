@@ -13,10 +13,12 @@ string = """
   p6(3) = 3
   p7 = 1, p8 = 2, ! p9 = 3
   ! p10 = 1
+  p12 = .TRUE., p13 = .FaLsE.
+  p14 = 1e-05, p15=1e3
 /
 &NAME2
   p1  = 'testo'
-  p11 = 'only me' 
+  p11 = 'only me'
 /
 
 """
@@ -45,6 +47,14 @@ def test_float(load_str):
 def test_list(load_str):
 	assert load_str['NAME1']['p5'] == [1,2,3], 'Failed to parse list value'
 
+def test_case_bool(load_str):
+	assert load_str['NAME1']['p12'] == True, 'Failed to parse case insensitive bool'
+	assert load_str['NAME1']['p13'] == False, 'Failed to parse case insensitive bool'
+
+def test_exp_notation(load_str):
+	assert load_str['NAME1']['p14'] == 1e-5, 'Failed to parse exponential notation'
+	assert load_str['NAME1']['p15'] == 1e+3, 'Failed to parse exponential notation'
+
 def test_list_assigned_1by1(load_str):
 	assert load_str['NAME1']['p6'] == [1,None,3], 'Failed to parse list value'
 
@@ -65,20 +75,10 @@ def test_multiple_same_line(load_str):
 	assert load_str['p8'] == 2, 'Failed to assign multiple params on one line'
 
 def test_inline_comment(load_str):
-	try:
-		load_str['p9']
-	except:
-		pass
-	else:
-		raise Exception("Not ignored an inline comment")
+	assert load_str['p9'] is None, 'Not ignored an inline comment'
 
 def test_normal_comment(load_str):
-	try:
-		load_str['p10']
-	except:
-		pass
-	else:
-		raise Exception("Not ignored an normal comment")
+	assert load_str['p10'] is None, 'Not ignored an normal comment'
 
 def test_tokenize_pattern(load_str):
 	assert load_str['NAME1/p1'] == '123', 'Failed to use tokenized pattern'
@@ -90,6 +90,19 @@ def test_case_insensitive(load_str):
 	assert load_str['NAME1/p1'] == '123'
 	assert load_str['NaMe1/P1'] == '123'
 	assert isinstance(load_str['NAME1'], fn)
+
+def test_manual_set(load_str):
+	load_str['NAME1']['a1'] = 2
+	assert load_str['a1'] == 2, 'Failed to assign value going through namelist'
+
+def test_pattern_set(load_str):
+	load_str['NAME1/a2'] = 3
+	assert load_str['a2'] == 3, 'Failed to assign value going through pattern'
+
+
+def test_pattern_set_new_nl(load_str):
+	load_str['NAME3/a3'] = 1
+	assert load_str['a3'] == 1, 'Failed to assign value in new namelist'
 
 
 

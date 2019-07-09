@@ -29,7 +29,7 @@ def format_f90_to_py(val, strip_s=False, strip_d=False):
 	if strip_s or strip_d:
 		return val
 	if ',' in val:
-		res = re.findall(r'[\+\-\.\d]+', val)
+		res = re.findall(r'[\+\-\.\deEdD]+', val)
 		res = [format_f90_to_py(a, strip_s, strip_d) for a in res]
 		if len(res) == 1:
 			res = res[0]
@@ -76,12 +76,13 @@ class fortran_namelist(OrderedDict):
 	def __getitem__(self, key):
 		if not isinstance(key, str):
 			raise ValueError("Key for {} must be of string type.".format(self))
-		return self.deep_find(key.lower())
+		res = self.deep_find(key.lower())
+		return res
 
 	def __setitem__(self, key, value):
 		if not isinstance(key, str):
 			raise ValueError("Key for {} must be of string type.".format(self))
-		return super().__setitem__(key.lower(), value)
+		self.set_item(key, value)
 
 	def __str__(self):
 		return self.format_output()
@@ -116,10 +117,12 @@ class fortran_namelist(OrderedDict):
 				for i,sv in enumerate(v):
 					if sv is None:
 						continue
-					res += '{0}{1:{4}{6}s} = {2:{5}{7}}{3}\n'.format(tabs, "{}({})".format(k,i+1), self._value_repr_(v[i]), 
+					res += '{0}{1:{4}{6}s} = {2:{5}{7}}{3}\n'.format(
+						tabs, "{}({})".format(k,i+1), self._value_repr_(v[i]), 
 						comma, al_1, al_2, al_p, al_v)
 			else:
-				res += '{0}{1:{4}{6}s} = {2:{5}{7}}{3}\n'.format(tabs, k, self._value_repr_(v), comma, al_1, al_2, al_p, al_v)
+				res += '{0}{1:{4}{6}s} = {2:{5}{7}}{3}\n'.format(
+					tabs, k, self._value_repr_(v), comma, al_1, al_2, al_p, al_v)
 		res += '/'
 
 		return res
@@ -173,17 +176,15 @@ class fortran_namelist(OrderedDict):
 	def set_item(self, key, value, i=None):
 		tof_nl, tof_param, n = _tokenize_pattern_(key)
 		if not tof_nl is None:
-			app = self[tof_nl]
-		else:
-			app = self
+			raise ValueError("Something went wrong here!!")
 
 		if not n:
 			n = i
 
 		if not n:
-			app[tof_param] = value
+			super().__setitem__(tof_param.lower(), value)
 		else:
-			app._set_vec_value_(tof_param.lower(), value, n)
+			self._set_vec_value_(tof_param.lower(), value, n)
 
 	def _set_vec_value_(nl, param, value, index):
 		index = str(index)
@@ -230,13 +231,11 @@ class fortran_namelist_collection(OrderedDict):
 	def __getitem__(self, key):
 		if not isinstance(key, str):
 			raise ValueError("Key for {} must be of string type.".format(self))
-		return self.deep_find(key.lower())
-		# return super().__getitem__(key.lower())
+		res =  self.deep_find(key.lower())
+		return res
 
 	def __setitem__(self, key, value):
-		if not isinstance(value, fortran_namelist):
-			raise ValueError("Value in {} must be of type {}.".format(type(self), type(fortran_namelist)))
-		super().__setitem__(key.lower(), value)
+		self.set_item(key, value)
 
 	def __contains__(self, key):
 		if not isinstance(key, str):
@@ -273,23 +272,36 @@ class fortran_namelist_collection(OrderedDict):
 	def max_length_value(self):
 		return max(a.max_length_value() for a in self.values())
 
+	def set_item(self, key, value):
+		tof_nl, tof_param, n = _tokenize_pattern_(key)
+		if tof_nl is None:
+			if not isinstance(value, fortran_namelist):
+				raise ValueError("Value must be of type 'fortran_namelist'")
+			super().__setitem__(tof_param.lower(), value)
+			return
+
+		if not tof_nl in self:
+			self[tof_nl] = fortran_namelist(name=tof_nl)
+		
+		self[tof_nl].set_item(tof_param.lower(), value, n)
+
 	@file_name_handle('r')
 	def parse(self, src):
 		content = src.read()
 
-		mid = [a.groupdict() for a in re.finditer(namelist_re, content, re.IGNORECASE)]
+		f   = list(re.finditer(namelist_re, content, re.IGNORECASE))
+		mid = [a.groupdict() for a in f]
 
-		# print('CONTENT:', content)
-		# print('-------------------\n', mid, '\n---------------------')
 		for elem in mid:
-			# print(elem)
 			new =  fortran_namelist()
 			new.parse(elem)
 
 			self[elem['name']] = new
 
+		last_index    = f[-1].end()
+		self.unparsed = content[last_index:]
+
 	def deep_find(self, pattern, up=None):
-		# print("SEARCHING FOR:  ", pattern, up)
 		if pattern in self:
 			return super().__getitem__(pattern.lower())
 		for elem in self.values():
@@ -297,7 +309,7 @@ class fortran_namelist_collection(OrderedDict):
 				return elem.deep_find(pattern, up)
 			except:
 				pass
-		raise
+		return None
 
 
 

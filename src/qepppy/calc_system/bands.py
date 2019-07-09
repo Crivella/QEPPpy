@@ -55,7 +55,20 @@ class bands(kpoints):
 
 	@property
 	def n_bnd(self):
-		return self.egv.shape[1]
+		try:
+			res = self.egv.shape[1]
+		except AttributeError:
+			res = None
+		if hasattr(self, '_n_bnd'):
+			try:
+				res = self._n_bnd
+			except:
+				self._n_bnd = res
+		return res
+
+	@n_bnd.setter
+	def n_bnd(self, value):
+		self._n_bnd = value
 
 	def band_unfolding_noproject(self, SC_rec):
 		PC_path  = self.kpt_cryst
@@ -203,7 +216,7 @@ class bands(kpoints):
 		for n,egv in enumerate(self.egv):
 			i = np.floor((egv - Emin) / deltaE +0.5).astype(dtype='int')
 			i = i[np.where( (0 <= i) & (i < res[0].size))]
-			res[1,i] += self.weight[n]
+			res[1,i] += self.kpt_weight[n]
 
 		res[1:] /= deltaE
 

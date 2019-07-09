@@ -143,15 +143,15 @@ class qe_structure(Parser_xml, Parser_regex):
 		msg = "CELL_PARAMETERS\n"
 		for l in self.direct:
 			for e in l:
-				msg += "{:9.4f}".format(e)
+				msg += " {:12.7f}".format(e)
 			msg += "\n"
 		msg += "\n"
 		return msg
 
 	def _format_atom_spec_(self):
 		msg = "ATOMIC_SPECIES\n"
-		for s in self._atom_spec:
-			msg += "{:6}{:12.4f}  {}".format(s['name'], s['mass'], s['pseudo_file'])
+		for t,m,p in zip(self.unique_atoms_typ, self.unique_atoms_mass, self.unique_atoms_pseudo):
+			msg += "{:6}{:12.4f}  {}".format(t, m, p)
 			msg += "\n"
 		msg += "\n\n"
 		return msg
@@ -167,7 +167,8 @@ class qe_structure(Parser_xml, Parser_regex):
 		return msg
 
 	def __str__(self, info=0):
-		msg = super().__str__()
+		# msg = super().__str__()
+		msg  = ''
 		msg += self._format_cell_(info)
 		msg += self._format_atom_spec_()
 		msg += self._format_atom_pos_()
@@ -192,9 +193,9 @@ class qe_structure(Parser_xml, Parser_regex):
 			return 1./0.529177
 		return 1.
 
-	@_cell_p.setter
-	def _cell_p(self, value):
-		self._app_cell_p = value
+	# @_cell_p.setter
+	# def _cell_p(self, value):
+	# 	self._app_cell_p = value
 	
 	# @property
 	# def symm_matrix(self):
@@ -245,10 +246,11 @@ class qe_structure(Parser_xml, Parser_regex):
 
 		lp = self.alat
 
-		if len(self.celldm) > 1:
-			b = self.celldm[1]
-		if len(self.celldm) > 2:
-			c = self.celldm[2]
+		celldm = self['celldm']
+		if len(celldm) > 1:
+			b = celldm[1]
+		if len(celldm) > 2:
+			c = celldm[2]
 		if   self.ibrav ==  1:
 			v1 = np.array([1,0,0]) * lp
 			v2 = np.array([0,1,0]) * lp
@@ -355,7 +357,7 @@ class qe_structure(Parser_xml, Parser_regex):
 				c*(cbc-cac*cg)/sg,
 				c*np.sqrt(1+2*cbc*cac*cg-cbc**2-cac**2-cg**2)/sg]) * lp
 
-		self._app_cell_p = 'bohr'
+		# self._app_cell_p = 'bohr'
 		return np.array([v1,v2,v3])
 
 
