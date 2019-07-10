@@ -73,7 +73,7 @@ data ={
 		'typ':str
 		},
 	'atoms_typ,atoms_coord_cart':{
-		'xml_search_string':'input//atomic_positions/atom', 
+		'xml_search_string':'output//atomic_positions/atom', 
 		'mode':'attr=name,value',
 		'typ':np.ndarray,
 		'rstring':r'\d[\t ]+(?P<name>[\w]+).*\(([ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)',
