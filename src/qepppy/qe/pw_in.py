@@ -36,8 +36,9 @@ class pw_in(qe_input, structure, system):
 				res += ' {crystal_b}\n'
 			else:
 				res += ' {tpiba_b}\n'
+			res += '  {}\n'.format(len(self.kpt_edges))
 			for e in self.kpt_edges:
-				res += '  {0[0]:9.6f} {0[1]:9.6f} {0[2]:9.6f}    {0[3]:.0f}\n'.format(e)
+				res += '    {0[0]:9.6f} {0[1]:9.6f} {0[2]:9.6f}    {0[3]:.0f}\n'.format(e)
 		else:
 			res += ' {{crystal}}\n  {:d}\n'.format(self.n_kpt)
 			for k,w in zip(self.kpt_cryst, self.kpt_weight):
