@@ -166,7 +166,7 @@ class fortran_namelist(OrderedDict):
 			return super().__getitem__(pattern)
 		tof_nl, tof_param, n  = _tokenize_pattern_(pattern, up)
 		if tof_nl is None or tof_nl.lower() == self.name:
-			res =  self[tof_param]
+			res =  super().__getitem__(tof_param)
 			for i in n:
 				res = res[int(i)-1]
 			return res
