@@ -65,6 +65,7 @@ def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
 			if not fname:
 				raise ValueError("Must pass valid file name to arg 'fname'")
 			save_args = {}
+			header = '{}  args{} kwargs={}\n'.format(func.__name__, args, kwargs) + header
 			if fmt:
 				save_args['fmt'] = fmt
 			if header:
