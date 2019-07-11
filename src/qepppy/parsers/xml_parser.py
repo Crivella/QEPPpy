@@ -227,8 +227,12 @@ class Parser_xml():
 		if not fact is None:
 			if isinstance(fact, str):
 				fact = getattr(self, fact)
-			if len(val)>0 and isinstance(val.flatten()[0], (int,float,np.number)):
-				val *= fact
+			if isinstance(val, np.ndarray):
+				if isinstance(val.flatten()[0], (int,float,np.number)):
+					val *= fact
+			else:
+				if isinstance(val, (int,float)):
+					val *= fact
 
 		return val
 
@@ -238,6 +242,7 @@ class Parser_xml():
 				continue
 			# dbg("-"*40)
 			# dbg(f"Setting attribute '{k}'")
+			# print("LOAD", k,v)
 
 			xml_string = v.get('xml_search_string')
 			modes      = v.get('mode',     'value')
