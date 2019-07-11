@@ -73,6 +73,7 @@ data ={
 		'xml_search_string':'output//total_energy/etot',
 		'rstring':r'\!\s*total energy\s*=',
 		'typ':float,
+		'xml_scale_fact':2,
 		}
 	}
 
