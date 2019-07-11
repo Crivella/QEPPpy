@@ -43,12 +43,12 @@ data ={
 		'rstring':r'spin',
 		'typ':bool,
 		},
-	'kpt_cart,weight':{
+	'kpt_cart,kpt_weight':{
 		'rstring':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)',
 		'typ':np.ndarray,
 		'max_num':'_n_kpt'
 		},
-	'weight':{
+	'kpt_weight':{
 		'xml_search_string':'output//ks_energies/k_point',
 		'mode':'attr=weight',
 		'typ':np.ndarray
