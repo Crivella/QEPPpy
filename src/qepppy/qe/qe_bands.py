@@ -44,7 +44,7 @@ data ={
 		'typ':bool,
 		},
 	'kpt_cart,kpt_weight':{
-		'rstring':r'[\s]{4,}k\([ \d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)',
+		'rstring':r'[\s]{4,}k\([ *\d]+\) = \((?P<kpt>[ \d\.\-]+)\).*wk = (?P<weight>[ \d\.]+)',
 		'typ':np.ndarray,
 		'max_num':'_n_kpt'
 		},

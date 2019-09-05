@@ -293,9 +293,14 @@ class kpoints(lattice):
 		norms  = np.linalg.norm(self.kpt_cart - center, axis=1)
 		w      = np.where(norms <= radius)[0]
 
+		crop_weight = self.kpt_weight[w].sum()
+		tot_weight  = self.kpt_weight.sum()
+
 		if verbose:
 			print(f"# Cropping k-points around {center} with radius {radius}")
 			print(f"# Cropped {len(w)} k-points out of {self.n_kpt}")
+			print(f"# The weight of the selected points is {crop_weight} vs the total weight {tot_weight}")
+			print(f"# Re-normaliing by a factor {tot_weight/crop_weight}")
 
 		res_kpt    = self.kpt_cart[w]
 		res_weight = self.kpt_weight[w]
