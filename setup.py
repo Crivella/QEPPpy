@@ -131,6 +131,7 @@ setup(
     url=URL,
     packages=find_packages('src', exclude=('*.tests','*.doc_parser')),
     package_dir={
+        '':'src',
         'qepppy':'src/qepppy',},
     package_data={
         'qepppy':[
