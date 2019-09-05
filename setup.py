@@ -129,7 +129,7 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=('*.tests','*.doc_parser')),
+    packages=find_packages('src', exclude=('*.tests','*.doc_parser')),
     package_dir={
         'qepppy':'src/qepppy',},
     package_data={
