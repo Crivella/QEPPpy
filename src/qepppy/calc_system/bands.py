@@ -11,9 +11,10 @@ def cumul_norm(
 	diff_path = app - np.vstack((app[0], app[:-1]))
 	norm      = np.linalg.norm(diff_path, axis=1)
 
-	if thr is None:
-		thr = 3 * np.average(norm)
-	norm[norm > thr] = 0
+	if not thr is None:
+		if thr == 0:
+			thr = 3 * np.average(norm)
+		norm[norm > thr] = 0
 
 	res   = norm.copy()
 	for i in range(1, res.shape[0]):
