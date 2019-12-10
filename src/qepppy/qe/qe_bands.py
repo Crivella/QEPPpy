@@ -59,7 +59,7 @@ data ={
 		},
 	'egv':{
 		'xml_search_string':'output//ks_energies/eigenvalues', 
-		'rstring':r'bands \(ev\):(?P<egv>[\s\d\.\-]+)', 
+		'rstring':r'(band energies)|(bands) \(ev\):(?P<egv>[\s\d\.\-]+)', 
 		'typ':np.ndarray,
 		'xml_scale_fact':HA_to_eV,
 		'max_num':'-_n_kpt',

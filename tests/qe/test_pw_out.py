@@ -14,7 +14,7 @@ cmp_list = [
 	'ibrav', 'alat',
 	'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 
 	'atoms_typ', 'unique_atoms_mass', # 'atoms_pseudo',
-	'n_kpt', 'kpt_cart', 'kpt_cryst', 'weight',
+	'n_kpt', 'kpt_cart', 'kpt_cryst', 'kpt_weight',
 	'egv',
 	# 'symm_matrix', 'symm_name',
 	'E_tot',

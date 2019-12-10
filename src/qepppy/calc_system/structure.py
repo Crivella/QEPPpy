@@ -154,7 +154,7 @@ class structure(atm, latt):
 		R_vec  = utils.generate_repetition_grid(*rep, self.direct)
  
 		n_cell = [max(a)-min(a)+1 for a in rep]
-		typ    = self.atoms_typ * (reduce(lambda x,y: x*y, n_cell))
+		typ    = np.array(list(self.atoms_typ) * (reduce(lambda x,y: x*y, n_cell)))
  
 		res    = np.empty(shape=(0,3))
 		coord  = self.atoms_coord_cart
@@ -280,15 +280,15 @@ class structure(atm, latt):
 
 	@set_self('symmetries')
 	def get_symmetries(self):
-		import ase.spacegroup
+		# import ase.spacegroup
 		from .symmetry import symmetries, symmetry
 
-		sg = ase.spacegroup.get_spacegroup(self._make_ase_atoms())
+		# sg = ase.spacegroup.get_spacegroup(self._make_ase_atoms())
 
 		new = symmetries()
 
-		for rot in sg.rotations:
-			new.append(symmetry(rotation=rot))
+		# for rot in sg.rotations:
+		# 	new.append(symmetry(rotation=rot))
 
 		return new
 
