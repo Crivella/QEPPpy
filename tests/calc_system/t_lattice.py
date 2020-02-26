@@ -24,4 +24,4 @@ class Test_lattice(BaseTest):
 			[0,0,0],
 			[0,.25,0]
 			])
-		assert np.all(res_C == C), "Failed to bring atoms nito cell correctly."
+		assert np.all(res_C == C), "Failed to bring atoms into cell correctly."

@@ -80,7 +80,7 @@ class bands(kpoints):
 		for unf_i,fol_i in enumerate(ri):
 			res[unf_i] = self.egv[fol_i]
 
-		x_coord = cumul_norm(self.kpt_cart)
+		x_coord = cumul_norm(self.kpt_cart, thr=0.1)
 		return x_coord, res
 
 	def band_unfolding(
@@ -154,7 +154,7 @@ class bands(kpoints):
 					A[unf_i,i] += W
 
 		E       = np.linspace(Emin, Emax, N)
-		x_coord = cumul_norm(self.kpt_cart)
+		x_coord = cumul_norm(self.kpt_cart, thr=.1)
 		X,Y     = np.meshgrid(x_coord, E)
 		Z       = A.T
 

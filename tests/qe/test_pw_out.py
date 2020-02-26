@@ -37,7 +37,7 @@ def outputs_xml(request):
 	name     = request.param
 	name     = os.path.join(test_dir, name)
 	xml_name = name + '.xml'
-	pkl_name = name + '.pickle'
+	pkl_name = name + '_out.pickle'
 
 	xml = qepppy.qe.pw_out(xml=xml_name)
 
@@ -60,7 +60,7 @@ def outputs_outfile(request):
 	name     = request.param
 	name     = os.path.join(test_dir, name)
 	out_name = name + '.out'
-	pkl_name = name + '.pickle'
+	pkl_name = name + '_out.pickle'
 
 	out = qepppy.qe.pw_out(file=out_name)
 
@@ -86,7 +86,7 @@ if __name__ == '__main__':
 	"""
 	for out_name in out_files:
 		xml_name = os.path.join(test_dir, out_name + '.xml')
-		pkl_name = os.path.join(test_dir, out_name + '.pickle')
+		pkl_name = os.path.join(test_dir, out_name + '_out.pickle')
 
 		xml = qepppy.qe.pw_out(xml=xml_name)
 

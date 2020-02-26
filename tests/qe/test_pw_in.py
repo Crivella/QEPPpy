@@ -29,7 +29,7 @@ def inputs(request):
 	name = os.path.join(test_dir, name)
 
 	in_name  = name + '.in'
-	pkl_name = name + '.pickle'
+	pkl_name = name + '_in.pickle'
 
 	inp = qepppy.qe.pw_in(input_file=in_name)
 
@@ -84,3 +84,20 @@ def test_pw_in_build_scratch(inputs):
 	new.validate()
 	str(new)
 
+if __name__ == '__main__':
+	"""
+	Generates the baseline files for the automated testing.
+	To be run with a stable pre-tested version.
+	"""
+	for name in in_files:
+		in_name  = os.path.join(test_dir, name + '.in')
+		pkl_name = os.path.join(test_dir, name + '_in.pickle')
+
+		xml = qepppy.qe.pw_in(input_file=in_name)
+
+		res = {}
+		for k in cmp_list:
+			res[k] = getattr(xml, k)
+
+		with open(pkl_name, 'wb') as f:
+			pickle.dump(res, f)
