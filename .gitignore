@@ -103,3 +103,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 *~
+
+__manual.py
+failed_img

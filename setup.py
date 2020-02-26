@@ -26,18 +26,19 @@ REQUIRED = [
 	'numpy',
 	'matplotlib',
     'scipy',
+    'decorator',
 ]
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    # 'xml_parsing':['xmltodict', 'xmlschema'],
 }
 
 SCRIPTS = [
-    "qepppy/tools/pdos_char.py",
-    "qepppy/tools/broad.py",
-    "qepppy/tools/sum_pdos.py",
-    "qepppy/tools/kk.py",
+    "src/qepppy/tools/pdos_char.py",
+    "src/qepppy/tools/broad.py",
+    "src/qepppy/tools/sum_pdos.py",
+    "src/qepppy/tools/kk.py",
 ]
 
 # The rest you shouldn't have to touch too much :)
@@ -58,7 +59,7 @@ except FileNotFoundError:
 # Load the package's __version__.py module as a dictionary.
 about = {}
 if not VERSION:
-    with open(os.path.join(here, NAME, '__version__.py')) as f:
+    with open(os.path.join(here, 'src', NAME, '__version__.py')) as f:
         exec(f.read(), about)
 else:
     about['__version__'] = VERSION
@@ -100,7 +101,7 @@ class UploadCommand(Command):
         
         sys.exit()
 
-class PyTest( TestCommand):
+class PyTest(TestCommand):
     user_options = [("pytest-args=", "a", "Arguments to pass to pytest")]
 
     def initialize_options(self):
@@ -128,13 +129,13 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=('*.tests','*.doc_parser')),
+    packages=find_packages('src', exclude=('*.tests','*.doc_parser')),
     package_dir={
-        'qepppy':'qepppy',},
+        '':'src',
+        'qepppy':'src/qepppy',},
     package_data={
         'qepppy':[
-            'qe/parser/data/*.templ',
-            'qe/parser/data/*.json'
+            'data/*.json',
             ]
         },
     include_package_data=True,
