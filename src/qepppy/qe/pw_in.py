@@ -120,7 +120,7 @@ class pw_in(qe_input, structure, system):
 		elif mode == 'bohr':
 			self.atoms_coord_cart = res
 		elif mode == 'angstrom':
-			from ...units import BOHR_to_A
+			from ..units import BOHR_to_A
 			res /= BOHR_to_A
 			self.atoms_coord_cart = res
 		elif mode == 'crystal':
@@ -216,7 +216,7 @@ class pw_in(qe_input, structure, system):
 			# self.alat = res[0,0]
 			pass
 		elif mode == 'angstrom':
-			from ...units import BOHR_to_A
+			from ..units import BOHR_to_A
 			res /= BOHR_to_A
 			# self.alat = res[0,0]
 
