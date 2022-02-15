@@ -101,5 +101,7 @@ class qe_input(fnc, metaclass=meta_app):
 		val = None
 		if '{' in l:
 			val = l.split('{')[1].split('}')[0]
+		elif ' ' in l:
+			val = l.split(' ')[1]
 
 		return val
