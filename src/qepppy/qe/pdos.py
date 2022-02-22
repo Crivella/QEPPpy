@@ -1,46 +1,55 @@
 import re
 import numpy as np
-from .parser.data_file_parser import data_file_parser as dfp
+from ..parsers import Parser_regex
 # from ..logger import logger, warning
 from .._decorators import numpy_save_opt, numpy_plot_opt, store_property, IO_stdout_redirect
 
 
 data={
 	'n_states':{
-		'res_type':int,
-		'outfile_regex':r'\s*natomwfc\s*='
+		'typ':int,
+		'rstring':r'\s*natomwfc\s*='
 		},
 	'_n_bnd':{
-		'res_type':int,
-		'outfile_regex':r'\s*nbnd\s*='
+		'typ':int,
+		'rstring':r'\s*nbnd\s*='
 		},
 	'_states':{
-		'res_type':list,
+		'typ':list,
 		# state #   1: atom   1 (C  ), wfc  1 (l=0 m= 1)
-		'outfile_regex':
+		'rstring':
 			r'state #\s*(?P<state_num>\d+)\s*\:\s*' + 
 			r'atom\s*(?P<atom_num>\d+)\s*'          + 
 			r'\(\s*(?P<atom_name>\S+)\s*\)\s*,'     +
 			r'\s*wfc\s*(?P<wfc_num>\d+)\s*'         +
-			r'\(l=\s*(?P<l>\d+)\s+m=\s*(?P<m>\d+)\s*\)'
+			# r'(\(l=\s*(?P<l>\d+)\s+m=\s*(?P<m>\d+)\s*\))' + 
+			# r'|' + 
+			r'(\(l=\s*(?P<lj>\d+)\s+j=\s*(?P<j>\S+)\s+m_j=\s*(?P<mj>\S+)\s*\))'
 		},
 	'_kpt':{
-		'res_type':list,
-		'outfile_regex':r'\s*k =\s*(?P<kpt>[\d.\- ]+)'
+		'typ':list,
+		'rstring':r'\s*k =\s*(?P<kpt>[\d.\- ]+)'
 		},
 	'_egv':{
-		'res_type':list,
-		'outfile_regex':
-			r'\s*e(( \= \s*)|(\((?P<egv_num>\s*\d+)\)\s*=\s*))(?P<egv>[\d\-\.]+)\s*(?P<unit>\S+)\s*' +
-			r'psi = (?P<components>[\s\d\.\+\*#\[\]]+)\|psi\|\^2 = (?P<sum2>[\d\.]+)\s*'
+		'typ':list,
+		'rstring':
+			r'\s*=*\s*e(' +
+			r'( \= \s*)' + 
+			r'|' + 
+			r'(\(\s*(?P<egv_num>\d+)\s*\)\s*=\s*))' + 
+			r'(?P<egv>[\d\-\.]+)\s*(?P<unit>\S+)\s*=*\s*' +
+			r'psi = (?P<components>[\s\d\.\+\*#\[\]]+)' +
+			r'\|psi\|\^2 = (?P<sum2>[\d\.]+)\s*'
+			# r'\s*e(( \= \s*)|(\((?P<egv_num>\s*\d+)\)\s*=\s*))(?P<egv>[\d\-\.]+)\s*(?P<unit>\S+)\s*' +
+			# r'psi = (?P<components>[\s\d\.\+\*#\[\]]+)\|psi\|\^2 = (?P<sum2>[\d\.]+)\s*'
 		},
 	}
 
-class pdos(dfp):
+class pdos(Parser_regex):
 	__name__ = "pdos"
-	def __init__(self, d={}, **kwargs):
-		d.update(data)
-		super().__init__(d=d, **kwargs)
+	def __init__(self, regex_data={}, **kwargs):
+		regex_data.update(data)
+		super().__init__(regex_data=regex_data, **kwargs)
 
 	@property
 	@store_property
@@ -55,9 +64,9 @@ class pdos(dfp):
 		return self._n_bnd
 
 	@property
-	@store_property
+	# @store_property
 	def kpt(self):
-		return np.array([a['kpt'] for a in self._kpt])
+		return self._kpt
 
 	@property
 	@store_property
@@ -67,25 +76,23 @@ class pdos(dfp):
 			}
 		res = np.empty(self.n_kpt*self.n_bnd)
 		for n,e in enumerate(self._egv):
-			if e['egv_num'] and e['egv_num'] != n+1:
-				raise NotImplementedError()
-			unit = e['unit']
+			_, egv, unit, _, _ = e
+			egv = float(egv)
 			if not unit in conversion:
 				raise NotImplementedError("Unit {} is not implemented".format(unit))
-			res[n] = e['egv'] * conversion[unit]
+			res[n] = egv * conversion[unit]
 
 		return res.reshape(self.n_kpt,self.n_bnd)
 
 	@property
 	@store_property
 	def components(self):
+		r = re.compile(r'\+?([\d.]+)\*\[\#\s*(\d+)\]')
 		res = np.zeros((self.n_kpt*self.n_bnd, self.n_states))
 		for n,e in enumerate(self._egv):
-			if e['egv_num'] and e['egv_num'] != n+1:
-				raise NotImplementedError()
-			r = re.compile(r'\+?([\d.]+)\*\[\#\s*(\d+)\]')
-			if e['components'].strip():
-				comp = np.array([(float(a.group(1)),int(a.group(2))) for a in r.finditer(e['components'])])
+			_, _, _, components, _ = e
+			if components.strip():
+				comp = np.array([(float(a.group(1)),int(a.group(2))) for a in r.finditer(components)])
 				res[n,comp[:,1].astype(dtype=int)-1] = comp[:,0]
 		return res.reshape(self.n_kpt,self.n_bnd,self.n_states)
 
