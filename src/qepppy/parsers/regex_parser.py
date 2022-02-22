@@ -46,15 +46,20 @@ class Parser_regex():
 
 	@staticmethod
 	def get_list_val(content, rstring, typ):
+		rgx = re.compile(r'\s[a-zA-Z]')
+		
 		res = re.finditer(rstring, content)
 		res = [x.groupdict() for x in res]
 		for n,e in enumerate(res):
 			for k,v in e.items():
-				b = np.fromstring(v, sep=' ')
-				if len(b) == 0 or re.findall(r'\s[a-zA-Z]', v):
+				if '*' in v or rgx.search(v):
 					b = str(v).strip()
-				elif len(b) == 1:
-					b = b[0]
+				else:
+					b = np.fromstring(v, sep=' ')
+					if len(b) == 0 :
+						b = str(v).strip()
+					elif len(b) == 1:
+						b = b[0]
 				res[n][k] = b
 
 		return res
@@ -84,7 +89,6 @@ class Parser_regex():
 
 		return val
 
-	
 
 	def parse_file(self, file):
 		# res = {}
@@ -122,9 +126,6 @@ class Parser_regex():
 						app2 = np.array([list(a.values()) for a in app])
 					else:
 						app2 = np.array([list(a.values())[num] for a in app])
-
-
-
 
 					val = self.max_num_truncate(max_num, app2)
 					val = self.scale(val, scale_fact)
