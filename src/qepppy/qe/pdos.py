@@ -4,6 +4,7 @@ from ..parsers import Parser_regex
 # from ..logger import logger, warning
 from .._decorators import numpy_save_opt, numpy_plot_opt, store_property, IO_stdout_redirect
 
+from dataclasses import dataclass
 
 data={
 	'n_states':{
@@ -44,6 +45,17 @@ data={
 			# r'psi = (?P<components>[\s\d\.\+\*#\[\]]+)\|psi\|\^2 = (?P<sum2>[\d\.]+)\s*'
 		},
 	}
+
+@dataclass(frozen=True)
+class state:
+	n: int
+	atm: int
+	atm_str: str
+	wfc: int
+	l: int
+	j: float
+	m: float
+
 
 class pdos(Parser_regex):
 	__name__ = "pdos"
@@ -100,17 +112,19 @@ class pdos(Parser_regex):
 	@store_property
 	def states(self):
 		res = []
-		m = max([len(a['atom_name']) for a in self._states])
 		for e in self._states:
-			msg = ""
-			msg += "atom (#{:3d}): ".format(int(e['atom_num']))
-			msg += "{1:>.{0}s} ".format(m,e['atom_name'])
-			# msg += "(#{:5d}) ".format(int(e['atom_num']))
-			if not e['l'] is None:
-				msg += "(l = {}".format(e['l']) + "  "
-				msg += "m = {})".format(e['m'])
+			n, a, astr, wfc, l, j, m = e
 
-			res.append(msg)
+			new = state(
+				int(float(n)),
+				int(float(a)),
+				astr,
+				int(float(wfc)),
+				int(float(l)),
+				float(j),
+				float(m),
+			)
+			res.append(new)
 		if len(res) != self.n_states:
 			raise NotImplementedError()
 		return res
@@ -125,8 +139,8 @@ class pdos(Parser_regex):
 					print("\t\t{}: {:8.3f}%".format(self.states[p], self.components[k-1,b-1,p]*100))
 		print()
 
-	@numpy_plot_opt()
-	@numpy_save_opt()
+	@numpy_plot_opt(_xlab="Energy (eV)", _ylab="PDOS (arb. units)")
+	@numpy_save_opt(_fname="pdos.dat")
 	def sum_pdos(
 		self, *args,
 		emin=-20, emax=20, deltaE=0.001, deg=0.00,
@@ -135,7 +149,7 @@ class pdos(Parser_regex):
 		):
 		if weight is None:
 			weight = np.ones(self.n_kpt) / self.n_kpt
-		res = np.linspace(emin, emax, (emax-emin)/deltaE+1).reshape(1,-1)
+		res = np.linspace(emin, emax, int((emax-emin)/deltaE)+1).reshape(1,-1)
 		res = np.pad(res, ((0,self.n_states),(0,0)), 'constant')
 
 		for k,egv in enumerate(self.egv):

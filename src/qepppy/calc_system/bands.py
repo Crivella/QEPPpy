@@ -162,7 +162,7 @@ class bands(kpoints):
 
 	@numpy_plot_opt(_ylab="Energy (eV)")
 	@numpy_save_opt(_fname="plotted.dat",_fmt="")
-	def band_structure(self, thr=np.inf):
+	def band_structure(self, fermi= 0.0, thr=np.inf):
 		"""
 		Compute the band structure.
 		Params:
@@ -184,7 +184,7 @@ class bands(kpoints):
 		# x = [norm[:i+1].sum() for i in range(len(norm))]
 
 		x   = cumul_norm(self.kpt_cart)
-		egv = self.egv
+		egv = self.egv - fermi
 
 		res = np.column_stack((x, egv))
 
