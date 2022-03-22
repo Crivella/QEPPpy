@@ -30,7 +30,8 @@ class fortran_binary_io():
 					record = record[0]
 					c = True
 				names = [a['name'] for a in record]
-				self.__dict__.update({n:[] for n in names})
+				for n in names:
+					setattr(self, n, [])
 				rec   = [
 					endian + 
 					str(self._convert_shape_(a['shape'])) + 
@@ -41,13 +42,40 @@ class fortran_binary_io():
 					if not isinstance(res, tuple):
 						res = tuple((res,))
 					for name,val in zip(names,res):
-						self.__dict__[name].append(val)
+						getattr(self, name).append(val)
 				for n in names:
-					self.__dict__[n] = np.array(self.__dict__[n])
+					app = np.array(getattr(self, n))
 					if not c:
-						self.__dict__[n] = self.__dict__[n].squeeze()
+						app = app.squeeze()
+					setattr(self, n, app)
 
 		self.binary = True
+
+	def write_binary(self, outname):
+		def to_array(dct, n=None):
+			res = getattr(self, dct['name'])
+			res = np.array(res, dtype=dct['type'])
+			if not n is None:
+				res = res[n]
+			shape = self._convert_shape_(dct['shape'])
+			res = res.reshape(shape)
+
+			return res
+
+		with scipy.io.FortranFile(outname, 'w') as f:
+			for record in self.binary_format:
+				rep = 1
+				if isinstance(record, tuple):
+					rep = self._conv_val_(record[1])
+					record = record[0]
+
+				if rep > 1:
+					for n in range(rep):
+						data = [to_array(_, n) for _ in record]
+						f.write_record(*data)
+				else:
+					data = [to_array(_) for _ in record]
+					f.write_record(*data)
 
 	def _convert_shape_(self, tupl):
 		l = []
