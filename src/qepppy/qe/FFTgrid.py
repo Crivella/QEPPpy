@@ -73,10 +73,12 @@ class FFTgrid():
 				(rep,)*3
 				)
 
-			ax1.contourf(
+			cs = ax1.contourf(
 				x, y, rho[(...,*index)].sum(axis=0).reshape(x.shape),
 				30, cmap=cmap
 				)
+
+			fig.colorbar(cs)
 
 			ax1.set_title('Slice {}'.format(zs))
 			ax1.set_xlabel('X')
