@@ -1,14 +1,5 @@
 import numpy as np
 
-class TypedList(list):
-	def __init__(self, typ):
-		self.typ = typ
-
-	def append(self, value):
-		if not isinstance(value, self.typ):
-			raise TypeError(f"List '{repr(self)}', only accept type '{self.typ}'.")
-		super().append(value)
-
 def recipr_base(base):
 	return np.linalg.inv(base).T * 2 * np.pi
 
@@ -41,7 +32,10 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
 	#					   y to change value along axis=0
 	#					   z to change value along axis=2
 	# Since the FFT grid has the axis=0,1,2 corresponding to x,y,z i need to do the proper remapping
-	y,x,z = np.meshgrid(b,a,c)
+	# y,x,z = np.meshgrid(b,a,c)
+
+	# OR juse use 'ij' indexing :)
+	x,y,z = np.meshgrid(a,b,c, indexing='ij')
 
 	if reverse:
 		x,y,z = z,y,x
@@ -58,10 +52,11 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
 
 def lowdin_ortho(base):
 	"""
+	https://arxiv.org/abs/1105.3571v1
 	O = (M . M^T)^{-1/2} . M
 	Params:
 	 - base: np.array with states along axis=0. If the states are 
-	         multidimensional (eg: FFT grids), flatten them before and after the
+	         multidimensional (eg: FFT grids), flatten them before. After the
 	         orthonormalization, restore the shape
 	"""
 	from scipy.linalg import sqrtm, inv
