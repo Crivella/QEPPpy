@@ -1,8 +1,10 @@
 import numpy as np
-from .atoms_list  import atoms_list  as atm
-from .lattice     import lattice     as latt
+
 from .. import utils
 from .._decorators import file_name_handle, set_self
+from .atoms_list import atoms_list as atm
+from .lattice import lattice as latt
+
 
 def cart_to_cryst(cls, coord):
 	direct = cls.direct
@@ -151,7 +153,7 @@ class structure(atm, latt):
 		assert(isinstance(repZ,(int,range,list,tuple)))
 
 		rep    = [range(a) if isinstance(a,int) else a for a in [repX,repY,repZ]]
-		R_vec  = utils.generate_repetition_grid(*rep, self.direct)
+		R_vec  = utils.generate_repetition_grid(rep, vect_matrix=self.direct)
  
 		n_cell = [max(a)-min(a)+1 for a in rep]
 		typ    = np.array(list(self.atoms_typ) * (reduce(lambda x,y: x*y, n_cell)))

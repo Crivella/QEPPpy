@@ -1,5 +1,7 @@
 import numpy as np
+
 from .. import utils
+
 
 def draw_cell(ax, cell, center=[0,0,0]):
 	"""
@@ -21,29 +23,38 @@ def draw_cell(ax, cell, center=[0,0,0]):
 			ax.plot(v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 		ax.plot(v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
 
-def draw_Wigner_Seitz(ax, recipr, draw_corners=True):
+def draw_Wigner_Seitz(
+	ax, recipr, draw_corners=True, 
+	edge_args={
+		'color': 'black'
+	}, 
+	corner_args={
+		'color': 'green'
+	}
+	):
 	"""
 	Draw the Wigner Seitz cell for the lattice.
 	Params:
 	 - ax: matplotlib 3D axis object
 	"""
-	from scipy.spatial import Voronoi
-	from scipy.spatial import KDTree
-	L = utils.generate_repetition_grid([-1,0,1],[-1,0,1],[-1,0,1], recipr)
+	res = []
+	dim = len(recipr)
+	from scipy.spatial import KDTree, Voronoi
+	L = utils.generate_repetition_grid([[-1,0,1]]*dim, vect_matrix=recipr)
 
 	vor = Voronoi(L)
 	P = vor.vertices
 	R = vor.ridge_vertices
 
 	tree       = KDTree(L)
-	d,i        = tree.query([0,0,0])
+	d,i        = tree.query([0,]*dim)
 	dist, ind  = tree.query(P, k=L.shape[0])
 	w          = (np.abs(dist.T - dist.T[0]) > 1E-5).T
 	closest    = ind.copy()
 	closest[w] = -1
 
 	cond    = np.where([not i in a for a in closest])[0]
-	P[cond] = np.zeros(3)
+	P[cond] = np.zeros(dim)
 
 
 	for i1, e in enumerate(R):
@@ -51,28 +62,42 @@ def draw_Wigner_Seitz(ax, recipr, draw_corners=True):
 			if r in cond:
 				R[i1][i2] = -1
 
-	X = P[:,0]
-	Y = P[:,1]
-	Z = P[:,2]
-
 	if draw_corners:
-		ax.scatter(X,Y,Z, color='green')
+		app = ax.scatter(*P.T, **corner_args)
+		res.append(app)
 
 	for vert in R:
 		vert.append(vert[0])
 		v = np.asarray(vert)
 		if np.all(v >= 0):
-			ax.plot(P[v, 0], P[v, 1], P[v, 2], color='k')
+			app = ax.plot(*P[v].T, **edge_args)
+			res.extend(app)
 
-def draw_sphere(ax, radius=1, center=[0,0,0], color="b"):
-	x0, y0, z0 = center
-	u = np.linspace(0, 2 * np.pi, 10)
-	v = np.linspace(0, np.pi, 7)
-	x = radius * np.outer(np.cos(u), np.sin(v)) + x0
-	y = radius * np.outer(np.sin(u), np.sin(v)) + y0
-	z = radius * np.outer(np.ones(np.size(u)), np.cos(v)) + z0
+	return res
 
-	ax.plot_surface(x, y, z, color=color)
+def draw_plane(ax, v1, v2, origin=[0,0,0], **kwargs):
+    a, b = np.meshgrid([0,1], [0,1], indexing='ij')
+    app = np.dot(np.array([a.flatten(), b.flatten()]).T, [v1,v2])
+    xx,yy,zz = (app + origin).T.reshape(3,2,2)
+
+    return ax.plot_surface(xx,yy,zz, **kwargs)
+
+def draw_sphere(ax, radius=1, center=[0,0,0], long=10, lat=7, **kwargs):
+	center = np.array(center).reshape(-1,3)
+
+	u = np.linspace(0, 2 * np.pi, long)
+	v = np.linspace(0, np.pi, lat)
+	x0 = radius * np.outer(np.cos(u), np.sin(v))
+	y0 = radius * np.outer(np.sin(u), np.sin(v))
+	z0 = radius * np.outer(np.ones(np.size(u)), np.cos(v))
+
+	res = []
+	for (xoff,yoff,zoff) in center:
+		app = ax.plot_surface(x0+xoff, y0+yoff, z0+zoff, **kwargs)
+		res.append(app)
+
+	return res
+
 
 def draw_cylinder(ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
 	x0, y0, z0 = start
@@ -91,7 +116,7 @@ def draw_cylinder(ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
 	y = radius * np.outer(-np.cos(u)*c_phi + np.sin(u)*s_phi*c_teta, np.ones(np.size(v)) ) + axis[1] * v + y0
 	z = radius * np.outer(-np.sin(u)*s_teta, np.ones(np.size(v)))                          + axis[2] * v + z0
 
-	ax.plot_surface(x, y, z, color=color)
+	return ax.plot_surface(x, y, z, color=color)
 
 def draw_bond(ax, start, end, color1, color2, graph_lvl=0):
 	if graph_lvl == 0:

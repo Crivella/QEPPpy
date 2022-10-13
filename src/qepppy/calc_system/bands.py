@@ -1,6 +1,9 @@
 import numpy as np
+
+from .._decorators import (IO_stdout_redirect, numpy_plot_opt, numpy_save_opt,
+                           set_self)
 from .kpoints import kpoints
-from .._decorators import numpy_plot_opt, numpy_save_opt, IO_stdout_redirect, set_self
+
 
 def cumul_norm(
 	path,
@@ -87,7 +90,8 @@ class bands(kpoints):
 		self, SC_rec, wavefunctions,
 		verbose = True,
 		**kwargs):
-		from itertools     import product
+		from itertools import product
+
 		from scipy.spatial import KDTree
 
 		if verbose:
@@ -183,7 +187,7 @@ class bands(kpoints):
 		
 		# x = [norm[:i+1].sum() for i in range(len(norm))]
 
-		x   = cumul_norm(self.kpt_cart)
+		x   = cumul_norm(self.kpt_cart, thr=thr)
 		egv = self.egv - fermi
 
 		res = np.column_stack((x, egv))

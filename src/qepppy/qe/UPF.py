@@ -1,5 +1,5 @@
 import numpy as np
-from .parser.data_file_parser import data_file_parser as dfp
+from ..parsers import Parser_xml
 from .._decorators import store_property
 
 data={
@@ -57,15 +57,10 @@ data={
 		},
 	}
 
-class UPF(dfp):
-	def __init__(self, d={}, **kwargs):
-		d.update(data)
-		super().__init__(d=d, **kwargs)
-
-	@property
-	@store_property
-	def mesh_size(self):
-		return self.header[0]['mesh_size']
+class UPF(Parser_xml):
+	def __init__(self, xml_data={}, **kwargs):
+		xml_data.update(data)
+		super().__init__(xml_data=xml_data, **kwargs)
 
 	@property
 	@store_property
@@ -75,6 +70,7 @@ class UPF(dfp):
 	@property
 	@store_property
 	def l_local(self):
+		# return getattr(self, 'local')
 		return self.header[0]['l_local']
 
 	@property

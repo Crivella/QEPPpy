@@ -1,6 +1,8 @@
 import numpy as np
-from .lattice  import lattice
-from .._decorators import set_self
+
+from .._decorators import numpy_save_opt, set_self
+from .lattice import lattice
+
 
 def u(r, q):
 	return (2.*r - q - 1.), (2. * q)
@@ -271,7 +273,8 @@ class kpoints(lattice):
 
 
 
-	@set_self('kpt_cart,kpt_weight')
+	@numpy_save_opt(_fname="kpt_crop.dat", _fmt="")
+	# @set_self('kpt_cart,kpt_weight')
 	def kpt_crop(
 		self, 
 		center=(0,0,0), radius=np.inf, 
@@ -285,13 +288,16 @@ class kpoints(lattice):
 		 - radius: Radius of the crop sphere. Defaulr = np.inf
 		 - verbose: Print information about the cropping. Default = True
 		"""
-		if radius < 0:
-			raise ValueError("Radius must be greather than 0.")
+		# if radius < 0:
+		# 	raise ValueError("Radius must be greather than 0.")
 		self.mesh  = self.shift = self.edges = None
 
 		center = np.array(center).reshape(3)
 		norms  = np.linalg.norm(self.kpt_cart - center, axis=1)
-		w      = np.where(norms <= radius)[0]
+		if radius < 0:
+			w = np.where(norms > -radius)[0]
+		else:
+			w = np.where(norms <= radius)[0]
 
 		crop_weight = self.kpt_weight[w].sum()
 		tot_weight  = self.kpt_weight.sum()
@@ -307,7 +313,7 @@ class kpoints(lattice):
 
 		res_weight = self._normalize_weight(res_weight)
 
-		return res_kpt, res_weight
+		return res_kpt, res_weight.reshape(-1,1)
 
 	def _kpt_plot(self, ax, edges_name=[]):
 		self.draw_Wigner_Seitz(ax)

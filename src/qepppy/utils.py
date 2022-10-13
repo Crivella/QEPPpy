@@ -1,11 +1,12 @@
 import numpy as np
 
+
 def recipr_base(base):
 	return np.linalg.inv(base).T * 2 * np.pi
 
-def generate_repetition_grid(r1,r2,r3, vect_matrix=None):
+def generate_repetition_grid(R, vect_matrix=None):
 	from itertools import product
-	res = np.array(list(product(r1,r2,r3)))
+	res = np.array(list(product(*R)))
 	if not vect_matrix is None:
 		res = res.dot(vect_matrix)
 
@@ -59,7 +60,7 @@ def lowdin_ortho(base):
 	         multidimensional (eg: FFT grids), flatten them before. After the
 	         orthonormalization, restore the shape
 	"""
-	from scipy.linalg import sqrtm, inv
+	from scipy.linalg import inv, sqrtm
 
 	shape   = base[0].shape
 	base    = np.array([a.flatten() for a in base])

@@ -1,6 +1,8 @@
-import re
 import functools
+import re
+
 import numpy as np
+
 
 def join_doc(func, add):
     tabs='\t'
@@ -68,6 +70,12 @@ def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
 
             if not fname:
                 raise ValueError("Must pass valid file name to arg 'fname'")
+
+            if isinstance(res, (tuple,list)):
+                tosave = np.hstack(res)
+            else:
+                tosave = res
+
             save_args = {}
             header = '{}  args{} kwargs={}\n'.format(func.__name__, args, kwargs) + header
             if fmt:
@@ -75,7 +83,7 @@ def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
             if header:
                 save_args['header'] = header
             save_args['delimiter'] = delimiter
-            np.savetxt( fname=fname, X=res, **save_args)
+            np.savetxt( fname=fname, X=tosave, **save_args)
             return res
 
         join_doc(wrapped, save_opt_doc)
