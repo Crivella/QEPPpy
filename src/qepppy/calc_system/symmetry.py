@@ -1,4 +1,6 @@
 import numpy as np
+from itertools import product
+
 from ..meta import PropertyCreator
 
 def get_symmetry_order(symm_matrix):
@@ -90,9 +92,9 @@ class symmetry(metaclass=PropertyCreator):
 
 		Return: (new_i,new_p)
 		 - new_i: List of indices that map the not-reduced set of points to the
-		          reduced one.
-		          new_p[new_i] will give a list of points that is equivalent to
-		          the not-reduced one by symmetry.
+				  reduced one.
+				  new_p[new_i] will give a list of points that is equivalent to
+				  the not-reduced one by symmetry.
 		 - new_p: The list of points that are not equivalent by symmetry.
 		"""
 		assert(isinstance(coord, np.ndarray))
@@ -134,26 +136,26 @@ class symmetries(list):
 
 		Return: (new_i,new_p)
 		 - new_i: List of indices that map the not-reduced set of points to the
-		          reduced one.
-		          new_p[new_i] will give a list of points that is equivalent to
-		          the not-reduced one by symmetry.
-		          e.g.: [0,1,2,3,2,1,0]
-		                means that kpt
-		                  4 was remapped onto 2
-		                  5 was remapped onto 1
-		                  6 was remapped onto 0
-		                getting a list of point equivalent by symetry to the original one
-		                is done by 'new_p[new_i]'
+				  reduced one.
+				  new_p[new_i] will give a list of points that is equivalent to
+				  the not-reduced one by symmetry.
+				  e.g.: [0,1,2,3,2,1,0]
+						means that kpt
+						  4 was remapped onto 2
+						  5 was remapped onto 1
+						  6 was remapped onto 0
+						getting a list of point equivalent by symetry to the original one
+						is done by 'new_p[new_i]'
 		 - new_p: The list of points that are not equivalent by symmetry.
 		 - symm_remap: List of the indices of the symmetry that was used to remap
-		               every k-point. If some indexes are -1, it means that that
-		               k-point was not remapped onto any other k-point using a symmetry
-		               (even if other points might have been remapped onto it).
-		               eg: [-1 -1  0  0  1]
-		                   means that kpt
-		                     0,1 were not remapped
-		                     2,3 were remapped using the symmetry with index 0
-		                     4   was  remapped using the symmetry with index 1
+					   every k-point. If some indexes are -1, it means that that
+					   k-point was not remapped onto any other k-point using a symmetry
+					   (even if other points might have been remapped onto it).
+					   eg: [-1 -1  0  0  1]
+						   means that kpt
+							 0,1 were not remapped
+							 2,3 were remapped using the symmetry with index 0
+							 4   was  remapped using the symmetry with index 1
 		"""
 		assert(isinstance(coord, np.ndarray))
 		assert(coord.shape[1] == 3)
@@ -163,34 +165,65 @@ class symmetries(list):
 
 		symm_remap = np.ones((coord.shape[0],), dtype=int) * -1
 
-		# print()
-		# print(coord)
-		# print(coord.shape[0])
 		for n,matrix in enumerate(self):
 			new_i, new_p = matrix.reduce(res_p, thr=thr)
 			res_p = new_p
 			res_i = new_i[res_i]
-			# print(len(res_i))
-			# raise NotImplementedError("NEED FIX. should use res_i nad not new_i !!!!!!!!!!!!!!!")
 			np.set_printoptions(linewidth=2000, formatter={'int':lambda x:f'{x:3d}'})
-			# print()
-			# print('-'*50)
-			# print(n, symm_remap)
-			# print(matrix)
 			uniq, count = np.unique(new_i, return_counts=True)
 			for u,c in zip(uniq, count):
 				if c == 1:
 					continue
 				w = np.where(new_i == u)
-				# print(w[0][0], end=', ')
 				w = w[0][1:]
 
 				# if np.any(symm_remap[w] != -1):
 				# 	raise NotImplementedError()
 				symm_remap[w] = n
 
-		# print(symm_remap)
 		return res_i, res_p, symm_remap
 
-	
+	def reduce2(self, coord, thr=1E-5):
+		"""
+		Reduce a list of points using all the symmetries IN ALL POSSIBLE COMBINATIOSN.
+		Params:
+		 - coord: np.array of shape(-1,3) containing the list of point to reduce
+
+		Return: (new_i,new_p)
+		 - new_i: List of indices that map the not-reduced set of points to the
+				  reduced one.
+				  new_p[new_i] will give a list of points that is equivalent to
+				  the not-reduced one by symmetry.
+				  e.g.: [0,1,2,3,2,1,0]
+						means that kpt
+						  4 was remapped onto 2
+						  5 was remapped onto 1
+						  6 was remapped onto 0
+						getting a list of point equivalent by symetry to the original one
+						is done by 'new_p[new_i]'
+		 - new_p: The list of points that are not equivalent by symmetry.
+		"""
+		assert(isinstance(coord, np.ndarray))
+		assert(coord.shape[1] == 3)
+
+		res_i = np.arange(coord.shape[0])
+		res_p = coord.copy()
+
+		symm_remap = np.ones((coord.shape[0],), dtype=int) * -1
+
+		combinations = list(product(*(range(_.order) for _ in self)))
+
+		for idxs in combinations:
+			M = np.diag([1,1,1])
+			# Build the symmetry matrix
+			for i,n in enumerate(idxs):
+				s = self[i]
+				for _ in range(n):
+					M = M.dot(s.rotation)
+
+			new_i, res_p = inequivalent_iteration(res_p, M, thr)
+			res_i = new_i[res_i]
+
+		return res_i, res_p
+
 

@@ -208,7 +208,9 @@ class kpoints(lattice):
 
 
 	@set_self('kpt_cryst,kpt_weight')
-	def generate_monkhorst_pack_grid(self, mesh=None, shift=None):
+	def generate_monkhorst_pack_grid(
+		self, mesh=None, shift=None,
+		use_symmeties=True, symm_thr=1E-5):
 		"""
 		Generate a Monkhorst-Pack grid of k-point.
 		Params:
@@ -246,13 +248,21 @@ class kpoints(lattice):
 		kpts, _ = self.translate_coord_into_FBZ(kpts, mode='cryst', num=2)
 		self.full_kpt_cryst = kpts
 
-		if self.symmetries == [] or self.symmetries is None:
-			try:
-				self.get_symmetries()
-			except:
-				pass
-		ind, kpts, _ = self.symmetries.reduce(kpts)
-		self.irrep_mapping  = ind
+		if use_symmeties:
+			# Must check symmetries on point in cartesian coordinates
+			# Checking on crystal only works if [M,B] = 0
+			kpts = cryst_to_cart(self, kpts)
+			if self.symmetries == [] or self.symmetries is None:
+				try:
+					self.get_symmetries()
+				except:
+					pass
+			ind, kpts, _ = self.symmetries.reduce(kpts, thr=symm_thr)
+			# ind, kpts = self.symmetries.reduce2(kpts, thr=symm_thr)
+			self.irrep_mapping  = ind
+			kpts = cart_to_cryst(self, kpts)
+		else:
+			ind = np.arange(len(kpts))
 
 		unique, counts = np.unique(ind, return_counts=True)
 		weight = counts[np.argsort(unique)]
