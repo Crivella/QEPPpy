@@ -1,59 +1,60 @@
 import numpy as np
-from ..parsers import Parser_xml
+
 from .._decorators import store_property
+from ..parsers import Parser_xml
 
 data={
 	'header':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'PP_HEADER',
-		'res_type':list,
+		'typ':list,
 		},
 	'mesh':{
 		'xml_ptype':'text', 
 		'xml_search_string':'PP_MESH/PP_R',
-		'res_type':np.array,
+		'typ':np.ndarray,
 		},
 	'rab':{
 		'xml_ptype':'text', 
 		'xml_search_string':'PP_MESH/PP_RAB',
-		'res_type':np.array,
+		'typ':np.ndarray,
 		},
 	'nlcc':{
 		'xml_ptype':'text', 
 		'xml_search_string':'PP_NLCC',
-		'res_type':np.array,
+		'typ':np.ndarray,
 		},
 	'nlcc':{
 		'xml_ptype':'text', 
 		'xml_search_string':'PP_NLCC',
-		'res_type':np.array,
+		'typ':np.ndarray,
 		},
 	'_semilocal':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'PP_SEMILOCAL', 
 		'extra_name':'vnl', 
-		'res_type':list,
+		'typ':list,
 		},
 	'local':{
 		'xml_ptype':'text', 
 		'xml_search_string':'PP_LOCAL',
-		'res_type':np.array,
+		'typ':np.ndarray,
 		},
 	'_nonloc':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'PP_NONLOCAL',
-		'res_type':list,
+		'typ':list,
 		},
 	'_pswfc':{
 		'xml_ptype':'nodelist', 
 		'xml_search_string':'PP_PSWFC//',
 		'extra_name':'PP_CHI',
-		'res_type':list,
+		'typ':list,
 		},
 	'rho_atom':{
 		'xml_ptype':'text', 
 		'xml_search_string':'PP_RHOATOM',
-		'res_type':np.array,
+		'typ':np.ndarray,
 		},
 	}
 
@@ -114,7 +115,7 @@ class UPF(Parser_xml):
 	@store_property
 	def pswfc(self):
 		try:
-			return np.array([a['PP_CHI'] for a in self._pswfc])
+			return np.array([np.fromstring(a, sep=' ') for a in self._pswfc])
 		except:
 			return None
 
