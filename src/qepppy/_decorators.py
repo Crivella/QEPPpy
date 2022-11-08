@@ -118,10 +118,10 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
             if not plot:
                 return res
 
-            import matplotlib.pyplot as plt
             from matplotlib.ticker import AutoMinorLocator as AML
             to_plot = False
             if ax is None:
+                import matplotlib.pyplot as plt
                 offset = 0
                 to_plot = True
                 fig, ax = plt.subplots()
