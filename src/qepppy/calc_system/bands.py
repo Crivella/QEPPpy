@@ -60,13 +60,13 @@ class bands(kpoints):
 	@property
 	def n_bnd(self):
 		try:
-			res = self.egv.shape[1]
-		except AttributeError:
-			res = None
-		if hasattr(self, '_n_bnd'):
+			res = self._n_bnd
+		except:
 			try:
-				res = self._n_bnd
-			except:
+				res = self.egv.shape[1]
+			except AttributeError:
+				res = None
+			else:
 				self._n_bnd = res
 		return res
 
