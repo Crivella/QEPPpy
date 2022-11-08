@@ -40,7 +40,7 @@ data={
 			r'|' + 
 			r'(\(\s*(?P<egv_num>\d+)\s*\)\s*=\s*))' + 
 			r'(?P<egv>[\d\-\.]+)\s*(?P<unit>\S+)\s*=*\s*' +
-			r'psi = (?P<components>[\s\d\.\+\*#\[\]]+)' +
+			r'(psi = )?(?P<components>[\s\d\.\+\*#\[\]]+)' +
 			r'\|psi\|\^2 = (?P<sum2>[\d\.]+)\s*'
 			# r'\s*e(( \= \s*)|(\((?P<egv_num>\s*\d+)\)\s*=\s*))(?P<egv>[\d\-\.]+)\s*(?P<unit>\S+)\s*' +
 			# r'psi = (?P<components>[\s\d\.\+\*#\[\]]+)\|psi\|\^2 = (?P<sum2>[\d\.]+)\s*'
