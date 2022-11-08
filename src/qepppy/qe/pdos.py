@@ -139,7 +139,7 @@ class pdos(Parser_regex, bands):
 	@numpy_save_opt(_fname="pdos.dat")
 	def sum_pdos(
 		self, *args,
-		emin=-20, emax=20, deltaE=0.001, deg=0.00,
+		emin=-20, emax=20, deltaE=0.001, fermi=0.00, deg=0.00,
 		weight=None,
 		**kwargs
 		):
@@ -149,7 +149,7 @@ class pdos(Parser_regex, bands):
 		res = np.pad(res, ((0,self.n_states),(0,0)), 'constant')
 
 		for k,egv in enumerate(self.egv):
-			i = np.floor((egv - emin) / deltaE +0.5).astype(dtype='int')
+			i = np.floor((egv-fermi - emin) / deltaE +0.5).astype(dtype='int')
 			w = np.where( (0 <= i) & (i < res[0].size))[0]
 			i = i[w]
 			res[1:,i] += self.components[k,w,:].T * weight[k]
