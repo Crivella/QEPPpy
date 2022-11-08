@@ -100,7 +100,7 @@ class Parser_regex():
 		res = [x.groupdict() for x in res]
 		for n,e in enumerate(res):
 			for k,v in e.items():
-				if '*' in v or rgx.search(v):
+				if '*' in v or rgx.search(v) or not v.strip():
 					b = str(v).strip()
 				else:
 					b = np.fromstring(v, sep=' ')

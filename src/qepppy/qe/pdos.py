@@ -64,23 +64,6 @@ class pdos(Parser_regex, bands):
 		regex_data.update(data)
 		super().__init__(regex_data=regex_data, **kwargs)
 
-	# @property
-	# @store_property
-	# def n_kpt(self):
-	# 	return len(self._kpt)
-
-	# @property
-	# @store_property
-	# def n_bnd(self):
-	# 	# if self._n_bnd != len(self._egv)//self.n_kpt:
-	# 	# 	raise NotImplementedError()
-	# 	return self._n_bnd
-
-	# @property
-	# # @store_property
-	# def kpt(self):
-	# 	return self._kpt
-
 	@property
 	@store_property
 	def _egv(self):
@@ -107,7 +90,7 @@ class pdos(Parser_regex, bands):
 	@store_property
 	def components(self):
 		r = re.compile(r'\+?([\d.]+)\*\[\#\s*(\d+)\]')
-		res = np.zeros((self.n_kpt,self.n_bnd, self.n_states))
+		res = np.zeros((self.n_kpt, self.n_bnd, self.n_states))
 		old = -1
 		nkpt = 0
 		for n,e in enumerate(self._raw_egv):
