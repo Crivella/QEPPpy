@@ -1,6 +1,7 @@
 import re
 import numpy as np
 from ..parsers import Parser_regex
+from ..calc_system import bands
 # from ..logger import logger, warning
 from .._decorators import numpy_save_opt, numpy_plot_opt, store_property, IO_stdout_redirect
 
@@ -27,11 +28,11 @@ data={
 			# r'|' + 
 			r'(\(l=\s*(?P<lj>\d+)\s+j=\s*(?P<j>\S+)\s+m_j=\s*(?P<mj>\S+)\s*\))'
 		},
-	'_kpt':{
+	'kpt_cart':{
 		'typ':list,
 		'rstring':r'\s*k =\s*(?P<kpt>[\d.\- ]+)'
 		},
-	'_egv':{
+	'_raw_egv':{
 		'typ':list,
 		'rstring':
 			r'\s*=*\s*e(' +
@@ -57,42 +58,48 @@ class state:
 	m: float
 
 
-class pdos(Parser_regex):
+class pdos(Parser_regex, bands):
 	__name__ = "pdos"
 	def __init__(self, regex_data={}, **kwargs):
 		regex_data.update(data)
 		super().__init__(regex_data=regex_data, **kwargs)
 
-	@property
-	@store_property
-	def n_kpt(self):
-		return len(self._kpt)
-
-	@property
-	@store_property
-	def n_bnd(self):
-		if self._n_bnd != len(self._egv)//self.n_kpt:
-			raise NotImplementedError()
-		return self._n_bnd
-
-	@property
+	# @property
 	# @store_property
-	def kpt(self):
-		return self._kpt
+	# def n_kpt(self):
+	# 	return len(self._kpt)
+
+	# @property
+	# @store_property
+	# def n_bnd(self):
+	# 	# if self._n_bnd != len(self._egv)//self.n_kpt:
+	# 	# 	raise NotImplementedError()
+	# 	return self._n_bnd
+
+	# @property
+	# # @store_property
+	# def kpt(self):
+	# 	return self._kpt
 
 	@property
 	@store_property
-	def egv(self):
+	def _egv(self):
 		conversion = {
 			'eV':1,
 			}
-		res = np.empty(self.n_kpt*self.n_bnd)
-		for n,e in enumerate(self._egv):
-			_, egv, unit, _, _ = e
+		res = np.empty((self.n_kpt,self.n_bnd))
+		old = -1
+		nkpt = 0
+		for n,e in enumerate(self._raw_egv):
+			nbnd, egv, unit, _, _ = e
+			nbnd = int(float(nbnd))-1
 			egv = float(egv)
 			if not unit in conversion:
 				raise NotImplementedError("Unit {} is not implemented".format(unit))
-			res[n] = egv * conversion[unit]
+			if nbnd < old:
+				nkpt +=1
+			old = nbnd
+			res[nkpt,nbnd] = egv * conversion[unit]
 
 		return res.reshape(self.n_kpt,self.n_bnd)
 
@@ -100,12 +107,18 @@ class pdos(Parser_regex):
 	@store_property
 	def components(self):
 		r = re.compile(r'\+?([\d.]+)\*\[\#\s*(\d+)\]')
-		res = np.zeros((self.n_kpt*self.n_bnd, self.n_states))
-		for n,e in enumerate(self._egv):
-			_, _, _, components, _ = e
+		res = np.zeros((self.n_kpt,self.n_bnd, self.n_states))
+		old = -1
+		nkpt = 0
+		for n,e in enumerate(self._raw_egv):
+			nbnd, _, _, components, _ = e
+			nbnd = int(float(nbnd))-1
+			if nbnd < old:
+				nkpt +=1
+			old = nbnd
 			if components.strip():
 				comp = np.array([(float(a.group(1)),int(a.group(2))) for a in r.finditer(components)])
-				res[n,comp[:,1].astype(dtype=int)-1] = comp[:,0]
+				res[nkpt,nbnd,comp[:,1].astype(dtype=int)-1] = comp[:,0]
 		return res.reshape(self.n_kpt,self.n_bnd,self.n_states)
 
 	@property
