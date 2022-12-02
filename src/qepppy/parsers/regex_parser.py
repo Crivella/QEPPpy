@@ -53,6 +53,8 @@ class Parser_regex():
 				  The number of columns/rgx_groups has to be equal to the number
 				  of attribute names, or max_num has to be used to truncate
 				  the resulting array.
+	   - repeatable: True/Fale (default) Allow to read output of calculations 
+	     that print the same output multiple times for different iterations
 	   - max_num: MAX number of column to consider when parsing iterables
 	     Can be positive/negative to truncate starting from the left/right 
 		 edge.
@@ -81,14 +83,18 @@ class Parser_regex():
 		self._regex_data = value
 
 	@staticmethod
-	def get_single_val(content, rstring, typ):
+	def get_single_val(content, rstring, typ, repeat):
 		res = None
 
 		if not 'flag' in rstring:
 			rstring += matches[typ]
-		val = re.search(rstring, content)
-		if not val is None:
-			res = typ(val.group('flag'))
+		val = list(re.finditer(rstring, content))
+		if not val:
+			return
+		if not repeat:
+			res = typ(val[-1].group('flag'))
+		else:
+			res = [typ(_.group('flag')) for _ in val]
 
 		return res
 
@@ -103,6 +109,7 @@ class Parser_regex():
 				if '*' in v or rgx.search(v) or not v.strip():
 					b = str(v).strip()
 				else:
+					v = v.replace('-', ' -')
 					b = np.fromstring(v, sep=' ')
 					if len(b) == 0 :
 						b = str(v).strip()
@@ -113,18 +120,29 @@ class Parser_regex():
 		return res
 
 	# @staticmethod
-	def max_num_truncate(self, max_num, val):
+	def max_num_truncate(self, max_num, val, repeat):
 		fact = 1
-		if not max_num is None:
-			if isinstance(max_num, str):
-				if max_num.startswith('-'):
-					fact = -1
-					max_num = max_num[1:]
-				max_num = getattr(self, max_num.strip()) * fact
+		if max_num is None:
+			return val
+
+		if isinstance(max_num, str):
+			if max_num.startswith('-'):
+				fact = -1
+				max_num = max_num[1:]
+			max_num = getattr(self, max_num.strip())
+		if not repeat:
+			max_num *= fact
 			if max_num > 0:
 				val = val[:max_num]
 			else:
 				val = val[max_num:]
+		else:
+			sx = val.shape[0]
+			if sx % max_num != 0:
+				raise ValueError(f"Read data cannot be reshaped using given {max_num=}")
+			new = sx//max_num
+			if new > 1:
+				val = val.reshape(sx//max_num, max_num, -1)
 
 		return val
 
@@ -155,9 +173,10 @@ class Parser_regex():
 			typ        = v.get('typ')
 			max_num    = v.get('max_num', None)
 			scale_fact = v.get('re_scale_fact', None)
+			repeat     = v.get('repeatable', False)
 
 			if typ in matches:
-				val = self.get_single_val(content, rstring, typ)
+				val = self.get_single_val(content, rstring, typ, repeat)
 				setattr(self, k, val)
 				# dbg1('found_single:', val)
 			elif typ in (list,np.ndarray):
@@ -175,7 +194,7 @@ class Parser_regex():
 					else:
 						app2 = np.array([list(a.values())[num] for a in app])
 
-					val = self.max_num_truncate(max_num, app2)
+					val = self.max_num_truncate(max_num, app2, repeat)
 					val = self.scale(val, scale_fact)
 
 					# dbg1(f'found_mul({name}):', val)

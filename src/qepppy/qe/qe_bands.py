@@ -21,10 +21,11 @@ data ={
 		'rstring':r'number of electrons[\s]*=',
 		'typ':float,
 		},
-	'fermi':{
+	'_fermi':{
 		'xml_search_string':'output//fermi_energy',
 		'rstring':r'the Fermi energy is',
 		'typ':float,
+		'repeatable': True,
 		},
 	'fermi_s':{ 
 		'xml_search_string':'output//two_fermi_energies',
@@ -57,23 +58,26 @@ data ={
 		'xml_search_string':'output//ks_energies/k_point', 
 		'typ':np.ndarray,
 		},
-	'egv':{
+	'_egv':{
 		'xml_search_string':'output//ks_energies/eigenvalues', 
 		'rstring':r'(band energies)|(bands) \(ev\):(?P<egv>[\s\d\.\-]+)', 
 		'typ':np.ndarray,
 		'xml_scale_fact':HA_to_eV,
 		'max_num':'-_n_kpt',
+		'repeatable': True,
 		},
-	'occ':{
+	'_occ':{
 		'xml_search_string':'output//ks_energies/occupations', 
 		'rstring':r'occupation numbers(?P<occ>[\s\d\.]+)',
-		'typ':np.ndarray
+		'typ':np.ndarray,
+		'repeatable': True,
 		},
 	'_E_tot':{
 		'xml_search_string':'output//total_energy/etot',
 		'rstring':r'\!\s*total energy\s*=',
 		'typ':float,
 		'xml_scale_fact':2,
+		'repeatable': True,
 		}
 	}
 
@@ -122,7 +126,76 @@ class qe_bands(Parser_xml, Parser_regex):
 		"""Total energy"""
 		if self._E_tot == 0.0:
 			return None
+		if isinstance(self._E_tot, list):
+			return self._E_tot[-1]
 		return self._E_tot
+
+	@property
+	def E_tot_all(self):
+		"""Total energy array for multiple iterations"""
+		if self._E_tot == 0.0:
+			return None
+		return self._E_tot
+
+	@property
+	def egv(self):
+		"""Eigenvalues"""
+		if self._egv is None:
+			return
+		ls = len(self._egv.shape)
+		if ls == 3:
+			return self._egv[-1]
+		if ls == 2:
+			return self._egv
+		if ls == 0 or self._egv.size == 0:
+			return
+		raise NotImplementedError
+
+	@property
+	def egv_all(self):
+		"""Eigenvalues array for multiple iterations"""
+		if self._egv is None:
+			return
+		return self._egv
+
+	@property
+	def occ(self):
+		"""Occupations"""
+		if self._occ is None:
+			return
+		ls = len(self._occ.shape)
+		if ls == 3:
+			return self._occ[-1]
+		if ls == 2:
+			return self._occ
+		if ls == 0 or self._occ.size == 0:
+			return
+		print(self._occ, self._occ.shape, ls)
+		raise NotImplementedError
+
+
+	@property
+	def occ_all(self):
+		"""Occupations array for multiple iterations"""
+		if self._occ is None:
+			return
+		return self._occ
+
+	@property
+	def fermi(self):
+		"""Fermi energy"""
+		if self._fermi is None:
+			return
+		if isinstance(self._fermi, list):
+			return self._fermi[-1]
+		return self._fermi
+
+	@property
+	def fermi_all(self):
+		"""Fermi energy array for multiple iterations"""
+		if self._fermi is None:
+			return
+		return self._fermi
 
 	@property
 	def vb(self):
