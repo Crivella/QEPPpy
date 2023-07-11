@@ -34,7 +34,7 @@ class bands(kpoints):
 	egv = {
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=float),
 		'doc':"""Array of shape (n_kpt, n_bnd,) where the Nth row represents the
 		energy ordered eigenvalues for the Nth kpoint."""
 		}
@@ -42,7 +42,7 @@ class bands(kpoints):
 	occ = {
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=float),
 		'doc':"""Array of shape (n_kpt, n_bnd,) where the Nth row and Jth
 		column represent the occupation for the Jth band of the Nth kpoint."""
 		}
@@ -273,7 +273,7 @@ class bands(kpoints):
 
 		_print("SMALLEST_GAP: radius={}, comp_point={}\n".format(radius, center))
 
-		center = np.array(center, dtype=np.float).reshape(3)
+		center = np.array(center, dtype=float).reshape(3)
 
 		norms  = np.linalg.norm(self.kpt_cart - center, axis=1)
 		w      = np.where(norms <= radius)[0]

@@ -55,7 +55,7 @@ class atoms_list(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
+		'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
 		# 'post_set_name':'_atoms_coord_cryst',
 		# 'post_set_func':_cart_to_cryst_,
 		'doc':"""List of atomic coordinate in CARTESIAN basis."""
@@ -65,7 +65,7 @@ class atoms_list(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
+		'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
 		# 'post_set_name':'_atoms_coord_cart',
 		# 'post_set_func':_cryst_to_cart_,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
@@ -84,7 +84,7 @@ class atoms_list(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape':('n_atoms',),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=float),
 		'post_set_name':'_unique_atoms_mass',
 		'post_set_func':get_unique,
 		'doc':"""List of atomic masses (same order as the list of coordinates)."""
@@ -101,7 +101,7 @@ class atoms_list(metaclass=PropertyCreator):
 	unique_atoms_typ={
 		'typ':(list,np.ndarray,),
 		'sub_typ':(str,np.ndarray,),
-		# 'conv_func':lambda x: np.array(x, dtype=np.float),
+		# 'conv_func':lambda x: np.array(x, dtype=float),
 		'doc':"""List of atom names."""
 		}
 
@@ -109,7 +109,7 @@ class atoms_list(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape':('n_types',),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=float),
 		'post_set_name':'_atoms_mass',
 		'post_set_func':undo_unique,
 		'doc':"""List of atomic masses."""

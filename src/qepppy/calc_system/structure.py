@@ -23,7 +23,7 @@ class structure(atm, latt):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
+		'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
 		'post_set_name':'_atoms_coord_cryst',
 		'post_set_func':cart_to_cryst,
 		'doc':"""List of atomic coordinate in CARTESIAN basis."""
@@ -33,7 +33,7 @@ class structure(atm, latt):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
+		'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
 		'post_set_name':'_atoms_coord_cart',
 		'post_set_func':cryst_to_cart,
 		'doc':"""List of atomic coordinate in CRYSTAL basis."""
@@ -43,7 +43,7 @@ class structure(atm, latt):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
+		'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
 		'doc':"""Array of forces acting on the atoms."""
 		}
 
@@ -51,7 +51,7 @@ class structure(atm, latt):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(-1,3),
+		'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
 		'doc':"""Array of velocities of the atoms."""
 		}
 
@@ -99,7 +99,7 @@ class structure(atm, latt):
 	def load_xyz(self, file):
 		import re
 		conv={
-			'R':np.float,
+			'R':float,
 			'I':np.bool,
 			'S':'|U30',
 			}

@@ -202,7 +202,7 @@ class Parser_xml():
 					val = [list(filter(None, re.split(r'\s+', a))) for a in val]
 					val = [a[0] if len(a) == 1 else a for a in val]
 			try:
-				val = np.array(val, dtype=np.float)
+				val = np.array(val, dtype=float)
 			except ValueError:
 				val = np.array(val)
 

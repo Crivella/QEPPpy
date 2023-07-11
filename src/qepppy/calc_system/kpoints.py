@@ -25,7 +25,7 @@ class kpoints(lattice):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=float),
 		'post_set_name':'_kpt_cryst',
 		'post_set_func':cart_to_cryst,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
@@ -34,7 +34,7 @@ class kpoints(lattice):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=float),
 		'post_set_name':'_kpt_cart',
 		'post_set_func':cryst_to_cart,
 		'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
@@ -43,14 +43,14 @@ class kpoints(lattice):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape':('n_kpt',),
-		'conv_func':lambda x: np.array(x, dtype=np.float),#/np.array(x, dtype=np.float).sum(),
+		'conv_func':lambda x: np.array(x, dtype=float),#/np.array(x, dtype=float).sum(),
 		'doc':"""List of k-points weights."""
 		}
 	kpt_mesh={
 		'typ':(tuple,),
 		'sub_typ':(int, np.integer),
 		'shape': (3,),
-		'conv_func':lambda x: np.array(x, dtype=np.int),
+		'conv_func':lambda x: np.array(x, dtype=int),
 		'doc':"""Density of the Monkhorst-Pack mesh grid."""
 		}
 	kpt_shift={
@@ -59,14 +59,14 @@ class kpoints(lattice):
 		'shape': (3,),
 		'default':(0,0,0),
 		'allowed':(0,1),
-		'conv_func':lambda x: np.array(x, dtype=np.int),
+		'conv_func':lambda x: np.array(x, dtype=int),
 		'doc':"""Shift of the Monkhorst-Pack mesh grid."""
 		}
 	kpt_edges={
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape': (-1,4,),
-		'conv_func':lambda x: np.array(x, dtype=np.float),
+		'conv_func':lambda x: np.array(x, dtype=float),
 		'doc':"""k-path where every i-th row is the 3 coordinates + the number of point
 		between the i-th and i-th + 1  k-points."""
 		}
@@ -273,7 +273,7 @@ class kpoints(lattice):
 
 	@staticmethod
 	def _normalize_weight(weight, norm=1):
-		weight = np.array(weight, dtype=np.float)
+		weight = np.array(weight, dtype=float)
 
 		return norm * weight / weight.sum()
 

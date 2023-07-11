@@ -8,7 +8,7 @@ class lattice(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape':(3,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(3,3),
+		'conv_func':lambda x: np.array(x, dtype=float).reshape(3,3),
 		'post_set_name':'_recipr',
 		'post_set_func':lambda x,y: utils.recipr_base(y),
 		'doc':"""Matrix of direct basis vector (as rows)."""
@@ -17,7 +17,7 @@ class lattice(metaclass=PropertyCreator):
 		'typ':(list,np.ndarray),
 		'sub_typ':(int,float,np.number),
 		'shape':(3,3),
-		'conv_func':lambda x: np.array(x, dtype=np.float).reshape(3,3),
+		'conv_func':lambda x: np.array(x, dtype=float).reshape(3,3),
 		'post_set_name':'_direct',
 		'post_set_func':lambda x,y: utils.recipr_base(y),
 		'doc':"""Matrix of reciprocal basis vector (as rows)."""

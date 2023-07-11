@@ -69,7 +69,7 @@ def test_flatten_iter(iterable):
 		),
 		(
 			(int,float,np.number),
-			np.int(2)
+			int(2)
 		),
 		(
 			(str,),
@@ -185,7 +185,7 @@ def test_check_type_wrong(typ_value):
 		),
 		(
 			(int,float,np.number),
-			[1,3, (3., np.int(5))]
+			[1,3, (3., int(5))]
 		),
 		(
 			(str,),

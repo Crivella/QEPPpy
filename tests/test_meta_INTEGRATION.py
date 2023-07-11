@@ -55,7 +55,7 @@ class A(metaclass=PropertyCreator):
 		'sub_typ':(int, np.integer),
 		'shape':(-1,3),
 		'allowed':range(10),
-		'conv_func':lambda x: np.array(x, dtype=np.integer)
+		'conv_func':lambda x: np.array(x, dtype=int)
 		}
 
 	p7={
