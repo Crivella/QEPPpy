@@ -215,7 +215,7 @@ class bands(kpoints):
 		   np.linspace(Emin,Emax,(Emax-Emin)/(deltaE)+1)
 		  The second column is the value of the DOS
 		"""
-		res = np.linspace(Emin, Emax, (Emax-Emin)/deltaE+1).reshape(1,-1)
+		res = np.linspace(Emin, Emax, int((Emax-Emin)/deltaE+1)).reshape(1,-1)
 		res = np.pad(res, ((0,1),(0,0)), 'constant')
 
 		for n,egv in enumerate(self.egv):
