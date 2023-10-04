@@ -30,7 +30,7 @@ initl_corr={
         },
 }
 
-class A(metaclass=PropertyCreator):
+class Dummy(metaclass=PropertyCreator):
     p1={
         }
 
@@ -74,7 +74,7 @@ class A(metaclass=PropertyCreator):
         'default':1
         }
 
-class B(A):
+class B(Dummy):
     pass
 
 @pytest.fixture(
@@ -103,27 +103,27 @@ def test_meta_default(val):
 
 
 def test_meta_init_corr(init_kwargs_corr):
-    A(**init_kwargs_corr)
+    Dummy(**init_kwargs_corr)
 
 def test_meta_init_inheritance(init_kwargs_corr):
     B(**init_kwargs_corr)
 
 def test_meta_doc():
-    assert "C'era una volta tanto tempo fa..." in A.p2.__doc__, (
+    assert "C'era una volta tanto tempo fa..." in Dummy.p2.__doc__, (
         "Documentation was not assigned correctly to property."
         ) 
 
 
 @pytest.mark.parametrize('num', range(5))
 def test_meta_conv_func(num):
-    new  = A()
+    new  = Dummy()
     new.p6 = [[1,2,3]]*num
 
     assert isinstance(new.p6, np.ndarray), "Failed to convert list to np.ndarray"
-    assert new.p6.shape[0] == num, f"Failed conversion: wrong shape '{A.p6.shape}'"
+    assert new.p6.shape[0] == num, f"Failed conversion: wrong shape '{Dummy.p6.shape}'"
 
 def test_meta_allowed_wrong():
-    new    = A()
+    new    = Dummy()
     try:
         new.p6 = np.arange(12).reshape(-1,3)
     except ValueError as e:
@@ -140,7 +140,7 @@ def test_meta_allowed_wrong():
     )
 def test_meta_reset_attr(name_val):
     name, val = name_val
-    new  = A()
+    new  = Dummy()
 
     assert not getattr(new, name), f"Wrong initialization of attr."
     setattr(new, name, val)
@@ -149,23 +149,26 @@ def test_meta_reset_attr(name_val):
         v = True
     assert v, "Failed to assign attr."
     setattr(new, name, None)
-    assert not getattr(new, name), "Failed to reset attr."
+    res = getattr(new, name)
+    if isinstance(res, np.ndarray):
+        res = len(res)   
+    assert not res, "Failed to reset attr."
 
 def test_meta_pre_set():
-    new    = A()
+    new    = Dummy()
     new.p7 = 12345
 
     assert new.p1 == 12345, "Failed pres_set."
 
 def test_meta_post_set_corr():
-    new    = A()
+    new    = Dummy()
     new.p1 = 444
     new.p8 = 12345
 
     assert new.p1 == 12345-444, "Failed post_set."
 
 def test_meta_post_set_wrong():
-    new    = A()
+    new    = Dummy()
     try:
         new.p8 = 12345
     except:
