@@ -1,0 +1,99 @@
+[build-system]
+# build the package with [flit](https://flit.readthedocs.io)
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+# See https://www.python.org/dev/peps/pep-0621/
+name = "qepppy"
+dynamic = ["version"] # read from qepppy/__init__.py
+description = "Python post-processing and input-output handling library for Quantum ESPRESSO"
+authors = [
+    { name = "Davide Grassano" },
+]
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+classifiers = [
+    'License :: OSI Approved :: MIT License',
+    "Development Status :: 4 - Beta",
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.11',
+]
+keywords = ["DFT", "post-processing", "linear algebra"]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy~=1.26.0",
+    "matplotlib~=3.5.1",
+    "scipy~=1.11.3",
+]
+
+[project.urls]
+Source = "https://github.com/crivella/QEPPpy"
+
+[project.optional-dependencies]
+tests = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mpl",
+    # "pytest-regressions~=2.4",
+]
+pre-commit = [
+    "pre-commit~=3.3.3",
+    "pylint~=2.17.4",
+    "pylint-pytest~=1.1.2",
+]
+release = [
+    "flit",
+]
+
+[project.scripts]
+pdos_char = "qepppy.tools.pdos_char:main"
+broad = "qepppy.tools.broad:main"
+sum_pdos = "qepppy.tools.sum_pdos:main"
+kk = "qepppy.tools.kk:main"
+
+[tool.flit.module]
+name = "qepppy"
+
+[tool.flit.sdist]
+exclude = [
+    ".gitignore", ".github", ".pre-commit-config.yaml",
+    "tests/", "tests/*",
+    "docs/", "docs/*"
+    ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+log_cli = 1
+addopts = "--mpl --mpl-baseline-path=tests/baseline"
+
+[tool.pylint.main]
+load-plugins = [
+    "pylint_pytest"
+]
+
+[tool.pylint.messages_control]
+# disable = [
+#     "logging-fstring-interpolation",
+#     "global-statement",
+#     "broad-exception-caught",
+#     "too-few-public-methods",
+# ]
+
+
+[tool.pylint.format]
+max-line-length = 120
+good-names = [
+    "_",
+    "l", "r", "b", "t",
+    "l1", "r1", "b1", "t1",
+    "l2", "r2", "b2", "t2",
+    "i", "j",
+    "k", "v",
+    "f",
+]
+
+[tool.pylint.design]
+max-args = 10
+max-locals = 20
+max-attributes = 12
