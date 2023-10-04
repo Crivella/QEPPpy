@@ -5,6 +5,7 @@ import pytest
 from qepppy.parsers.xml_parser import Parser_xml
 
 cwd = os.path.dirname(os.path.realpath(__file__))
+fixtures = os.path.join(cwd, 'fixtures')
 
 
 @pytest.fixture(scope='module')
@@ -17,7 +18,7 @@ def cls():
 
 @pytest.fixture(scope='module')
 def cls1():
-    xml = os.path.join(cwd, 'test.xml')
+    xml = os.path.join(fixtures, 'test.xml')
     new = Parser_xml(xml=xml)
 
     return new
@@ -69,7 +70,7 @@ def test_xpath_multiple_cross_same_node(cls1):
     )
 def test_xmlparser_xpath_corr(cls, xpath):
     if not cls.find(xpath):
-        raise AssertionError("Failed to properly parse")
+        raise AssertionError('Failed to properly parse')
 
 
 @pytest.mark.parametrize(
@@ -85,5 +86,4 @@ def test_xmlparser_xpath_corr(cls, xpath):
     )
 def test_xmlparser_xpath_wrong(cls, xpath):
     if cls.find(xpath):
-        raise AssertionError("Failed to properly parse")
-
+        raise AssertionError('Failed to properly parse')
