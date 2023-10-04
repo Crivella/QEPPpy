@@ -83,7 +83,9 @@ def check_shape(cls, value, shape):
         _check_value_list(cls, value, shape)
 
 def check_allowed(value, allowed, nonetyp=None):
-    if len(allowed) == 0 or (not nonetyp is None and value == nonetyp):
+    if len(allowed) == 0:
+        return
+    if not nonetyp is None and type(value) == type(nonetyp) and value == nonetyp:
         return
     for v in flatten_iter(value):
         if not v in allowed:
