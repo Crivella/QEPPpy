@@ -7,15 +7,15 @@ from .lattice import lattice
 def u(r, q):
 	return (2.*r - q - 1.), (2. * q)
 
-def cart_to_cryst(cls, coord):
+def cart_to_cryst(cls: 'kpoints', coord: np.ndarray):
 	recipr = cls.recipr
-	if recipr == []:
+	if len(recipr) == 0:
 		return
 	return coord.dot(np.linalg.inv(recipr))
 
-def cryst_to_cart(cls, coord):
+def cryst_to_cart(cls: 'kpoints', coord: np.ndarray):
 	recipr = cls.recipr
-	if recipr == []:
+	if len(recipr) == 0:
 		return
 	return coord.dot(recipr)
 
@@ -81,9 +81,9 @@ class kpoints(lattice):
 			from .symmetry import symmetries
 			self.symmetries = symmetries()
 
-		if self.kpt_mesh != ():
+		if len(self.kpt_mesh) > 0:
 			self.generate_monkhorst_pack_grid()
-		if self.kpt_edges != []:
+		if len(self.kpt_edges) > 0:
 			self.generate_kpath()
 
 		super().__init__(*args, **kwargs)
@@ -252,7 +252,7 @@ class kpoints(lattice):
 			# Must check symmetries on point in cartesian coordinates
 			# Checking on crystal only works if [M,B] = 0
 			kpts = cryst_to_cart(self, kpts)
-			if self.symmetries == [] or self.symmetries is None:
+			if self.symmetries is None or len(self.symmetries) == 0:
 				try:
 					self.get_symmetries()
 				except:
@@ -328,7 +328,7 @@ class kpoints(lattice):
 	def _kpt_plot(self, ax, edges_name=[]):
 		self.draw_Wigner_Seitz(ax)
 		ax.scatter(*self.kpt_cart.T)
-		if not self.kpt_edges is None and self.kpt_edges != []:
+		if not self.kpt_edges is None and len(self.kpt_edges) > 0:
 			ax.scatter(
 				*self.kpt_edges[:,:3].dot(self.recipr).T, 
 				s=10, color='r'

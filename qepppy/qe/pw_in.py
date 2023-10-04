@@ -1,8 +1,10 @@
 import numpy as np
-from .parser.input_files import qe_input
-from .qe_structure import qe_structure as structure
+
 from ..calc_system import system
 from ..parsers import fortran_namelist_collection as fnc
+from .parser.input_files import qe_input
+from .qe_structure import qe_structure as structure
+
 
 class pw_in(qe_input, structure, system):
 	cards = ['CELL_PARAMETERS', 'ATOMIC_SPECIES','ATOMIC_POSITIONS','K_POINTS',
@@ -27,11 +29,11 @@ class pw_in(qe_input, structure, system):
 		res += structure.__str__(self)
 
 		res += '\n\nK_POINTS'
-		if self.kpt_mesh != ():
+		if len(self.kpt_mesh) > 0:
 			res += ' {automatic}\n'
 			res += '   {0[0]:d} {0[1]:d} {0[2]:d}    {1[0]:d} {1[1]:d} {1[2]:d}'.format(
 				self.kpt_mesh, self.kpt_shift)
-		elif self.kpt_edges != []:
+		elif len(self.kpt_edges) > 0:
 			if 'cryst' in self.kpt_mode:
 				res += ' {crystal_b}\n'
 			else:

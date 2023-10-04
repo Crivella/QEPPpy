@@ -6,15 +6,15 @@ from .atoms_list import atoms_list as atm
 from .lattice import lattice as latt
 
 
-def cart_to_cryst(cls, coord):
+def cart_to_cryst(cls: 'structure', coord: np.ndarray):
 	direct = cls.direct
-	if direct == []:
+	if len(direct) == 0:
 		return []
 	return coord.dot(np.linalg.inv(direct))
 
-def cryst_to_cart(cls, coord):
+def cryst_to_cart(cls: 'structure', coord: np.ndarray):
 	direct = cls.direct
-	if direct == []:
+	if len(direct) == 0:
 		return []
 	return coord.dot(direct)
 
@@ -58,7 +58,7 @@ class structure(atm, latt):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		if self.direct != [] and self.atoms_coord_cryst != [] and self.atoms_typ != []:
+		if len(self.direct) > 0 and len(self.atoms_coord_cryst) > 0 and len(self.atoms_typ) > 0:
 			self.get_symmetries()
 
 	@file_name_handle('w')
@@ -78,11 +78,11 @@ class structure(atm, latt):
 
 		data_str = self.atoms_coord_cart
 
-		if not self.atoms_velocities == []:
+		if len(self.atoms_velocities) > 0:
 			prop_str += ':vel:R:3'
 			data_str = np.hstack((data_str, self.atoms_velocities))
 
-		if not self.atoms_forces == []:
+		if len(self.atoms_forces) > 0:
 			prop_str += ':forces:R:3'
 			data_str = np.hstack((data_str, self.atoms_forces))
 
@@ -99,8 +99,8 @@ class structure(atm, latt):
 	def load_xyz(self, file):
 		import re
 		conv={
-			'R':float,
-			'I':np.bool,
+			'R': float,
+			'I': bool,
 			'S':'|U30',
 			}
 

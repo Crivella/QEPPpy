@@ -1,10 +1,11 @@
 import numpy as np
-from ..parsers import Parser_xml, Parser_regex
-# from .parser.data_file_parser import data_file_parser as dfp
-from ..errors import ValidateError
+
 # from ..calc_system.structure import structure as structure
 # from ..calc_system import system
 from .. import utils
+# from .parser.data_file_parser import data_file_parser as dfp
+from ..errors import ValidateError
+from ..parsers import Parser_regex, Parser_xml
 
 bravais_index={	
 	'0':'free',
@@ -130,7 +131,7 @@ class qe_structure(Parser_xml, Parser_regex):
 			self._app_atom_p = 'bohr'
 		if not hasattr(self,'_app_cell_p') or  not self._app_cell_p:
 			self._app_cell_p = 'bohr'
-		if self._direct is None or self._direct == []:
+		if self._direct is None or len(self._direct) == 0:
 			self._direct = np.diag([1]*3)
 
 		xml_data.update(data)
