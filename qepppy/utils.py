@@ -30,8 +30,8 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
     # The 'y,x,z' order is because of how the 3d meshgrid output behaves:
     #    x,y,z=np.meshgrid(1,2,3) 
     #       will cause the x to change value along axis=1
-    #					   y to change value along axis=0
-    #					   z to change value along axis=2
+    #                       y to change value along axis=0
+    #                       z to change value along axis=2
     # Since the FFT grid has the axis=0,1,2 corresponding to x,y,z i need to do the proper remapping
     # y,x,z = np.meshgrid(b,a,c)
 

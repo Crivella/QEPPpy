@@ -102,7 +102,7 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
     """
     def decorator(func):
         @functools.wraps(func)
-        def wrapped(	
+        def wrapped(    
             *args,
             ax=None,
             plot=_plot,
@@ -193,7 +193,7 @@ def set_self(_name, _default=True):
         return wrapped
     return decorator
 
-def store_property(func):	
+def store_property(func):    
     """
     The first time the property value is accessed, generate it and store the 
     result in the object's __dict__ for future calls.
@@ -217,7 +217,7 @@ def IO_stdout_redirect(_outfile=None):
     params:
       - _outfile: Default output filename
     """
-    def decorator(func):	
+    def decorator(func):    
         @functools.wraps(func)
         def wrapped(*args, outfile=_outfile, **kwargs):
             import sys
