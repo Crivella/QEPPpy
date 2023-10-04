@@ -100,7 +100,7 @@ class Parser_regex():
         return res
 
     @staticmethod
-    def get_list_val(content, rstring, typ):
+    def get_list_val(content, rstring):
         rgx = re.compile(r'\s[a-zA-Z]')
         
         res = re.finditer(rstring, content)
@@ -111,7 +111,11 @@ class Parser_regex():
                     b = str(v).strip()
                 else:
                     v = v.replace('-', ' -')
-                    b = np.fromstring(v, sep=' ')
+                    b = []
+                    try:
+                        b = np.fromstring(v, sep=' ')
+                    except ValueError:
+                        pass
                     if len(b) == 0 :
                         b = str(v).strip()
                     elif len(b) == 1:
@@ -181,7 +185,7 @@ class Parser_regex():
                 setattr(self, k, val)
                 # dbg1('found_single:', val)
             elif typ in (list,np.ndarray):
-                app = self.get_list_val(content, rstring, typ)
+                app = self.get_list_val(content, rstring)
                 params = k.split(',')
                 # dbg1(params)
                 # dbg1(app)
