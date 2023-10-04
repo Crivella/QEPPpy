@@ -111,8 +111,7 @@ def kk(data, sf='imag'):
 
 	return switch[sf](data)
 
-
-if __name__ == "__main__":
+def main():
 	import sys
 	argc = len(sys.argv)
 	if not 2<= argc <=5:
@@ -128,4 +127,6 @@ if __name__ == "__main__":
 	if argc == 3:
 		res = kk(data, str(sys.argv[2]))
 
+if __name__ == "__main__":
+	main()
 

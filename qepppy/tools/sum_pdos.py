@@ -67,8 +67,7 @@ def sum_pdos(atoms="", path=".", deg=0.0, **kwargs):
 
 join_doc(sum_pdos, _sum_pdos_.__doc__)
 
-
-if __name__ == "__main__":
+def main():
 	import sys
 	argc = len(sys.argv)
 	if(not 2<=argc<=5):
@@ -87,6 +86,8 @@ if __name__ == "__main__":
 	if(argc==5):
 		sum_pdos(sys.argv[1], sys.argv[2], bool(sys.argv[3]), bool(sys.argv[4]))
 
+if __name__ == "__main__":
+	main()
 
 
 

@@ -65,8 +65,7 @@ def pdos_char(fname="", kpt_list=[], bnd_list=[], thr=0):
 					if wf >= thr:
 						print("\t\t{}:\t{:7.3f}%".format(state_l[int(s)-1], wf*100))
 
-
-if __name__ == "__main__":
+def main():
 	import sys
 	argc = len(sys.argv)
 	if not 2<=argc<=5:
@@ -85,6 +84,8 @@ if __name__ == "__main__":
 	elif argc==5:
 		pdos_char(sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]))
 
+if __name__ == "__main__":
+	main()
 
 
 

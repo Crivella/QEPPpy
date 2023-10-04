@@ -68,8 +68,7 @@ def broad(data, t="gauss", deg=0.1, axis=0):
 
 	return res
 
-
-if __name__ == "__main__":
+def main():
 	import sys
 	argc = len(sys.argv)
 	if not 2<=argc<=5 or sys.argv[1] == 'help':
@@ -102,4 +101,6 @@ if __name__ == "__main__":
 		print("Saving broadened data to '{}'".format(n_name))
 		np.savetxt(n_name, b)
 
+if __name__ == "__main__":
+	main()
 		
