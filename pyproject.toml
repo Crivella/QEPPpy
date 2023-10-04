@@ -34,6 +34,7 @@ Source = "https://github.com/crivella/QEPPpy"
 tests = [
     "pytest",
     "pytest-cov",
+    "pytest-mpl",
     # "pytest-regressions~=2.4",
 ]
 pre-commit = [
@@ -64,6 +65,7 @@ exclude = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 log_cli = 1
+addopts = "--mpl --mpl-baseline-path=tests/baseline"
 
 [tool.pylint.main]
 load-plugins = [
