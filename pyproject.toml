@@ -36,12 +36,11 @@ tests = [
     "pytest-cov",
     # "pytest-regressions~=2.4",
 ]
-# pre-commit = [
-#     "pre-commit~=3.3.3",
-#     "pylint~=2.17.4",
-#     "pylint-pytest~=1.1.2",
-#     "pylint-django~=2.5.3",
-# ]
+pre-commit = [
+    "pre-commit~=3.3.3",
+    "pylint~=2.17.4",
+    "pylint-pytest~=1.1.2",
+]
 release = [
     "flit",
 ]
@@ -52,24 +51,15 @@ broad = "qepppy.tools.broad:main"
 sum_pdos = "qepppy.tools.sum_pdos:main"
 kk = "qepppy.tools.kk:main"
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# package_data={
-#     'qepppy':[
-#         'data/*.json',
-#         ]
-#     },
-
 [tool.flit.module]
 name = "qepppy"
 
-# [tool.flit.sdist]
-# exclude = [
-#     ".gitignore", ".github", ".pre-commit-config.yaml",
-#     "icon.ico", "run_server.py", "build.sh",
-#     "Dockerfile-cpu", "Dockerfile-gpu", "nginx.default", "start-server.sh",
-#     "mysite/", "mysite/*", "manage.py", "tests/", "tests/*",
-#     "docs/", "docs/*"
-#     ]
+[tool.flit.sdist]
+exclude = [
+    ".gitignore", ".github", ".pre-commit-config.yaml",
+    "tests/", "tests/*",
+    "docs/", "docs/*"
+    ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
