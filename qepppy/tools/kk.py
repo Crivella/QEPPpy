@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.signal import hilbert
 
-from qepppy._decorators import numpy_plot_opt, numpy_save_opt
+from .._decorators import numpy_plot_opt, numpy_save_opt
 
 
 def _kk_(data, im=1, start_offset=0, end_offset=0):

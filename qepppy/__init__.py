@@ -1,4 +1,4 @@
-from . import qe
+from . import qe, tools
 
 VERSION = (0, 7, 0)
 

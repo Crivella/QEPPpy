@@ -3,7 +3,7 @@ from re import split
 
 import numpy as np
 
-from qepppy._decorators import join_doc, numpy_plot_opt, numpy_save_opt
+from .._decorators import join_doc, numpy_plot_opt, numpy_save_opt
 
 orb_types = ('s', 'p', 'd', 'f') 
 max_orb = len(orb_types)

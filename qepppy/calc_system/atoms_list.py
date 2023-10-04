@@ -1,3 +1,4 @@
+import importlib
 import json
 from importlib import resources
 
@@ -6,7 +7,13 @@ import numpy as np
 from ..graphics import mpl_graphics as cg
 from ..meta import PropertyCreator
 
-periodic_table = json.load(resources.files('qepppy.data').joinpath('periodic_table.json').open(encoding='utf-8'))
+periodic_table = {}
+try:
+    importlib.import_module('qepppy')
+except ImportError:
+    pass
+else:
+	periodic_table = json.load(resources.files('qepppy.data').joinpath('periodic_table.json').open(encoding='utf-8'))
 
 def undo_unique(cls, l):
     res = []
