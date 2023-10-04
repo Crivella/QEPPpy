@@ -9,4 +9,3 @@ class ValidateError(Exception):
     Exception used to signal a failure while validating an input/output
     """
     pass
-

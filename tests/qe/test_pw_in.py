@@ -14,7 +14,7 @@ in_files = [a[:-3] for a in os.listdir(test_dir) if a.endswith('.in')]
 
 cmp_list = [
     'ibrav', 'alat',
-    'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 'atoms_typ', 'unique_atoms_mass', 
+    'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 'atoms_typ', 'unique_atoms_mass',
     ]
 
 @pytest.fixture(
@@ -49,7 +49,7 @@ def test_pw_in_parsing(inputs):
 
 def test_pw_in_build_init(inputs):
     inp, std = inputs
-    new = qepppy.qe.pw_in(    
+    new = qepppy.qe.pw_in(
         input_data={
             'SYSTEM':{
                 'nat':       inp.n_atoms,

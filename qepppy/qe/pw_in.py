@@ -38,11 +38,11 @@ class pw_in(qe_input, structure, system):
                 res += ' {crystal_b}\n'
             else:
                 res += ' {tpiba_b}\n'
-            res += '  {}\n'.format(len(self.kpt_edges))
+            res += f'  {len(self.kpt_edges)}\n'
             for e in self.kpt_edges:
                 res += '    {0[0]:11.8f} {0[1]:11.8f} {0[2]:11.8f}    {0[3]:.0f}\n'.format(e)
         else:
-            res += ' {{crystal}}\n  {:d}\n'.format(self.n_kpt)
+            res += f' {{crystal}}\n  {self.n_kpt:d}\n'
             for k,w in zip(self.kpt_cryst, self.kpt_weight):
                 res += '  {0[0]:11.8f} {0[1]:11.8f} {0[2]:11.8f}    {1:9.6f}\n'.format(k,w)
 
@@ -70,7 +70,7 @@ class pw_in(qe_input, structure, system):
             typs.append(t)
             mass.append(float(m))
             pseudo.append(p)
-        
+
         self.unique_atoms_typ    = typs
         self.unique_atoms_mass   = mass
         self.unique_atoms_pseudo = pseudo
@@ -104,7 +104,7 @@ class pw_in(qe_input, structure, system):
                 t,x,y,z,ix,iy,iz = s
                 raise NotImplementedError()
             else:
-                raise ValidateError("Invalid format for ATOMIC_POSITIONS card.")
+                raise ValidateError('Invalid format for ATOMIC_POSITIONS card.')
 
             typ.append(t)
             x_l.append(float(x))
@@ -138,7 +138,7 @@ class pw_in(qe_input, structure, system):
         yk     = []
         zk     = []
         wk     = []
-        
+
         mode = self.get_mode(content)
         if not mode is None:
             mode = mode.lower()
@@ -198,13 +198,13 @@ class pw_in(qe_input, structure, system):
 
     def read_cell_parameters(self, content):
         res = [[]]*3
-        
+
         if self.ibrav != 0:
             return
         mode = self.get_mode(content)
         if not mode is None:
             mode = mode.lower()
-        
+
         for n,l in enumerate(content.strip().split('\n')[1:]):
             if n >= 3:
                 break

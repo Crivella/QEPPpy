@@ -55,4 +55,3 @@ class system(structure, bands):
         """
         res, _ = self.translate_coord_into_FBZ(self.kpt_cryst)
         return res
-

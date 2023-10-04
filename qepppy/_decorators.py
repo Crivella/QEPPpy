@@ -7,15 +7,15 @@ import numpy as np
 def join_doc(func, add):
     tabs='\t'
     if not func.__doc__:
-        func.__doc__ = ""
+        func.__doc__ = ''
 
     app = func.__doc__
-    func.__doc__ = ""
+    func.__doc__ = ''
     for line in app.split('\n'):
-        func.__doc__ += tabs + re.sub(r"^\t*", "", line) + "\n"
+        func.__doc__ += tabs + re.sub(r'^\t*', '', line) + '\n'
 
-    for line in add.split("\n"):
-        func.__doc__ += tabs + re.sub(r"^\t*", "", line) + "\n"
+    for line in add.split('\n'):
+        func.__doc__ += tabs + re.sub(r'^\t*', '', line) + '\n'
 
 save_opt_doc = """
     numpy_save_opt specific params:
@@ -42,7 +42,7 @@ plot_opt_doc = """
                    No label is set if (end-start > len(labels))
       - dash_list: List of tuples of dashes option to be used.
                    % is used to loop if (end-start > len(colors))
-                   If no dash_list is specified, the lines will switch from 
+                   If no dash_list is specified, the lines will switch from
                    nodash to dash=(8,2) for every loop of the colors"""
 
 set_self_doc = """
@@ -53,7 +53,7 @@ set_self_doc = """
 
 def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
     """
-    Decorator factory to add functionality to save return value to file 
+    Decorator factory to add functionality to save return value to file
     using np.savetxt
     Params:
       - _fname:     Default save_file name to be used if not specified
@@ -77,7 +77,7 @@ def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
                 tosave = res
 
             save_args = {}
-            header = '{}  args{} kwargs={}\n'.format(func.__name__, args, kwargs) + header
+            header = f'{func.__name__}  args{args} kwargs={kwargs}\n' + header
             if fmt:
                 save_args['fmt'] = fmt
             if header:
@@ -92,7 +92,7 @@ def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
 
 def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
     """
-    Decorator factory to add functionality to plot return value to file 
+    Decorator factory to add functionality to plot return value to file
     using matplotlib.
     Params:
       - _plot:   Default enable/disable plot (default = True)
@@ -102,7 +102,7 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
     """
     def decorator(func):
         @functools.wraps(func)
-        def wrapped(    
+        def wrapped(
             *args,
             ax=None,
             plot=_plot,
@@ -142,9 +142,9 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
                     dash = dash_list[(i+offset)%len(dash_list)]
                 else:
                     dash = (8,2*(((i+offset)//cl)%2))
-                ax.plot( 
-                    X, Y, 
-                    color=colors[(i+offset)%cl], 
+                ax.plot(
+                    X, Y,
+                    color=colors[(i+offset)%cl],
                     label=labels[i] if i<len(labels) else '',
                     dashes=dash,
                     )
@@ -193,9 +193,9 @@ def set_self(_name, _default=True):
         return wrapped
     return decorator
 
-def store_property(func):    
+def store_property(func):
     """
-    The first time the property value is accessed, generate it and store the 
+    The first time the property value is accessed, generate it and store the
     result in the object's __dict__ for future calls.
     """
     @functools.wraps(func)
@@ -217,7 +217,7 @@ def IO_stdout_redirect(_outfile=None):
     params:
       - _outfile: Default output filename
     """
-    def decorator(func):    
+    def decorator(func):
         @functools.wraps(func)
         def wrapped(*args, outfile=_outfile, **kwargs):
             import sys
@@ -225,7 +225,7 @@ def IO_stdout_redirect(_outfile=None):
 
             f = None
             if isinstance(outfile, str):
-                f = open(outfile, "w")
+                f = open(outfile, 'w')
             elif not outfile is None and hasattr(outfile, 'close') and not outfile is sys.stdout:
                 f = outfile
 
@@ -258,7 +258,7 @@ def IO_stderr_redirect(_errfile=None):
 
             f = None
             if isinstance(errfile, str):
-                f = open(errfile, "w")
+                f = open(errfile, 'w')
             elif not errfile is None and hasattr(errfile, 'close') and not errfile is sys.stdout:
                 f = errfile
 

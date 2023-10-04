@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-    
+
 import numpy as np
 from scipy.signal import hilbert
 
@@ -32,29 +32,29 @@ def _kk_(data, im=1, start_offset=0, end_offset=0):
 @numpy_save_opt(_fname='kk_imag.dat')
 def kk_eps_real2imag(data):
     """
-    Apply the Hilbert transformation (Kramers-Kronig) to the real part of the 
+    Apply the Hilbert transformation (Kramers-Kronig) to the real part of the
     dielectric function.
     1 is subtracted to the starting data to the result to get the imaginary part
     of the dielectric function.
     Params:
-     - data: An array where the first column is the x-axis data and all the 
+     - data: An array where the first column is the x-axis data and all the
              other column are y-axis to which the Hilbert transform is applied.
-             If a an array of shape (1,n_pt) or (n_pt,) is given, it is treated 
+             If a an array of shape (1,n_pt) or (n_pt,) is given, it is treated
              as a y-axis and the x-axis is generated using np.arange(n_pt).
-    """ 
+    """
     return _kk_(data, im=1, start_offset=-1)
 
 @numpy_plot_opt(_plot=False)
 @numpy_save_opt(_fname='kk_real.dat')
 def kk_eps_imag2real(data):
     """
-    Apply the Hilbert transformation (Kramers-Kronig) to the imaginary part of 
+    Apply the Hilbert transformation (Kramers-Kronig) to the imaginary part of
     the dielectric function.
     1 is added to the result to get the real part of the dielectric function.
     Params:
-     - data: An array where the first column is the x-axis data and all the 
+     - data: An array where the first column is the x-axis data and all the
              other column are y-axis to which the Hilbert transform is applied.
-             If a an array of shape (1,n_pt) or (n_pt,) is given, it is treated 
+             If a an array of shape (1,n_pt) or (n_pt,) is given, it is treated
              as a y-axis and the x-axis is generated using np.arange(n_pt).
     """
     return _kk_(data, im=-1, end_offset=1)
@@ -73,9 +73,9 @@ def _kk_refl(data):
      - nt   = n + i*k = (1+r)/(1-r)
      - eps  = nt^2
     Params:
-     - data: An array where the first column is the x-axis data and all the 
+     - data: An array where the first column is the x-axis data and all the
              other column are y-axis to which the Hilbert transform is applied.
-             If a an array of shape (1,n_pt) or (n_pt,) is given, it is treated 
+             If a an array of shape (1,n_pt) or (n_pt,) is given, it is treated
              as a y-axis and the x-axis is generated using np.arange(n_pt).
     """
     n_pt = data.shape[0]
@@ -99,7 +99,7 @@ def _kk_refl(data):
 def kk_refl(data, **kwargs):
     for i in range(1,data.shape[1]):
         kw_cpy = kwargs.copy()
-        kw_cpy['fname'] = 'kk_refl_col{:02d}.dat'.format(i)
+        kw_cpy['fname'] = f'kk_refl_col{i:02d}.dat'
         _kk_refl(data[:,(0,i)], **kw_cpy)
 
 
@@ -118,7 +118,7 @@ def main():
     argc = len(sys.argv)
     if not 2<= argc <=5:
         print(
-            "Incorrect use. Pleas pass arguments:"
+            'Incorrect use. Pleas pass arguments:'
             "\n\t'data_file'\t (),"
             "\n\t'start_from\t(optional) (imag/real/refl, default=imag)',"
             )
@@ -129,6 +129,5 @@ def main():
     if argc == 3:
         res = kk(data, str(sys.argv[2]))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
-

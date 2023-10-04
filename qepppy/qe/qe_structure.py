@@ -7,7 +7,7 @@ from .. import utils
 from ..errors import ValidateError
 from ..parsers import Parser_regex, Parser_xml
 
-bravais_index={    
+bravais_index={
     '0':'free',
     '1':'simple cubic (sc)',
     '2':'face-centered cubic (fcc)',
@@ -38,19 +38,19 @@ data ={
         'typ':int
         },
     '_n_types':{
-        'xml_search_string':'output//atomic_species', 
+        'xml_search_string':'output//atomic_species',
         'rstring':r'number of atomic types\s*=\s*',
         'mode':'attr=ntyp',
         'typ':int
         },
     'ibrav':{
-        'xml_search_string':'output//atomic_structure', 
+        'xml_search_string':'output//atomic_structure',
         'rstring':r'bravais-lattice index\s*=',
         'mode':'attr=bravais_index',
         'typ':int
         },
     'alat':{
-        'xml_search_string':'output//atomic_structure', 
+        'xml_search_string':'output//atomic_structure',
         'rstring':r'lattice parameter \(alat\)\s*=',
         'mode':'attr=alat',
         'typ':float,
@@ -63,8 +63,8 @@ data ={
     'direct':{
         'xml_search_string':'output//cell',
         'rstring':
-            r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' + 
-            r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' + 
+            r'\s*a\(1\) = \((?P<a1>[\s\d.\-]*)\)\s*\n' +
+            r'\s*a\(2\) = \((?P<a2>[\s\d.\-]*)\)\s*\n' +
             r'\s*a\(3\) = \((?P<a3>[\s\d.\-]*)\)\s*\n',
         'typ':np.ndarray,
         're_scale_fact':'_cell_p'
@@ -74,7 +74,7 @@ data ={
         'typ':str
         },
     'atoms_typ,atoms_coord_cart':{
-        'xml_search_string':'output//atomic_positions/atom', 
+        'xml_search_string':'output//atomic_positions/atom',
         'mode':'attr=name,value',
         'typ':np.ndarray,
         'rstring':r'\d[\t ]+(?P<name>[\w]+).*\(([ \d]+)\) = \((?P<coord>[ \d\.\-]+)\)',
@@ -105,7 +105,7 @@ data ={
         'typ':np.ndarray
         },
     'symm_name':{
-        'xml_search_string':'output//symmetry/info', 
+        'xml_search_string':'output//symmetry/info',
         'mode':'attr=name'
         },
     'fft_dense_grid':{
@@ -116,7 +116,7 @@ data ={
         'typ':np.ndarray
         },
     'fft_smooth_grid':{
-        'xml_search_string':'output//fft_smooth', 
+        'xml_search_string':'output//fft_smooth',
         'rstring':
             r'Smooth.*FFT dimensions:\s*\(\s*(?P<nr1>\d*),\s*(?P<nr2>\d*),\s*(?P<nr3>\d*)\s*\)',
         'mode':r'attr=nr\d',
@@ -125,7 +125,7 @@ data ={
     }
 
 class qe_structure(Parser_xml, Parser_regex):
-    __name__ = "qe_structure";
+    __name__ = 'qe_structure';
     def __init__(self, xml_data={}, regex_data={}, **kwargs):
         if not hasattr(self,'_app_atom_p') or not self._app_atom_p:
             self._app_atom_p = 'bohr'
@@ -140,31 +140,31 @@ class qe_structure(Parser_xml, Parser_regex):
 
     def _format_cell_(self, info):
         if self.ibrav and info == 0:
-            return ""
-        msg = "CELL_PARAMETERS\n"
+            return ''
+        msg = 'CELL_PARAMETERS\n'
         for l in self.direct:
             for e in l:
-                msg += " {:12.7f}".format(e)
-            msg += "\n"
-        msg += "\n"
+                msg += f' {e:12.7f}'
+            msg += '\n'
+        msg += '\n'
         return msg
 
     def _format_atom_spec_(self):
-        msg = "ATOMIC_SPECIES\n"
+        msg = 'ATOMIC_SPECIES\n'
         for t,m,p in zip(self.unique_atoms_typ, self.unique_atoms_mass, self.unique_atoms_pseudo):
-            msg += "  {:6}{:12.4f}  {}".format(t, m, p)
-            msg += "\n"
-        msg += "\n\n"
+            msg += f'  {t:6}{m:12.4f}  {p}'
+            msg += '\n'
+        msg += '\n\n'
         return msg
 
     def _format_atom_pos_(self):
-        msg = "ATOMIC_POSITIONS {crystal}\n"
+        msg = 'ATOMIC_POSITIONS {crystal}\n'
         for coord,name in zip(self.atoms_coord_cryst, self.atoms_typ):
-            msg += "  {}  ".format(name)
+            msg += f'  {name}  '
             for c in coord:
-                msg += "{:14.9f}".format(c)
-            msg += "\n"
-        msg += "\n"
+                msg += f'{c:14.9f}'
+            msg += '\n'
+        msg += '\n'
         return msg
 
     def __str__(self, info=0):
@@ -197,7 +197,7 @@ class qe_structure(Parser_xml, Parser_regex):
     # @_cell_p.setter
     # def _cell_p(self, value):
     #     self._app_cell_p = value
-    
+
     # @property
     # def symm_matrix(self):
     #     """List of symmetry operation matrices"""
@@ -219,17 +219,17 @@ class qe_structure(Parser_xml, Parser_regex):
 
     def validate(self):
         if self.ibrav == None:
-            raise ValidateError("ibrav is not set.")
+            raise ValidateError('ibrav is not set.')
         # if self._atom_spec == None:
         if self._atoms_typ is None:
-            raise ValidateError("List of atom types is not set.")
+            raise ValidateError('List of atom types is not set.')
         # if self._atoms == None:
         if self._atoms_coord_cart is None:
-            raise ValidateError("List of atomic positions is not set.")
+            raise ValidateError('List of atomic positions is not set.')
 
         for typ in self.atoms_typ:
             if not typ in self.unique_atoms_typ:
-                raise ValidateError("Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES")
+                raise ValidateError('Atoms in ATOMIC_POSITION do not match the type in ATOMIC_SPECIES')
 
         if self.ibrav == 0:
             if self.direct is None:
@@ -243,7 +243,7 @@ class qe_structure(Parser_xml, Parser_regex):
 
     def _ibrav_to_cell_(self):
         if self.ibrav == None:
-            raise ValueError("Failed to generate cell structure from self.ibrav: self.ibrav not set.")
+            raise ValueError('Failed to generate cell structure from self.ibrav: self.ibrav not set.')
 
         lp = self.alat
 
@@ -360,6 +360,3 @@ class qe_structure(Parser_xml, Parser_regex):
 
         # self._app_cell_p = 'bohr'
         return np.array([v1,v2,v3])
-
-
-

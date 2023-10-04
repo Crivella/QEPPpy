@@ -28,7 +28,7 @@ data ={
         'typ':float,
         'repeatable': True,
         },
-    'fermi_s':{ 
+    'fermi_s':{
         'xml_search_string':'output//two_fermi_energies',
         'typ':np.ndarray,
         },
@@ -56,19 +56,19 @@ data ={
         'typ':np.ndarray
         },
     'kpt_cart':{
-        'xml_search_string':'output//ks_energies/k_point', 
+        'xml_search_string':'output//ks_energies/k_point',
         'typ':np.ndarray,
         },
     '_egv':{
-        'xml_search_string':'output//ks_energies/eigenvalues', 
-        'rstring':r'(band energies)|(bands) \(ev\):(?P<egv>[\s\d\.\-]+)', 
+        'xml_search_string':'output//ks_energies/eigenvalues',
+        'rstring':r'(band energies)|(bands) \(ev\):(?P<egv>[\s\d\.\-]+)',
         'typ':np.ndarray,
         'xml_scale_fact':HA_to_eV,
         'max_num':'-_n_kpt',
         'repeatable': True,
         },
     '_occ':{
-        'xml_search_string':'output//ks_energies/occupations', 
+        'xml_search_string':'output//ks_energies/occupations',
         'rstring':r'occupation numbers(?P<occ>[\s\d\.]+)',
         'typ':np.ndarray,
         'repeatable': True,
@@ -96,7 +96,7 @@ class qe_bands(Parser_xml, Parser_regex):
     - band_structure(): Plot/print_to_file the band structure.
     - smallest_gap(): Print an analysis of the band gap.
     """
-    __name__ = "bands"
+    __name__ = 'bands'
     e_units = HA_to_eV
     def __init__(self, xml_data={}, regex_data={}, **kwargs):
         xml_data.update(data)
@@ -106,9 +106,9 @@ class qe_bands(Parser_xml, Parser_regex):
     def __str__(self):
         msg = super().__str__()
         bnd = self._n_bnd
-        kpt_fmt = "\nkpt(#{{:5d}}):  " + "{:8.4f}"*3 + " [2pi/alat]"
-        egv_fmt = "\nEigenvalues(eV):\n" + ("  "+"{:12.6f}"*8+"\n")*(bnd//8)
-        egv_fmt += "  " + "{:12.6f}"*(bnd%8) + "\n"
+        kpt_fmt = '\nkpt(#{{:5d}}):  ' + '{:8.4f}'*3 + ' [2pi/alat]'
+        egv_fmt = '\nEigenvalues(eV):\n' + ('  '+'{:12.6f}'*8+'\n')*(bnd//8)
+        egv_fmt += '  ' + '{:12.6f}'*(bnd%8) + '\n'
         for i in range(self._n_kpt):
             msg += kpt_fmt.format(*self.kpt_cart[i]).format(i)
             msg += egv_fmt.format(*self.egv[i])
@@ -117,9 +117,9 @@ class qe_bands(Parser_xml, Parser_regex):
     def __getitem__(self, key):
         if(isinstance(key, int)):
             if(0 <= key < self._n_kpt):
-                return {'kpt':self.kpt_cart[key], 'egv':self.egv[key], 'occ':self.occ[key]} 
+                return {'kpt':self.kpt_cart[key], 'egv':self.egv[key], 'occ':self.occ[key]}
             else:
-                raise KeyError("Index '{}' out of range {}-{}".format(key, 0, self._n_kpt - 1))
+                raise KeyError(f"Index '{key}' out of range {0}-{self._n_kpt - 1}")
         return super().__getitem__(key)
 
     @property
@@ -207,9 +207,9 @@ class qe_bands(Parser_xml, Parser_regex):
 
     def validate(self):
         if self._n_kpt <= 0:
-            raise ValidateError("Failed to read nkpt from file '{}'.".format(self.xml))
+            raise ValidateError(f"Failed to read nkpt from file '{self.xml}'.")
         if self._n_bnd <= 0:
-            raise ValidateError("Failed to read nbnd from file '{}'.".format(self.xml))
+            raise ValidateError(f"Failed to read nbnd from file '{self.xml}'.")
         legv = self._egv.shape[0]
         if self.occ.size:
             locc = self._occ.shape[0]
@@ -219,12 +219,3 @@ class qe_bands(Parser_xml, Parser_regex):
         #     raise ValidateError("Corrupted file. Number of k-points does not match number egv or occ {}/{}/{}".format(
         #         self.n_kpt, legv, locc))
         super().validate()
-
-
-
-
-
-
-
-
-

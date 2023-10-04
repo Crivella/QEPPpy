@@ -64,12 +64,12 @@ class structure(atm, latt):
     @file_name_handle('w')
     def save_xyz(self, file):
         latt_str = (
-            'Lattice="' + 
-            ' '.join(str(a) for a in self.direct.flatten()) + 
+            'Lattice="' +
+            ' '.join(str(a) for a in self.direct.flatten()) +
             '"'
             )
         prop_str = (
-            'Properties=' + 
+            'Properties=' +
             ':'.join([
                 'species:S:1',
                 'pos:R:3'
@@ -91,7 +91,7 @@ class structure(atm, latt):
         ml = max(len(a) for a in self.atoms_typ) + 1
 
         for i in range(self.n_atoms):
-            file.write('{{:{}s}}'.format(ml).format(self.atoms_typ[i]))
+            file.write(f'{{:{ml}s}}'.format(self.atoms_typ[i]))
             np.savetxt(file, data_str[i], fmt='%14.7e', newline=' ')
             file.write('\n')
 
@@ -142,9 +142,9 @@ class structure(atm, latt):
          - repZ: repetitions along Z
 
         Return:
-         - res: np.array of shape (n_atoms*repX*repY*repZ) containing the 
+         - res: np.array of shape (n_atoms*repX*repY*repZ) containing the
                 positions of the atoms in the supercell.
-         - typ: list with len = (n_atoms*repX*repY*repZ) containing the 
+         - typ: list with len = (n_atoms*repX*repY*repZ) containing the
                 name/type of all the atoms. (1 to 1 correspondence with 'res')
         """
         from functools import reduce
@@ -154,10 +154,10 @@ class structure(atm, latt):
 
         rep    = [range(a) if isinstance(a,int) else a for a in [repX,repY,repZ]]
         R_vec  = utils.generate_repetition_grid(rep, vect_matrix=self.direct)
- 
+
         n_cell = [max(a)-min(a)+1 for a in rep]
         typ    = np.array(list(self.atoms_typ) * (reduce(lambda x,y: x*y, n_cell)))
- 
+
         res    = np.empty(shape=(0,3))
         coord  = self.atoms_coord_cart
         for vec in R_vec:
@@ -191,23 +191,23 @@ class structure(atm, latt):
 
     def _plot_mpl(
         self, ax,
-        repX=1, repY=1, repZ=1, 
-        cell=False, 
+        repX=1, repY=1, repZ=1,
+        cell=False,
         bonds=True,
         recipr=False,
         graph_lvl=1,):
 
         if recipr:
-            ax.set_xlabel(r"$x (Bohr^{-1})$")
-            ax.set_ylabel(r"$y (Bohr^{-1})$")
-            ax.set_zlabel(r"$z (Bohr^{-1})$")
+            ax.set_xlabel(r'$x (Bohr^{-1})$')
+            ax.set_ylabel(r'$y (Bohr^{-1})$')
+            ax.set_zlabel(r'$z (Bohr^{-1})$')
             self.draw_Wigner_Seitz(ax)
             # plt.show()
             return
         else:
-            ax.set_xlabel("x (Bohr)")
-            ax.set_ylabel("y (Bohr)")
-            ax.set_zlabel("z (Bohr)")
+            ax.set_xlabel('x (Bohr)')
+            ax.set_ylabel('y (Bohr)')
+            ax.set_zlabel('z (Bohr)')
 
         L, typ = self.make_supercell(repX,repY,repZ)
 
@@ -219,7 +219,7 @@ class structure(atm, latt):
         ax.legend()
 
     def plot_mpl(
-        self, 
+        self,
         *args, **kwargs
         ):
         """
@@ -273,7 +273,7 @@ class structure(atm, latt):
             try:
                 import ase
             except ImportError:
-                print("ase must be installed and accessible to the PYTHONPATH.")
+                print('ase must be installed and accessible to the PYTHONPATH.')
 
             self.plot_ase(*args, **kwargs)
         else:
@@ -312,5 +312,3 @@ class structure(atm, latt):
     #         new.append(symmetry(rotation=rot))
 
     #     return new
-
-

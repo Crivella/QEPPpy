@@ -140,8 +140,8 @@ class bands(kpoints):
                       f'{"on k0 = ":>30s} {PC_path[unf_i]}  (k0 crystal-PC) = {k0} (2pi)')
                 print(f'{"dk = ":>30s} {dk}')
                 if check_symm:
-                    print(f'{"":15s}' + '*'*15) 
-                    print(f'{"":15s}{ SC_path[unf_i]} is already calculated using symmetry.') 
+                    print(f'{"":15s}' + '*'*15)
+                    print(f'{"":15s}{ SC_path[unf_i]} is already calculated using symmetry.')
                     print(f'{"":15s}{ SC_path_red[fol_i]}\'s coefficients will be used (KPT #{fol_i+1:3d} in SC calclulation).')
 
                 sys.stdout.flush()
@@ -164,8 +164,8 @@ class bands(kpoints):
 
         return X,Y,Z
 
-    @numpy_plot_opt(_ylab="Energy (eV)")
-    @numpy_save_opt(_fname="plotted.dat",_fmt="")
+    @numpy_plot_opt(_ylab='Energy (eV)')
+    @numpy_save_opt(_fname='plotted.dat',_fmt='')
     def band_structure(self, fermi= 0.0, thr=np.inf):
         """
         Compute the band structure.
@@ -173,9 +173,9 @@ class bands(kpoints):
           - thr: Threshold of delta_K to be considered a cut in the band plot
         Return:
           numpy array with shape(n_kpt,n_bnd+1).
-          The first column is the coordinates of |dK| to be used as X axis for 
+          The first column is the coordinates of |dK| to be used as X axis for
           a band plot.
-          The other column are the ordered band eigenvalue for the 
+          The other column are the ordered band eigenvalue for the
           corresponding kpt.
         """
         # kpt = np.array(self.kpt_cart)
@@ -184,7 +184,7 @@ class bands(kpoints):
         # norm = np.linalg.norm(kpt, axis=1)
 
         # norm[norm > thr] = 0
-        
+
         # x = [norm[:i+1].sum() for i in range(len(norm))]
 
         x   = cumul_norm(self.kpt_cart, thr=thr)
@@ -194,9 +194,9 @@ class bands(kpoints):
 
         return res
 
-    @numpy_plot_opt(_xlab="Energy (eV)",_ylab="DOS (arb. units)")
-    @numpy_save_opt(_fname="dos.dat")
-    def density_of_states(self, 
+    @numpy_plot_opt(_xlab='Energy (eV)',_ylab='DOS (arb. units)')
+    @numpy_save_opt(_fname='dos.dat')
+    def density_of_states(self,
         Emin=-20, Emax=20, deltaE=0.001, deg=0.00
         ):
         """
@@ -211,7 +211,7 @@ class bands(kpoints):
 
         Return:
           numpy array of shape ((Emax-Emin)/(deltaE)+1,2)
-          The first column is the value of the energies generated using 
+          The first column is the value of the energies generated using
            np.linspace(Emin,Emax,(Emax-Emin)/(deltaE)+1)
           The second column is the value of the DOS
         """
@@ -253,7 +253,7 @@ class bands(kpoints):
 
     @IO_stdout_redirect()
     def smallest_gap(self,
-        center=(0.,0.,0.), radius=np.inf, 
+        center=(0.,0.,0.), radius=np.inf,
         verbose=True, **kwargs
         ):
         """
@@ -271,7 +271,7 @@ class bands(kpoints):
             if verbose:
                 print(*args, **kwargs)
 
-        _print("SMALLEST_GAP: radius={}, comp_point={}\n".format(radius, center))
+        _print(f'SMALLEST_GAP: radius={radius}, comp_point={center}\n')
 
         center = np.array(center, dtype=float).reshape(3)
 
@@ -284,42 +284,42 @@ class bands(kpoints):
         # n_el        = self.n_el
 
         if len(kpt) == 0:
-            _print("No k-point found for the given criteria.")
+            _print('No k-point found for the given criteria.')
             return
 
         ef = np.nan
         # ef    = self.fermi
-        # if ef == None: 
+        # if ef == None:
         #     ef = np.nan
         # _print("E_fermi(from file):\t{:f} eV".format(ef))
 
         vb = self.vb
         cb = self.cb
-        _print("vb = {}, cb = {}".format(vb+1, cb+1))
+        _print(f'vb = {vb + 1}, cb = {cb + 1}')
 
 
-        _print("\nFound {} points with the given criteria.".format(kpt.shape[0]))
+        _print(f'\nFound {kpt.shape[0]} points with the given criteria.')
 
         mg1 = np.argmax(egv[:,vb])
         top_valence = egv[mg1,vb]
-        _print("\nMax_vb_energy: vb= {:f} eV".format(top_valence))
-        _print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[mg1], num[mg1]+1))
+        _print(f'\nMax_vb_energy: vb= {top_valence:f} eV')
+        _print('\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) '.format(kpt[mg1], num[mg1]+1))
 
         mg2 = np.argmin(egv[:,cb])
         bot_conduction = egv[mg2,cb]
-        _print("\nMin_cb_energy: cb = {:f} eV".format(bot_conduction))
-        _print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[mg2], num[mg2]+1))
+        _print(f'\nMin_cb_energy: cb = {bot_conduction:f} eV')
+        _print('\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) '.format(kpt[mg2], num[mg2]+1))
 
         gap = bot_conduction - top_valence
         if mg1 == mg2:
-            _print("DIRECT GAP {:.5f} eV".format(gap))
+            _print(f'DIRECT GAP {gap:.5f} eV')
         else:
             if(gap < 0):
-                _print("METALLIC")
+                _print('METALLIC')
             else:
-                _print("INDIRECT GAP {:.5f} eV".format(gap))
+                _print(f'INDIRECT GAP {gap:.5f} eV')
 
-        
+
         if not np.isnan(ef):
             w = np.where((egv[:,vb] < ef) & (egv[:,cb] > ef))[0]
             app_egv = egv[w,:]
@@ -327,26 +327,26 @@ class bands(kpoints):
             app_num = num[w]
             res = np.argmin(app_egv[:,cb] - app_egv[:,vb])
             opt_gap = app_egv[res,cb] - app_egv[res,vb]
-            _print("\nMin_opt_gap: {:f} eV".format(opt_gap))
-            _print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1})".format(app_kpt[res], app_num[res]+1))
-            _print("\t{} -> {}   Ef: {} eV".format(app_egv[res,vb], app_egv[res,cb], ef))        
+            _print(f'\nMin_opt_gap: {opt_gap:f} eV')
+            _print('\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1})'.format(app_kpt[res], app_num[res]+1))
+            _print(f'\t{app_egv[res, vb]} -> {app_egv[res, cb]}   Ef: {ef} eV')
         else:
-            _print("\nCannot calculate min_opt_gap with invalid fermi energy")
+            _print('\nCannot calculate min_opt_gap with invalid fermi energy')
 
         res = np.argmin(egv[:,cb] - egv[:,vb])
-        _print("\nMin_gap_energy (vb->cb): {:f} eV".format(egv[res,cb] - egv[res,vb]))
-        _print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[res], num[res]+1))
-        _print("\t{} -> {}   Ef: {} eV".format(egv[res,vb], egv[res,cb], ef))
+        _print(f'\nMin_gap_energy (vb->cb): {egv[res, cb] - egv[res, vb]:f} eV')
+        _print('\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) '.format(kpt[res], num[res]+1))
+        _print(f'\t{egv[res, vb]} -> {egv[res, cb]}   Ef: {ef} eV')
 
         res = np.argmin(egv[:,cb+1] - egv[:,vb])
-        _print("\nMin_gap_energy (vb->cb+1): {:f} eV".format(egv[res,cb+1] - egv[res,vb]))
-        _print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[res], num[res]+1))
-        _print("\t{} -> {}   Ef: {} eV".format(egv[res,vb], egv[res,cb+1], ef))
+        _print(f'\nMin_gap_energy (vb->cb+1): {egv[res, cb + 1] - egv[res, vb]:f} eV')
+        _print('\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) '.format(kpt[res], num[res]+1))
+        _print(f'\t{egv[res, vb]} -> {egv[res, cb + 1]}   Ef: {ef} eV')
 
         res = np.argmin(egv[:,cb+1] - egv[:,cb])
-        _print("\nMin_gap_energy (cb->cb+1): {:f} eV".format(egv[res,cb+1] - egv[res,cb]))
-        _print("\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) ".format(kpt[res], num[res]+1))
-        _print("\t{} -> {}   Ef: {} eV".format(egv[res,cb], egv[res,cb+1], ef))
+        _print(f'\nMin_gap_energy (cb->cb+1): {egv[res, cb + 1] - egv[res, cb]:f} eV')
+        _print('\tat {0[0]:.6f} {0[1]:.6f} {0[2]:.6f} (2pi/a) (# {1}) '.format(kpt[res], num[res]+1))
+        _print(f'\t{egv[res, cb]} -> {egv[res, cb + 1]}   Ef: {ef} eV')
 
 
     def fit_analysis(self, n_pt=5):
@@ -382,42 +382,39 @@ class bands(kpoints):
 
         res = {}
 
-        print("LINEAR:")
+        print('LINEAR:')
         ptr = res['linear'] = {}
         i   = ext_v['max'][0]
         sl  = slice(i-n_pt,i+1)
         print(sl)
         app = scipy.optimize.curve_fit(linear, x[sl], bands[sl,self.vb])
         ptr['vb'] = app
-        print("--Valence    band (left fit):")
-        print(" "*4 + "Vf = {:>12.4E} eV/(2pi/alat)".format(app[0][0]))
-        print(" "*9 + "{:>12.4E} m/s".format(app[0][0] * self.alat * 1.28E4))
+        print('--Valence    band (left fit):')
+        print(' '*4 + f'Vf = {app[0][0]:>12.4E} eV/(2pi/alat)')
+        print(' '*9 + f'{app[0][0] * self.alat * 12800.0:>12.4E} m/s')
 
         i   = ext_c['min'][0]
         sl  = slice(i-n_pt,i+1)
         app = scipy.optimize.curve_fit(linear, x[sl], bands[sl,self.cb])
         ptr['cb'] = app
-        print("--Conduction band (left fit):")
-        print(" "*4 + "Vf = {:>12.4E} eV/(2pi/alat)".format(app[0][0]))
-        print(" "*9 + "{:>12.4E} m/s".format(app[0][0] * self.alat * 1.28E4))
+        print('--Conduction band (left fit):')
+        print(' '*4 + f'Vf = {app[0][0]:>12.4E} eV/(2pi/alat)')
+        print(' '*9 + f'{app[0][0] * self.alat * 12800.0:>12.4E} m/s')
 
-        print("QUADRATIC:")
+        print('QUADRATIC:')
         ptr = res['quadratic'] = {}
         i   = ext_v['max'][0]
         sl  = slice(i-n_pt,i+n_pt)
         app = scipy.optimize.curve_fit(quadratic, x[sl], bands[sl,self.vb])
         ptr['vb'] = app
-        print("--Valence band")
-        print("    f(x) = {:>12.4E} * x^2 + {:>12.4E} * x + {:>12.4E}".format(*app[0]))
+        print('--Valence band')
+        print('    f(x) = {:>12.4E} * x^2 + {:>12.4E} * x + {:>12.4E}'.format(*app[0]))
 
         i   = ext_c['min'][0]
         sl  = slice(i-n_pt,i+n_pt)
         app = scipy.optimize.curve_fit(quadratic, x[sl], bands[sl,self.cb])
         ptr['cb'] = app
-        print("--Conduction band")
-        print("    f(x) = {:>12.4E} * x^2 + {:>12.4E} * x + {:>12.4E}".format(*app[0]))
+        print('--Conduction band')
+        print('    f(x) = {:>12.4E} * x^2 + {:>12.4E} * x + {:>12.4E}'.format(*app[0]))
 
         return res
-
-
-    

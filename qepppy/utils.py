@@ -28,7 +28,7 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
     # Specific order to obtain the array with shape (n1,n2,n3) as the data grid
     # The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
     # The 'y,x,z' order is because of how the 3d meshgrid output behaves:
-    #    x,y,z=np.meshgrid(1,2,3) 
+    #    x,y,z=np.meshgrid(1,2,3)
     #       will cause the x to change value along axis=1
     #                       y to change value along axis=0
     #                       z to change value along axis=2
@@ -56,7 +56,7 @@ def lowdin_ortho(base):
     https://arxiv.org/abs/1105.3571v1
     O = (M . M^T)^{-1/2} . M
     Params:
-     - base: np.array with states along axis=0. If the states are 
+     - base: np.array with states along axis=0. If the states are
              multidimensional (eg: FFT grids), flatten them before. After the
              orthonormalization, restore the shape
     """
@@ -65,21 +65,21 @@ def lowdin_ortho(base):
     shape   = base[0].shape
     base    = np.array([a.flatten() for a in base])
     overlap = np.dot(base.conj(), base.T)
-    print("OVERLAP: \n", overlap)
+    print('OVERLAP: \n', overlap)
 
     base = np.dot(
         inv(sqrtm(overlap)).conj(),
         base
         )
-    
+
     overlap = np.dot(base.conj(), base.T)
-    print("OVERLAP: \n", overlap)
+    print('OVERLAP: \n', overlap)
 
     return base.reshape(-1,*shape)
 
 def remap_plane(
-    invT, 
-    Xlim, Ylim, Zlim, 
+    invT,
+    Xlim, Ylim, Zlim,
     shape, rep, fixaxis=2
     ):
     lim = (Xlim, Ylim, Zlim)
@@ -105,7 +105,7 @@ def remap_plane(
     rec = np.array(rec) * shape.reshape(3,1)
     rec = rec.astype(dtype='int')
     i,j,k = rec
-    
+
     return a, b, tuple((i,j,k))
 
 def remap_generic_plane(

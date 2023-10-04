@@ -22,9 +22,9 @@ nl_body_line = r'('                   + \
 namelist_re = r'\s*&(?P<name>\S+).*\n' + r'(?P<body>' + nl_body_line + r'*)' + r'\s*/'
 
 def format_f90_to_py(val, strip_s=False, strip_d=False):
-    val = val.replace("\n", "")
+    val = val.replace('\n', '')
     if strip_s:
-        val = val.replace("'", "")
+        val = val.replace("'", '')
     if strip_d:
         val = val.replace('"', '')
     if strip_s or strip_d:
@@ -49,7 +49,7 @@ def format_f90_to_py(val, strip_s=False, strip_d=False):
 
 def _tokenize_pattern_(pattern, up=None):
     if not isinstance(pattern, list):
-        pattern = ([None]*2 +  pattern.split("/"))[-2:]
+        pattern = ([None]*2 +  pattern.split('/'))[-2:]
     tof_major, tof_minor  = pattern
     if up:
         tof_major = up
@@ -57,7 +57,7 @@ def _tokenize_pattern_(pattern, up=None):
     n = []
     if '(' in tof_minor:
         n = tof_minor.split('(')[1].split(')')[0]
-        n = n.replace(" ", "").split(",")
+        n = n.replace(' ', '').split(',')
         tof_minor = tof_minor.split('(')[0]
 
     return tof_major, tof_minor, n
@@ -67,28 +67,28 @@ class fortran_namelist(OrderedDict):
         self.name = name.lower()
         if d is None:
             return
-            
+
         if not isinstance(d, dict):
-            raise TypeError("Must initialize fortran_namelist using a dictionary")
+            raise TypeError('Must initialize fortran_namelist using a dictionary')
 
         for k,v in d.items():
             self.set_item(k,v)
 
     def __getitem__(self, key):
         if not isinstance(key, str):
-            raise ValueError("Key for {} must be of string type.".format(self))
+            raise ValueError(f'Key for {self} must be of string type.')
         res = self.deep_find(key.lower())
         return res
 
     def __setitem__(self, key, value):
         if not isinstance(key, str):
-            raise ValueError("Key for {} must be of string type.".format(self))
+            raise ValueError(f'Key for {self} must be of string type.')
         self.set_item(key, value)
 
     def __str__(self):
         return self.format_output()
 
-    def  format_output(self, align_p=">=", align_v="<", **kwargs):
+    def  format_output(self, align_p='>=', align_v='<', **kwargs):
         d = {
             'al_p':0,
             'al_v':0,
@@ -111,15 +111,15 @@ class fortran_namelist(OrderedDict):
         #     return '\n\n'.join(a._format_output_(**kwargs) for a in self.values())  + '\n\n'
         return self._format_output_(**kwargs) + '\n\n'
 
-    def _format_output_(self, tabs="  ", comma=",", upper_nl=True, al_p=0, al_v=0, al_1='>', al_2='<'):
-        res = '&{}\n'.format(self.name.upper() if upper_nl else self.name.lower())
+    def _format_output_(self, tabs='  ', comma=',', upper_nl=True, al_p=0, al_v=0, al_1='>', al_2='<'):
+        res = f'&{self.name.upper() if upper_nl else self.name.lower()}\n'
         for k,v in self.items():
             if isinstance(v, list):
                 for i,sv in enumerate(v):
                     if sv is None:
                         continue
                     res += '{0}{1:{4}{6}s} = {2:{5}{7}}{3}\n'.format(
-                        tabs, "{}({})".format(k,i+1), self._value_repr_(v[i]), 
+                        tabs, '{}({})'.format(k,i+1), self._value_repr_(v[i]),
                         comma, al_1, al_2, al_p, al_v)
             else:
                 res += '{0}{1:{4}{6}s} = {2:{5}{7}}{3}\n'.format(
@@ -155,7 +155,7 @@ class fortran_namelist(OrderedDict):
         for a in r:
             p = a['param']
             v = a['value']
-            i = a['vec'] 
+            i = a['vec']
             if v is None:
                 continue
             v = format_f90_to_py(v, not a['strip_single'] is None, not a['strip_double'] is None)
@@ -177,7 +177,7 @@ class fortran_namelist(OrderedDict):
     def set_item(self, key, value, i=None):
         tof_nl, tof_param, n = _tokenize_pattern_(key)
         if not tof_nl is None:
-            raise ValueError("Something went wrong here!!")
+            raise ValueError('Something went wrong here!!')
 
         if not n:
             n = i
@@ -208,7 +208,7 @@ class fortran_namelist(OrderedDict):
     @staticmethod
     def _value_repr_(value):
         if isinstance(value, str):
-            return "'{}'".format(value)
+            return f"'{value}'"
         if isinstance(value, bool):
             if value:
                 return '.TRUE.'
@@ -233,7 +233,7 @@ class fortran_namelist_collection(OrderedDict):
 
     def __getitem__(self, key):
         if not isinstance(key, str):
-            raise ValueError("Key for {} must be of string type.".format(self))
+            raise ValueError(f'Key for {self} must be of string type.')
         res =  self.deep_find(key.lower())
         return res
 
@@ -242,13 +242,13 @@ class fortran_namelist_collection(OrderedDict):
 
     def __contains__(self, key):
         if not isinstance(key, str):
-            raise ValueError("Key for {} must be of string type.".format(repr(self)))
+            raise ValueError(f'Key for {repr(self)} must be of string type.')
         return super().__contains__(key.lower())
 
     def __str__(self):
         return self.format_output()
 
-    def format_output(self, align_p=">=", align_v="<", **kwargs):
+    def format_output(self, align_p='>=', align_v='<', **kwargs):
         d = {
             'al_p':0,
             'al_v':0,
@@ -285,7 +285,7 @@ class fortran_namelist_collection(OrderedDict):
 
         if not tof_nl in self:
             self[tof_nl] = fortran_namelist(name=tof_nl)
-        
+
         self[tof_nl].set_item(tof_param.lower(), value, n)
 
     @file_name_handle('r')
@@ -313,6 +313,3 @@ class fortran_namelist_collection(OrderedDict):
             except:
                 pass
         return None
-
-
-

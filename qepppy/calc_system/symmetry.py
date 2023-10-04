@@ -120,7 +120,7 @@ class symmetry(metaclass=PropertyCreator):
 class symmetries(list):
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
-        
+
     def append(self, value):
         if isinstance(value, symmetry):
             new = value
@@ -227,5 +227,3 @@ class symmetries(list):
             res_i = new_i[res_i]
 
         return res_i, res_p
-
-

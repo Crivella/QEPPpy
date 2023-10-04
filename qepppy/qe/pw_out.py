@@ -22,7 +22,7 @@ class pw_out(structure, bands, system):
      - outfile = Name of the pw outfile to parse
      - xml     = Name of the data-file*.xml to parse
     """
-    __name__ = "pw_out"
+    __name__ = 'pw_out'
     def __init__(self, *args, xml=None, **kwargs):
         self.set_data_file(xml)
         super().__init__(*args, xml=self.xml, **kwargs)
@@ -36,21 +36,21 @@ class pw_out(structure, bands, system):
             self.xml = xml
             self.data_path = os.path.dirname(os.path.realpath(xml))
         elif os.path.isdir(xml):
-            file = os.path.join(xml, "data-file-schema.xml")
+            file = os.path.join(xml, 'data-file-schema.xml')
             if not os.path.isfile(file):
                 raise FileNotFoundError(file)
             self.data_path = xml
             self.xml       = file
         else:
-            raise FileNotFoundError("The file/folder {} does not exist".format(xml))
-        if "data-file-schema.xml" in self.xml:
+            raise FileNotFoundError(f'The file/folder {xml} does not exist')
+        if 'data-file-schema.xml' in self.xml:
             self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
             self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
 
     @property
     # @store_property
     def tmp(self):
-        """Iterable. Every element is of type <class wavefnc> and contains the 
+        """Iterable. Every element is of type <class wavefnc> and contains the
         data from the wafeunction binaries."""
         if not hasattr(self, 'prefix'):
             return []
@@ -72,15 +72,15 @@ class pw_out(structure, bands, system):
         return pseudo
 
     def calc_matrixelements(self, bnd_low=1, bnd_high=np.inf):
-        fname = base = "matrixelements"
+        fname = base = 'matrixelements'
         i = 1
         while os.path.exists(fname):
             fname = base + '_' + str(i)
             i += 1
         bnd_low -= 1
         bnd_high = min(bnd_high, self.n_bnd)
-        
-        f = open(fname, "a")
+
+        f = open(fname, 'a')
         for k,psi in enumerate(self.tmp):
             egv = self.egv[k][bnd_low:bnd_high]
             occ = self.occ[k][bnd_low:bnd_high]*2
@@ -95,34 +95,16 @@ class pw_out(structure, bands, system):
                 dE = egv[c] - egv[v-bnd_low]
 
                 pp = np.sum(
-                    np.conj(psi.C_kn[v]) * 
-                    psi.C_kn[c + bnd_low].reshape(len(c), 1, psi.nspin, psi.igwx) * 
-                    kG.reshape(1,3,1,psi.igwx), 
+                    np.conj(psi.C_kn[v]) *
+                    psi.C_kn[c + bnd_low].reshape(len(c), 1, psi.nspin, psi.igwx) *
+                    kG.reshape(1,3,1,psi.igwx),
                     axis=(2,3))
                 pp = np.real(np.conj(pp) * pp)
 
                 res = np.column_stack((c+1 + bnd_low, pp, dE, occ[v-bnd_low]-occ[c]))
 
-                fmt="{:5d}{:5d}".format(k+1,v+1) + "%5d" + "%16.8E"*3 + "%8.4f"*2
+                fmt=f'{k + 1:5d}{v + 1:5d}' + '%5d' + '%16.8E'*3 + '%8.4f'*2
                 np.savetxt(f, res, fmt=fmt)
                 f.flush()
 
         f.close()
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

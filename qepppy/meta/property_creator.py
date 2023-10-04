@@ -28,7 +28,7 @@ def check_type(typ, value):
         return True
 
     raise TypeError(
-        err_header + 
+        err_header +
         f"value='{value}' must be of type '{typ}'."
         )
 
@@ -38,7 +38,7 @@ def check_sub_type(sub_typ, value):
         return True
 
     raise TypeError(
-        err_header + 
+        err_header +
         f"elements of value='{value}' must be of type '{sub_typ}'."
         )
 
@@ -125,12 +125,12 @@ def set_typ(typ, value):
         for t in typ:
             if isinstance(value, t):
                 return value
-        raise TypeError("Invalid type value '{}' for type '{}'.".format(type(value), typ))
+        raise TypeError(f"Invalid type value '{type(value)}' for type '{typ}'.")
 
     return typ(value)
 
-def key_setter(key, 
-    typ=None, sub_typ=None, 
+def key_setter(key,
+    typ=None, sub_typ=None,
     shape=None,
     conv_func=lambda x:x,
     allowed=[],
@@ -140,12 +140,12 @@ def key_setter(key,
     def setter(cls, value):
         # print(f'Setting attribute {key} with value {value}')
         global err_header
-        err_header = f"While assigning '{key[1:]}':\n" + "*"*8 + " "
+        err_header = f"While assigning '{key[1:]}':\n" + '*'*8 + ' '
 
         nonetyp = None
         if value is None and not None in typ:
             value = set_typ(typ, value)
-            nonetyp = value 
+            nonetyp = value
 
         set_other(cls, pre_set_name, pre_set_func, value)
 
@@ -156,7 +156,7 @@ def key_setter(key,
             value = conv_func(value)
         except Exception as e:
             raise Exception(
-                err_header + 
+                err_header +
                 f"Failed to run conversion function '{conv_func}' on value='{value}'"
                 ) from e
 
@@ -170,23 +170,23 @@ def key_setter(key,
 
 class PropertyCreator(type):
     """
-    Metaclass to creaty property object following rules specified in a 
+    Metaclass to creaty property object following rules specified in a
     dictionary.
     The name of the dict being transformed into a property object must be a
     string and not begin with '_'.
     Rules:
      - settable:
         True/False
-     - typ: 
-        Instance or tuple of instances to be used for check with 
+     - typ:
+        Instance or tuple of instances to be used for check with
         'isinstance' for the property (used when calling the setter).
         If the property is not of any of the specified type, a 'TypeError' will
         be raised during assignment (cls.prop = var).
         Examples: 'typ':int,    'typ':(int,float,),
-     - sub_type: 
-        Instance or tuple of instances to be used for check with 
-        'isinstance' for all sub-elements of an iterable (used when calling the 
-        setter).        
+     - sub_type:
+        Instance or tuple of instances to be used for check with
+        'isinstance' for all sub-elements of an iterable (used when calling the
+        setter).
         If the property is not of any of the specified type, a 'TypeError' will
         be raised during assignment (cls.prop = var).
         Examples: 'typ':int,    'typ':(int,float,),
@@ -214,7 +214,7 @@ class PropertyCreator(type):
          - value: value over which to run the function.
      - shape:
         Shape of the object. Must be a tuple.
-        The element of the tuple must be an 'int' or a 'str' pointing to the name 
+        The element of the tuple must be an 'int' or a 'str' pointing to the name
         of another attribute of the object.
         The assigned value must have the 'shape' attribute, unless the tuple only has
         one element. In this case,  shape[0] will be compared with len(value).
@@ -231,11 +231,11 @@ class PropertyCreator(type):
         lprop   = []
         for k,v in dct.items():
             new_dct[k] = v
-            if not isinstance(k, str) or k.startswith("_") or not isinstance(v, dict):
+            if not isinstance(k, str) or k.startswith('_') or not isinstance(v, dict):
                 continue
 
             lprop.append(k)
-            hk        = "_" + k
+            hk        = '_' + k
             settable  = v.pop('settable',  True)
             typ       = v.pop('typ',       None)
             sub_typ   = v.pop('sub_typ',   None)
@@ -259,7 +259,7 @@ class PropertyCreator(type):
                    'sub_type      = {}.\n'
                    'allowed       = {}.\n'
                    'default_value = {}.\n\n'
-                   '{}').format(typ, sub_typ, allowed, default, doc.lstrip().replace('\t', '')) 
+                   '{}').format(typ, sub_typ, allowed, default, doc.lstrip().replace('\t', ''))
 
             new_dct[hk] = set_typ(typ, default)
 
@@ -267,7 +267,7 @@ class PropertyCreator(type):
             setter = None
             if settable:
                 setter = key_setter(
-                    hk, typ, sub_typ, 
+                    hk, typ, sub_typ,
                     shape,
                     conv_func,
                     allowed,
@@ -297,6 +297,3 @@ class PropertyCreator(type):
         res.__init__ = __init__
 
         return res
-
-
-

@@ -5,54 +5,54 @@ from ..parsers import Parser_xml
 
 data={
     'header':{
-        'xml_ptype':'nodelist', 
+        'xml_ptype':'nodelist',
         'xml_search_string':'PP_HEADER',
         'typ':list,
         },
     'mesh':{
-        'xml_ptype':'text', 
+        'xml_ptype':'text',
         'xml_search_string':'PP_MESH/PP_R',
         'typ':np.ndarray,
         },
     'rab':{
-        'xml_ptype':'text', 
+        'xml_ptype':'text',
         'xml_search_string':'PP_MESH/PP_RAB',
         'typ':np.ndarray,
         },
     'nlcc':{
-        'xml_ptype':'text', 
+        'xml_ptype':'text',
         'xml_search_string':'PP_NLCC',
         'typ':np.ndarray,
         },
     'nlcc':{
-        'xml_ptype':'text', 
+        'xml_ptype':'text',
         'xml_search_string':'PP_NLCC',
         'typ':np.ndarray,
         },
     '_semilocal':{
-        'xml_ptype':'nodelist', 
-        'xml_search_string':'PP_SEMILOCAL', 
-        'extra_name':'vnl', 
+        'xml_ptype':'nodelist',
+        'xml_search_string':'PP_SEMILOCAL',
+        'extra_name':'vnl',
         'typ':list,
         },
     'local':{
-        'xml_ptype':'text', 
+        'xml_ptype':'text',
         'xml_search_string':'PP_LOCAL',
         'typ':np.ndarray,
         },
     '_nonloc':{
-        'xml_ptype':'nodelist', 
+        'xml_ptype':'nodelist',
         'xml_search_string':'PP_NONLOCAL',
         'typ':list,
         },
     '_pswfc':{
-        'xml_ptype':'nodelist', 
+        'xml_ptype':'nodelist',
         'xml_search_string':'PP_PSWFC//',
         'extra_name':'PP_CHI',
         'typ':list,
         },
     'rho_atom':{
-        'xml_ptype':'text', 
+        'xml_ptype':'text',
         'xml_search_string':'PP_RHOATOM',
         'typ':np.ndarray,
         },
@@ -127,4 +127,3 @@ class UPF(Parser_xml):
         except Exception as e:
             print(e)
             return None
-

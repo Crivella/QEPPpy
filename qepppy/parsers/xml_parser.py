@@ -87,7 +87,7 @@ class Parser_xml():
             # dbg2('       elem: ', str(elem)[:80])
             if not isinstance(elem, dict):
                 # dbg2(str(elem)[:80])
-                raise ValueError("Unexpected behavior. All elements should be dicts.")
+                raise ValueError('Unexpected behavior. All elements should be dicts.')
 
             # dbg2('       keys: ', elem.keys())
             if to_find in elem:
@@ -145,7 +145,7 @@ class Parser_xml():
             if isinstance(l, dict):
                 res = Parser_xml._get_dict_attr(l, attr)
             else:
-                raise ValueError("Unexpected behavior!!")
+                raise ValueError('Unexpected behavior!!')
         else:
             res = []
             for e in l:
@@ -182,7 +182,7 @@ class Parser_xml():
             if isinstance(l, dict):
                 res = Parser_xml._get_dict_value(l)
             else:
-                raise ValueError("Unexpected behavior!!")
+                raise ValueError('Unexpected behavior!!')
         else:
             res = []
             for e in l:
@@ -255,10 +255,10 @@ class Parser_xml():
             lmodes = modes.split(',')
 
             if len(params) != len(lmodes):
-                raise ValueError("Must give the same number of assign names and modes!!")
+                raise ValueError('Must give the same number of assign names and modes!!')
 
             if not all(any(mode.startswith(a) for a in ['all','attr','value']) for mode in lmodes):
-                raise ValueError(f"Mode = {modes}  is not a valid value.")
+                raise ValueError(f'Mode = {modes}  is not a valid value.')
 
             try:
                 val = self.find(xml_string)
@@ -285,9 +285,3 @@ class Parser_xml():
 
     # def validate_schema(self):
     #     xmlschema.validate(self.xml, schema=self.schema)
-
-
-
-
-
-

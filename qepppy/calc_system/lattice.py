@@ -45,7 +45,7 @@ class lattice(metaclass=PropertyCreator):
 
     @staticmethod
     def _transalte_points(
-        base, coord, 
+        base, coord,
         mode='cryst',
         num=5,
         ):

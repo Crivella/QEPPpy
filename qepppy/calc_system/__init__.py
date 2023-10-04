@@ -1,2 +1,2 @@
-from .system import system
 from .bands import bands
+from .system import system

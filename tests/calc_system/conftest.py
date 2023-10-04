@@ -46,7 +46,7 @@ class BaseTest():
         cls_typ = self.cls_typ
         res = cls_typ()
 
-        assert isinstance(res, cls_typ), "Failed to initialize empty instance of " + repr(cls_typ)
+        assert isinstance(res, cls_typ), 'Failed to initialize empty instance of ' + repr(cls_typ)
 
         return res
 
@@ -55,7 +55,6 @@ class BaseTest():
         cls_typ = self.cls_typ
         res = cls_typ()
 
-        assert isinstance(res, cls_typ), "Failed to initialize empty instance of " + repr(cls_typ)
+        assert isinstance(res, cls_typ), 'Failed to initialize empty instance of ' + repr(cls_typ)
 
         return res
-

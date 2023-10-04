@@ -107,7 +107,7 @@ class kpoints(lattice):
         self._n_kpt = value
 
     def generate_kpath(
-        self, 
+        self,
         edges=None,
         mode='crystal'
         ):
@@ -116,7 +116,7 @@ class kpoints(lattice):
         Params:
          - edges: list or np.array of shape (N+1, 4), where N is the number of
                   k-points lines.
-                  The first 3 columns have to contain the coordinates of the 
+                  The first 3 columns have to contain the coordinates of the
                   k-point.
                   The 4th columns has to contain an integer > 0 that indicates
                   the number of k-points between the current and the next edge.
@@ -149,7 +149,7 @@ class kpoints(lattice):
             path = np.vstack((path, new))
 
         if   'cryst' in mode:
-            self.kpt_cryst = path 
+            self.kpt_cryst = path
         elif 'cart' in mode:
             self.kpt_cart  = path
 
@@ -170,9 +170,9 @@ class kpoints(lattice):
         for n,p in enumerate(ind):
             l = len(p)
             if l == 0:
-                raise ValueError(f"No correspondence found for point {unk[n]}")
+                raise ValueError(f'No correspondence found for point {unk[n]}')
             if l > 1:
-                raise ValueError(f"Multiple points correspond to {unk[n]}, try reducing the threshold.")
+                raise ValueError(f'Multiple points correspond to {unk[n]}, try reducing the threshold.')
             res.append(p[0])
 
         return res
@@ -186,7 +186,7 @@ class kpoints(lattice):
         M          = SC_rec_inv.dot(PC_rec).T
 
         K_G     = self.kpt_cryst.dot(M.T)
-        
+
         max_G_i = int(np.ceil(((np.linalg.det(M) ** (1/3)-1)/2))) + 3
         new, _  = self._transalte_points(SC_rec, K_G, mode='cryst', num=max_G_i)
 
@@ -232,7 +232,7 @@ class kpoints(lattice):
 
         l1,l2,l3 = [
             list(
-                (n+shift[i])/d for n,d in 
+                (n+shift[i])/d for n,d in
                     (
                         u(r+1,q) for r in range(q)
                     )
@@ -283,11 +283,11 @@ class kpoints(lattice):
 
 
 
-    @numpy_save_opt(_fname="kpt_crop.dat", _fmt="")
+    @numpy_save_opt(_fname='kpt_crop.dat', _fmt='')
     # @set_self('kpt_cart,kpt_weight')
     def kpt_crop(
-        self, 
-        center=(0,0,0), radius=np.inf, 
+        self,
+        center=(0,0,0), radius=np.inf,
         verbose=True
         ):
         """
@@ -313,10 +313,10 @@ class kpoints(lattice):
         tot_weight  = self.kpt_weight.sum()
 
         if verbose:
-            print(f"# Cropping k-points around {center} with radius {radius}")
-            print(f"# Cropped {len(w)} k-points out of {self.n_kpt}")
-            print(f"# The weight of the selected points is {crop_weight} vs the total weight {tot_weight}")
-            print(f"# Re-normaliing by a factor {tot_weight/crop_weight}")
+            print(f'# Cropping k-points around {center} with radius {radius}')
+            print(f'# Cropped {len(w)} k-points out of {self.n_kpt}')
+            print(f'# The weight of the selected points is {crop_weight} vs the total weight {tot_weight}')
+            print(f'# Re-normaliing by a factor {tot_weight/crop_weight}')
 
         res_kpt    = self.kpt_cart[w]
         res_weight = self.kpt_weight[w]
@@ -330,7 +330,7 @@ class kpoints(lattice):
         ax.scatter(*self.kpt_cart.T)
         if not self.kpt_edges is None and len(self.kpt_edges) > 0:
             ax.scatter(
-                *self.kpt_edges[:,:3].dot(self.recipr).T, 
+                *self.kpt_edges[:,:3].dot(self.recipr).T,
                 s=10, color='r'
                 )
 
@@ -364,12 +364,3 @@ class kpoints(lattice):
         ax.set_zticklabels([])
 
         plt.show()
-
-
-
-
-
-
-
-
-

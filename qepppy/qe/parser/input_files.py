@@ -32,7 +32,7 @@ def key_getter(key, item=None, attr=None):
         elif not attr is None:
             return getattr(cls, attr)
         else:
-            raise ValueError(f"Cannot retrieve {key}")
+            raise ValueError(f'Cannot retrieve {key}')
 
     return getter
 
@@ -50,7 +50,7 @@ def key_setter(key, item=None, attr=None):
         elif not attr is None:
             setattr(cls, attr, value)
         else:
-            raise ValueError(f"Cannot set {key}")
+            raise ValueError(f'Cannot set {key}')
 
     return setter
 
@@ -59,7 +59,7 @@ class VariableLinker(type):
         new_dct = {}
         for k,v in dct.items():
             new_dct[k] = v
-            if not isinstance(k, str) or not k.startswith("_link_") or not isinstance(v, dict):
+            if not isinstance(k, str) or not k.startswith('_link_') or not isinstance(v, dict):
                 continue
 
             k       = k[6:]
@@ -67,7 +67,7 @@ class VariableLinker(type):
             item    = v.pop('item',      None)
 
             if attrib and item:
-                raise ValueError("Must link the variable to only an attibute or an item, not both.")
+                raise ValueError('Must link the variable to only an attibute or an item, not both.')
 
             getter = key_getter(k, item, attrib)
             setter = key_setter(k, item, attrib)

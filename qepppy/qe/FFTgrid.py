@@ -7,7 +7,7 @@ from .. import utils
 class FFTgrid:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not hasattr(self, "nspin"):
+        if not hasattr(self, 'nspin'):
             self.nspin = 1
 
     def make_density_grid(self, bnd_list=[1]):
@@ -25,7 +25,7 @@ class FFTgrid:
 
     def test_norm(self):
         if not self.binary:
-            raise Exception("Must first read a wavefunction file.")
+            raise Exception('Must first read a wavefunction file.')
         for val in self.C_kn:
             norm = np.linalg.norm(val)
             if np.abs(norm - 1) > 1.0e-7:
@@ -35,7 +35,7 @@ class FFTgrid:
 
     def test_orthonorm(self):
         if not self.binary:
-            raise Exception("Must first read a wavefunction file.")
+            raise Exception('Must first read a wavefunction file.')
         overlap = np.dot(self.C_kn.conj(), self.C_kn.T)
         if not np.allclose(overlap, np.eye(overlap.shape[0])):
             return False
@@ -52,7 +52,7 @@ class FFTgrid:
 
         return GRID
 
-    def plot_density_zslice(self, rep=1, bnd_list=[1], z_slice=[0], cmap="inferno"):
+    def plot_density_zslice(self, rep=1, bnd_list=[1], z_slice=[0], cmap='inferno'):
 
         rho = self.make_density_grid(bnd_list=bnd_list)
         X, Y, Z = utils.xyz_mesh(
@@ -82,8 +82,8 @@ class FFTgrid:
 
             fig.colorbar(cs)
 
-            ax1.set_title("Slice {}".format(zs))
-            ax1.set_xlabel("X")
-            ax1.set_ylabel("Y")
+            ax1.set_title(f'Slice {zs}')
+            ax1.set_xlabel('X')
+            ax1.set_ylabel('Y')
 
             plt.show()

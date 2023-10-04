@@ -22,5 +22,5 @@ class Test_bands(Test_kpoints):
         file    = os.path.join(cwd, '../qe/test_files', 'bands_unfold_noproject.dat')
         test    = np.loadtxt(file)
 
-        assert np.allclose(x,test[:,0]),  "Failed to produce unfolded band structure without projection."
-        assert np.allclose(y,test[:,1:], atol=1e-4), "Failed to produce unfolded band structure without projection."
+        assert np.allclose(x,test[:,0]),  'Failed to produce unfolded band structure without projection.'
+        assert np.allclose(y,test[:,1:], atol=1e-4), 'Failed to produce unfolded band structure without projection.'

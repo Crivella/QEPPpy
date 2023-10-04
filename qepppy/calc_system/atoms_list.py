@@ -188,7 +188,7 @@ class atoms_list(metaclass=PropertyCreator):
         Draw atoms onto a matplotlib axis object.
         Params:
          - ax:         Matplotlib axis object
-         - atom_coord: List of atomic coordinates (not necessarily the original 
+         - atom_coord: List of atomic coordinates (not necessarily the original
                        one in order to use a supercell).
          - atom_namse: List of atom names (same shape as atom_coord). Used to
                        plot the proper color and atomic radius.
@@ -211,7 +211,7 @@ class atoms_list(metaclass=PropertyCreator):
         Draw atomic bonds onto a matplotlib axis object.
         Params:
          - ax:         Matplotlib axis object
-         - atom_coord: List of atomic coordinates (not necessarily the original 
+         - atom_coord: List of atomic coordinates (not necessarily the original
                        one in order to use a supercell).
          - atom_namse: List of atom names (same shape as atom_coord). Used to
                        plot the proper color and atomic radius.
@@ -236,8 +236,3 @@ class atoms_list(metaclass=PropertyCreator):
                     start = tree1.data[i1]
                     end   = tree2.data[i2]
                     cg.draw_bond(ax, start, end, c1, c2, **kwargs)
-
-
-
-
-

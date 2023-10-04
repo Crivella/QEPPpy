@@ -14,16 +14,16 @@ def fortran_bin_read( f, dtype, num):
     It will still works, but print a WARING message and skip the reading of the
     final 4byte in the tail of the fortran WRITE statement containing a
     duplicate of the WRITE size.
-    """ 
+    """
     app1 = np.fromfile( f, np.dtype('<i4'),1)[0]
     to_read = dtype.itemsize*num
     if to_read != app1:
-        print( "WARNING: reading only {} bytes out of {} from WRITE statement".format(to_read, app1))
+        print( f'WARNING: reading only {to_read} bytes out of {app1} from WRITE statement')
     res = np.fromfile( f, dtype, num)
     if to_read == app1:
         app2 = np.fromfile( f, np.dtype('<i4'),1)[0]
         if app2 != app1:
-            print( "WARNING: mismatch between WRITE header and tail")
+            print( 'WARNING: mismatch between WRITE header and tail')
 
     return res
 
@@ -44,7 +44,7 @@ def read_rhotw( fname='out.rhotw'):
     """
     with open( 'out.rhotw', 'rb') as f:
         nt, nqpol = fortran_bin_read( f, np.dtype('<i4'), 2)
-        print( "nt = ", nt, "   nqpol =", nqpol)
+        print( 'nt = ', nt, '   nqpol =', nqpol)
 
         rhotw=np.empty( (nqpol, nt), dtype=complex)
         for i in range(6):
@@ -52,10 +52,10 @@ def read_rhotw( fname='out.rhotw'):
         rhotw = np.array( rhotw)
 
         vcol = fortran_bin_read( f, np.dtype('<f4'), nqpol)
-        print( "Vc(ipol) = ", vcol)
+        print( 'Vc(ipol) = ', vcol)
 
         FAQ, = fortran_bin_read( f, np.dtype('<f4'), 1)
-        print( "FAQ = ", FAQ)
+        print( 'FAQ = ', FAQ)
     print( '\n\n')
 
     return nt, nqpol, rhotw, vcol, FAQ
@@ -75,7 +75,7 @@ def read_trans(fname='exc.out'):
         trans = [a.groupdict() for a in  r.finditer( f.read())]
     en   = np.array([a['en']   for a in trans], dtype=float)/HARTREE
     fact = np.array([a['fact'] for a in trans], dtype=float)
-    
+
     return en, fact
 
 
@@ -92,12 +92,12 @@ def _calc_eps_w( w, rhotw, en, fact, vcol, FAQ):
     Return a numpy array of shape (nqpol,) containing the complex dielectric
     function for every polarization.
     Implement the formula:
-      \varepsilon(\omega) = 1 + FAQ * vc * 
+      \varepsilon(\omega) = 1 + FAQ * vc *
         sum_{t}[fact_t* rhotw_t*conjg(rhotw_t) * (1/(en_t - w) - 1/(-en_t - w))]
     """
-    res = 1. + FAQ * vcol * np.sum( fact * np.absolute(rhotw)**2 * 
+    res = 1. + FAQ * vcol * np.sum( fact * np.absolute(rhotw)**2 *
             (
-                  1. / (en - w) 
+                  1. / (en - w)
                 - 1. / (-en - w)
             ),
             axis=1)
@@ -109,7 +109,7 @@ def _calc_eps_load( broad=(5E-3,)):
     """
     out_res=[]
     for b in broad:
-        out_res.append( np.loadtxt('eps_test_b{}.dat'.format(b)))
+        out_res.append( np.loadtxt(f'eps_test_b{b}.dat'))
 
     return out_res
 
@@ -155,7 +155,7 @@ def _calc_eps_full( Emin=0, Emax=10, deltaE=1E-2, broad=(5E-3,), rhotw_name='out
 
         out_res.append( res)
         if save:
-            np.savetxt( 'eps_test_b{}.dat'.format(b), res, fmt='%9.4f' + '%13.4e'*16)
+            np.savetxt( f'eps_test_b{b}.dat', res, fmt='%9.4f' + '%13.4e'*16)
 
     return out_res
 
@@ -175,5 +175,3 @@ def calc_eps( load=False, save=False, broad=(5E-3,), **kwargs):
         out_res = _calc_eps_full( save=save, broad=broad, **kwargs)
 
     return np.array( out_res)
-
-

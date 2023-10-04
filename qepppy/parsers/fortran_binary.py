@@ -10,16 +10,16 @@ _endian = {
 }
 
 class fortran_binary_io():
-    def __init__(self, src="", endian=endianess, **kwargs):
+    def __init__(self, src='', endian=endianess, **kwargs):
         self.binary = False
-        
+
         self.src = src
         if src:
             self.read_binary(src=src, endian=endian)
 
         super().__init__(**kwargs)
-        
-    def read_binary(self, src="", endian=endianess):
+
+    def read_binary(self, src='', endian=endianess):
         endian = _endian[endian]
         with scipy.io.FortranFile(src) as f:
             for record in self.binary_format:
@@ -33,8 +33,8 @@ class fortran_binary_io():
                 for n in names:
                     setattr(self, n, [])
                 rec   = [
-                    endian + 
-                    str(self._convert_shape_(a['shape'])) + 
+                    endian +
+                    str(self._convert_shape_(a['shape'])) +
                     a['type'] for a in record
                     ]
                 for n in range(rep):
@@ -90,5 +90,4 @@ class fortran_binary_io():
             return val
         elif isinstance(val, str):
             return int(self.__dict__[val])
-        raise ValueError("{} must be either int or str... Correct your code!!!".format(val))
-
+        raise ValueError(f'{val} must be either int or str... Correct your code!!!')

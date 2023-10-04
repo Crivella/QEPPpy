@@ -60,17 +60,17 @@ def _get_value_(f, search_data, dtype=str):
 
     return dtype(a)
 
-def _xml_attr_(node, f="", n=""):
+def _xml_attr_(node, f='', n=''):
     if f:
         node = node.find(f)
     return _format_(node.get(n))
 
-def _xml_text_(node, f="", n=""):
+def _xml_text_(node, f='', n=''):
     if f:
         node = node.find(f)
     return _format_(node.text)
 
-def _xml_node_list_(node, f="", n=""):
+def _xml_node_list_(node, f='', n=''):
     if f:
         node = node.findall(f)
     res = []
@@ -79,16 +79,16 @@ def _xml_node_list_(node, f="", n=""):
         d = {k:_format_(v) for k,v in d.items()}
         add = None
         if not c.text is None:
-            add = c.text.strip().replace("\n", " ")
+            add = c.text.strip().replace('\n', ' ')
         if add:
-            add = list(filter(None, add.split(" ")))
+            add = list(filter(None, add.split(' ')))
             if len(add) == 1:
                 add = add[0]
             if isinstance(add, list):
                 add = np.array(add, dtype=float)
-            if n: 
+            if n:
                 tag = n
-            else: 
+            else:
                 tag = c.tag
             d[tag] = _format_(add)
         else:
@@ -109,13 +109,13 @@ class data_file_parser(object):
                 When schema is given will also genetate 2 attributes:
                 - data_path: Path of the folder containing the *.save folder.
                 - prefix:    Prefix of calculation
-    - outfile:  Name of the pw.x output file to parse (Parsing will run if the 
+    - outfile:  Name of the pw.x output file to parse (Parsing will run if the
                 outfile is set).
-    - **kwargs: Overwrite parsed variables with user's one given as a 
+    - **kwargs: Overwrite parsed variables with user's one given as a
                 var_name=value keyword arg.
-                The var_name must already exist after the parsing (cannot set 
+                The var_name must already exist after the parsing (cannot set
                 unrecognized variables).
-    This parser accept a rule dict passed as a keyword argument 'd' to the 
+    This parser accept a rule dict passed as a keyword argument 'd' to the
     __init__ method.
     The rule dict has to follow the format:
     {
@@ -128,33 +128,33 @@ class data_file_parser(object):
         }
     'varname1':{...}
     }
-    The parsing will generate internal variables using as name the keys of the 
+    The parsing will generate internal variables using as name the keys of the
     rule dict.
     The rule are as follow:
-    - attr:     Get the value of the attribute of name "n" of the node given 
+    - attr:     Get the value of the attribute of name "n" of the node given
                 by root.find(f)
     - text:     Get the text of the node given by root.find(f)
     - nodelist: Find a list of nodes using root.findall(f) and analyze them.
-                The resulting variable will be a list dictionary (one element 
+                The resulting variable will be a list dictionary (one element
                 for every node found).
-                "extra_name" is used as a key name for the text value of the 
+                "extra_name" is used as a key name for the text value of the
                 node, otherwise the xml node.tag is used.
-                Text that contains arrays of number are automatically converted 
+                Text that contains arrays of number are automatically converted
                 into np.ndarray objects.
                 All the node attributes are saved are saved as key:values in the
                 dict.
-                If the node contains children instead of text, explore them 
+                If the node contains children instead of text, explore them
                 recursively:
                 - saves all the attributes found in the dict as key:value pairs.
-                - saves all the the text values found in the dict as 
+                - saves all the the text values found in the dict as
                    node.tag:text pairs.
-                NOTE: No conflict resolution is present for attributes with the 
+                NOTE: No conflict resolution is present for attributes with the
                       same name across children.
-                      The attribute are updated at every step, so the value of 
+                      The attribute are updated at every step, so the value of
                       the last one will be stored.
     """
-    __name__ = "data_file_parser"
-    def __init__(self, xml="", outfile="", data={}, **kwargs):
+    __name__ = 'data_file_parser'
+    def __init__(self, xml='', outfile='', data={}, **kwargs):
         self._data_ = data
         for i in data:
             self.__dict__[i] = None
@@ -181,19 +181,19 @@ class data_file_parser(object):
         if os.path.isfile(self.xml):
             self.data_path = os.path.dirname(os.path.realpath(self.xml))
         elif os.path.isdir(self.xml):
-            file = os.path.join(self.xml, "data-file-schema.xml")
+            file = os.path.join(self.xml, 'data-file-schema.xml')
             if not os.path.isfile(file):
                 raise FileNotFoundError(file)
             self.data_path = self.xml
             self.xml    = file
         else:
-            raise FileNotFoundError("The file/folder {} does not exist".format(self.xml))
-        if "data-file-schema.xml" in self.xml:
+            raise FileNotFoundError(f'The file/folder {self.xml} does not exist')
+        if 'data-file-schema.xml' in self.xml:
             self.prefix    = '.'.join(os.path.basename(self.data_path).split('.')[:-1])
             self.data_path = os.path.abspath( os.path.join(self.data_path, os.path.pardir))
 
     def _parse_outfile_(self):
-        with open(self.outfile, "r") as f:
+        with open(self.outfile, 'r') as f:
             content = f.read()
 
         for k, v in self._data_.items():
@@ -233,9 +233,9 @@ class data_file_parser(object):
 
             if res is None:
                 self.__dict__[k] = None
-            elif t == np.array: 
+            elif t == np.array:
                 self.__dict__[k] = np.fromstring(res, sep=' ', dtype=float)
-            else: 
+            else:
                 self.__dict__[k] = t(res)
         return
 
@@ -245,5 +245,3 @@ class data_file_parser(object):
         #     return True and super().validate()
         # except:
         #     return True
-
-

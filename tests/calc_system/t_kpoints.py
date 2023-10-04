@@ -12,10 +12,10 @@ cwd = os.path.dirname(os.path.realpath(__file__))
 edges = np.array([
     [0.500, 0.500, 0.500,   30],
     [0.000, 0.000, 0.000,   30],
-    [0.500, 0.000, 0.500,   15], 
-    [0.625, 0.250, 0.625,   1], 
+    [0.500, 0.000, 0.500,   15],
+    [0.625, 0.250, 0.625,   1],
     [0.375, 0.375, 0.750,   30],
-    [0.000, 0.000, 0.000,   1], 
+    [0.000, 0.000, 0.000,   1],
     ])
 
 class Test_kpoints(Test_lattice):
@@ -55,7 +55,7 @@ class Test_kpoints(Test_lattice):
         unf = cls_edges.generate_unfolding_path(cls_edges.recipr/3)
         test = np.loadtxt(file)[:,:3]
 
-        assert np.allclose(unf, test), "Incorrect unfold path."
+        assert np.allclose(unf, test), 'Incorrect unfold path.'
 
     @pytest.mark.parametrize('shift',[(0,0,0),(1,1,1)])
     @pytest.mark.parametrize('shape',[(1,1,1),(5,5,5),(10,10,7)])

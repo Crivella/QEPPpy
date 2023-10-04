@@ -38,8 +38,8 @@ def dpforexc_read_trans(fname='exc.out'):
             contains the fact (f_i - f_j) for every transition
     """
     r = re.compile(
-        r'\sis,ikp,iv,ik,ic,it,fact,gwten =' + 
-        r'\s+(?P<is>[\d]+)\s+(?P<kpt>[\d]+)\s+(?P<iv>[\d]+)\s+(?P<ik>[\d]+)\s+' + 
+        r'\sis,ikp,iv,ik,ic,it,fact,gwten =' +
+        r'\s+(?P<is>[\d]+)\s+(?P<kpt>[\d]+)\s+(?P<iv>[\d]+)\s+(?P<ik>[\d]+)\s+' +
         r'(?P<ic>[\d]+)\s+(?P<num>[\d]+)\s+(?P<fact>[\d\.]+)\s+(?P<en>[\d\.]+)'
         )
     with open('exc.out', 'r') as f:
@@ -48,7 +48,7 @@ def dpforexc_read_trans(fname='exc.out'):
     ib   = np.array([a['ib'] for a in trans], dtype='int')
     en   = np.array([a['en']   for a in trans], dtype='float')/HARTREE
     fact = np.array([a['fact'] for a in trans], dtype='float')
-    
+
     return iv, ib, en, fact
 
 
@@ -59,7 +59,7 @@ def _calc_eps_dft_(w, mel, en, fact, FAQ, weight):
     Params:
      -w     = Spectral energy (as a complex number) in atomic units (HARTREE)
               w = _w + i \eta where \eta is the lorentzian broadening.
-     -mel   = Numpy array of shape (pol, nt) 
+     -mel   = Numpy array of shape (pol, nt)
               contains the square modulus of the matrix element for every
               polarization and transition
               columns 4,5,6(xx,yy,zz) of 'matrixelements' (output of pw2gw)
@@ -69,7 +69,7 @@ def _calc_eps_dft_(w, mel, en, fact, FAQ, weight):
               !!!Must be passed in atomic units (HARTREE)
      -fact  = Numpy array of shape (nt,)
               contains the fact = (f_v - f_c) for every transition
-              column 8 of 'matrixelements' (output of pw2gw)               
+              column 8 of 'matrixelements' (output of pw2gw)
      -FAQ   = Multiplicative factor to calculate dielectric function
               8 * pi / vol
      -weight= Numpy array of shape (nt,)
@@ -80,13 +80,13 @@ def _calc_eps_dft_(w, mel, en, fact, FAQ, weight):
     A numpy array of shape (nqpol,) containing the complex dielectric
     function for every polarization.
     Implement the formula:
-      \varepsilon(\omega) = 1 + FAQ * 
+      \varepsilon(\omega) = 1 + FAQ *
         sum_{t}[fact_t* mel/(en^2) * (1/(en_t - w) - 1/(-en_t - w))]
     """
     return 1 + FAQ * np.sum(mel / en**2 * fact *(1./ (en - w) - 1./ (-en - w)) * weight, axis=1)
 
 def _get_dpforexc_data_(
-    Emin=0, Emax=30, deltaE=0.05, 
+    Emin=0, Emax=30, deltaE=0.05,
     band_low=1, band_high=np.inf,
     deg=5E-2,
     rhotw='out.rhotw', exc='exc.out',
@@ -94,9 +94,9 @@ def _get_dpforexc_data_(
     ):
     """
     dpforexc mode:
-     - band_low:   Exclude all the transition originating from bands lower than 
+     - band_low:   Exclude all the transition originating from bands lower than
                    bands_low (default=1).
-     - bands_high: Exclude all the transitions arriving at bands higher than 
+     - bands_high: Exclude all the transitions arriving at bands higher than
                    bands_high (default=np.inf).
      - rhotw:      Path/name of the out.rhotw file from a dpforexc calculation
                    (default='out.rhotw')
@@ -110,10 +110,10 @@ def _get_dpforexc_data_(
     FAQ    = data.FAQ * data.vcol
 
     w      = np.where(
-        (band_low <= iv)    & 
-        (ic <= band_high)   & 
-        (Emin-20*deg <= en) & 
-        (en <= Emax+20*deg) & 
+        (band_low <= iv)    &
+        (ic <= band_high)   &
+        (Emin-20*deg <= en) &
+        (en <= Emax+20*deg) &
         (en != 0)
         )[0]
     en     = en[w]
@@ -122,7 +122,7 @@ def _get_dpforexc_data_(
     return mel, weight, en, fact, FAQ
 
 def _get_pw2gw_data(
-    Emin=0, Emax=30, deltaE=0.05, 
+    Emin=0, Emax=30, deltaE=0.05,
     band_low=1, band_high=np.inf,
     deg=5E-2,
     mel='matrixelements', kdat='k.dat',
@@ -130,15 +130,15 @@ def _get_pw2gw_data(
     ):
     """
     pw2gw mode:
-     - band_low:   Exclude all the transition originating from bands lower than 
+     - band_low:   Exclude all the transition originating from bands lower than
                    bands_low (default=1).
-     - bands_high: Exclude all the transitions arriving at bands higher than 
+     - bands_high: Exclude all the transitions arriving at bands higher than
                    bands_high (default=np.inf).
      - mel:        Path/name of the matrixelements file from a pw2gw calculation
                    (default='matrixelements')
      - kdat:       Path/name of the k.dat file from a pw2gw calculation
                    (default='k.dat')
-     - vol:        Volume in atomic units of the cell to be used for the 
+     - vol:        Volume in atomic units of the cell to be used for the
                    normalization constant."""
     data   = np.loadtxt(mel,  comments='#').T
     weight = np.loadtxt(kdat, comments='#')[:,3]
@@ -146,8 +146,8 @@ def _get_pw2gw_data(
     w      = np.where(
         (band_low <= data[1])    &
         (data[2] <= band_high)   &
-        (Emin-20*deg <= data[6]) & 
-        (data[6] <= Emax+20*deg) & 
+        (Emin-20*deg <= data[6]) &
+        (data[6] <= Emax+20*deg) &
         (data[6] != 0.0)
         )[0]
     data   = data[:,w]
@@ -160,24 +160,24 @@ def _get_pw2gw_data(
 
 @numpy_plot_opt(
     _plot=False,
-    _xlab=r"$\hbar\omega$ (eV)", 
-    _ylab=r"$\varepsilon(\omega)$ (arb. units)",
+    _xlab=r'$\hbar\omega$ (eV)',
+    _ylab=r'$\varepsilon(\omega)$ (arb. units)',
     )
 @numpy_save_opt(
-    _fname="eps.dat",
-    _fmt="%12.4E",
-    _header=("{:>10s}" + "{:>12s}"*2).format("En (eV)", 'real', 'imag'),
+    _fname='eps.dat',
+    _fmt='%12.4E',
+    _header=('{:>10s}' + '{:>12s}'*2).format('En (eV)', 'real', 'imag'),
     _delimiter='',
     )
 def calc_eps(
-    mode="pw2gw",
-    Emin=0, Emax=30, deltaE=0.05, 
+    mode='pw2gw',
+    Emin=0, Emax=30, deltaE=0.05,
     deg=5E-2,
     **kwargs
     ):
     r"""
     Compute the complex dielectric function using the formula:
-      \varepsilon(\omega) = 1 + FAQ * 
+      \varepsilon(\omega) = 1 + FAQ *
         sum_{t}[fact_t* mel/(en^2) * (1/(en_t - w) - 1/(-en_t - w))]
 
     Params:
@@ -189,7 +189,7 @@ def calc_eps(
      - deg:    Lorentzian broadening (must be > 0) used in 'w = r(w) + 1j * deg'"""
     modes = ['pw2gw', 'dpforexc']
     if not mode in modes:
-        raise NotImplementedError("Mode {} is not implemented.".format(mode))
+        raise NotImplementedError(f'Mode {mode} is not implemented.')
     if mode == 'pw2gw':
         mel, weight, en,fact, FAQ = _get_pw2gw_data(Emin=Emin, Emax=Emax, deltaE=deltaE, deg=deg, **kwargs)
     elif mode == 'dpforexc':
@@ -223,19 +223,19 @@ def calc_eps(
 
 @numpy_plot_opt(
     _plot=False,
-    _xlab=r"$\hbar\omega$ (eV)", 
-    _ylab=r"$\varepsilon_2(\omega)$ (arb. units)",
+    _xlab=r'$\hbar\omega$ (eV)',
+    _ylab=r'$\varepsilon_2(\omega)$ (arb. units)',
     _labels=['eps2 X','eps2 Y','eps2 Z','eps2 AVG',]
     )
 @numpy_save_opt(
-    _fname="eps.dat",
-    _fmt="%9.4f" + "%12.4E"*4,
-    _header=("{:>7s}" + "{:>12s}"*4).format("En (eV)", 'eps2 X','eps2 Y','eps2 Z','eps2 AVG'),
+    _fname='eps.dat',
+    _fmt='%9.4f' + '%12.4E'*4,
+    _header=('{:>7s}' + '{:>12s}'*4).format('En (eV)', 'eps2 X','eps2 Y','eps2 Z','eps2 AVG'),
     _delimiter='',
     )
 def calc_eps_pw2gw_light(
-    mel="matrixelements", kdat="k.dat",
-    Emin=0, Emax=30, deltaE=0.05, 
+    mel='matrixelements', kdat='k.dat',
+    Emin=0, Emax=30, deltaE=0.05,
     band_low=1, band_high=np.inf,
     deg=0, deg_type='gauss',
     **kwargs
@@ -246,7 +246,7 @@ def calc_eps_pw2gw_light(
     res = np.zeros((x.size, 4))
     res[:,0] = x
 
-    weight = np.loadtxt(kdat, comments="#")
+    weight = np.loadtxt(kdat, comments='#')
     weight = weight[:,3]
 
     with open(mel) as f:

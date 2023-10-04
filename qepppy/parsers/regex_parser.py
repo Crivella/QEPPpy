@@ -18,15 +18,15 @@ class Parser_regex():
     Parse a file using regex defined syntax. Meant to be used as a child class.
     The parent class can be passed a `regex_data` on its init to specify the
     syntax:
-     - KEYs: name of the attribute/s to be set in the class after parsing the 
+     - KEYs: name of the attribute/s to be set in the class after parsing the
        file. Can use comma to specify more than one attribute to be set as a
        result of the same parse operation. '_' can be used in order to ignore
        part of the results
-       EG: 
-       - {'test':...} will set an attribute `test` on the parent class 
+       EG:
+       - {'test':...} will set an attribute `test` on the parent class
        - {'test1,test2':...} will set attributes `test1` and `test2`.
        - {'p1,_,p2':...} will set attributes `p1` and `p2`, while ignoring the
-         second variable resulting from the parse operation. 
+         second variable resulting from the parse operation.
        For more info on how the result is split from the parsing see the parse
        rules section.
        with the result of the parsing rule given by the value.
@@ -38,11 +38,11 @@ class Parser_regex():
               exception will be risen
               - single_value: int/float/str/bool
                 This search expect the REGEX string to contain a 'flag' named
-                search group, the content of which will be the result of the 
+                search group, the content of which will be the result of the
                 parse. If 'flag' is not present, a default search group will
                 be added depending on the specified type.
                 EG: rstring='nbnd = ', typ='int
-                    final_rstring = 'nbnd = [\s]*(?P<flag>[\d\-]+)'
+                    final_rstring = 'nbnd = [\\s]*(?P<flag>[\\d\-]+)'
               - iterable: list/np.ndarray
                 In this case rstring can specify multiple search groups, the
                 result of which will be made into a list.
@@ -54,10 +54,10 @@ class Parser_regex():
                   The number of columns/rgx_groups has to be equal to the number
                   of attribute names, or max_num has to be used to truncate
                   the resulting array.
-       - repeatable: True/Fale (default) Allow to read output of calculations 
+       - repeatable: True/Fale (default) Allow to read output of calculations
          that print the same output multiple times for different iterations
        - max_num: MAX number of column to consider when parsing iterables
-         Can be positive/negative to truncate starting from the left/right 
+         Can be positive/negative to truncate starting from the left/right
          edge.
        - re_scale_fact: Multiply the final result by this scale factor.
          If this is a string, the parser will look for the corresponding
@@ -79,7 +79,7 @@ class Parser_regex():
     @regex_data.setter
     def regex_data(self, value):
         if not isinstance(value, dict):
-            raise ValueError("Value must be a dictionary.")
+            raise ValueError('Value must be a dictionary.')
 
         self._regex_data = value
 
@@ -102,7 +102,7 @@ class Parser_regex():
     @staticmethod
     def get_list_val(content, rstring):
         rgx = re.compile(r'\s[a-zA-Z]')
-        
+
         res = re.finditer(rstring, content)
         res = [x.groupdict() for x in res]
         for n,e in enumerate(res):
@@ -144,7 +144,7 @@ class Parser_regex():
         else:
             sx = val.shape[0]
             if sx % max_num != 0:
-                raise ValueError(f"Read data cannot be reshaped using given {max_num=}")
+                raise ValueError(f'Read data cannot be reshaped using given {max_num=}')
             new = sx//max_num
             if new > 1:
                 val = val.reshape(sx//max_num, max_num, -1)
@@ -206,4 +206,3 @@ class Parser_regex():
                     setattr(self, name, val)
             else:
                 raise NotImplementedError()
-

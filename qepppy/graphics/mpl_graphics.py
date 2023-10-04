@@ -20,14 +20,14 @@ def draw_cell(ax, cell, center=[0,0,0]):
                 orig = V[(n2+1)%3] + V[(n2+2)%3]
             else:
                 orig = V[n2%3]
-            ax.plot(v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
-        ax.plot(v[:,0], v[:,1], v[:,2], color="black", linewidth=0.5)
+            ax.plot(v[:,0], v[:,1], v[:,2], color='black', linewidth=0.5)
+        ax.plot(v[:,0], v[:,1], v[:,2], color='black', linewidth=0.5)
 
 def draw_Wigner_Seitz(
-    ax, recipr, draw_corners=True, 
+    ax, recipr, draw_corners=True,
     edge_args={
         'color': 'black'
-    }, 
+    },
     corner_args={
         'color': 'green'
     }
@@ -99,7 +99,7 @@ def draw_sphere(ax, radius=1, center=[0,0,0], long=10, lat=7, **kwargs):
     return res
 
 
-def draw_cylinder(ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
+def draw_cylinder(ax, radius=1, axis=[0,0,1], start=[0,0,0], color='b'):
     x0, y0, z0 = start
 
     norm   = np.linalg.norm(axis)
@@ -121,7 +121,7 @@ def draw_cylinder(ax, radius=1, axis=[0,0,1], start=[0,0,0], color="b"):
 def draw_bond(ax, start, end, color1, color2, graph_lvl=0):
     if graph_lvl == 0:
         v = np.vstack((start, end))
-        ax.plot(v[:,0], v[:,1], v[:,2], color="black", linewidth=1.5)
+        ax.plot(v[:,0], v[:,1], v[:,2], color='black', linewidth=1.5)
     elif graph_lvl == 1 or graph_lvl == 2:
         mid = (start + end) / 2
         v = np.vstack((start, mid))
@@ -141,18 +141,18 @@ def draw_bond(ax, start, end, color1, color2, graph_lvl=0):
 def draw_atom(ax, X,Y,Z, color='k', name='None', radius=1, graph_lvl=0):
     if graph_lvl == 0 or graph_lvl == 1:
         ax.scatter(
-            X, Y, Z, 
+            X, Y, Z,
             s=80*radius,
-            marker="o",
+            marker='o',
             depthshade=False,
             c=color,
             label=name
             )
     elif graph_lvl == 2 or graph_lvl == 3:
         ax.scatter(
-            X, Y, Z, 
+            X, Y, Z,
             s=10,
-            marker="o",
+            marker='o',
             depthshade=False,
             c=color,
             label=name
@@ -161,6 +161,3 @@ def draw_atom(ax, X,Y,Z, color='k', name='None', radius=1, graph_lvl=0):
             draw_sphere(ax, radius=radius*0.3, center=[x,y,z], color=color)
     else:
         raise ValueError("arg 'graph_lvl' must be <= 3")
-
-
-

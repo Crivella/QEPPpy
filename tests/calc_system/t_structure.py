@@ -14,7 +14,7 @@ class Test_structure(Test_atoms, Test_lattice):
     def cls_wcc(self, cls_rec, coord):
         cls_rec.atoms_coord_cryst = coord
         return cls_rec
-    
+
     @pytest.mark.mpl_image_compare
     @pytest.mark.parametrize('rep', [1,2,3], ids=['rep:' + str(a) for a in [1,2,3]])
     def test_plot_cell(self, cls_wcc, rep):

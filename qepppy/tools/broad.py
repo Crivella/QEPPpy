@@ -5,7 +5,7 @@ def _gaussian(x, broad):
     dx = x[1] - x[0]
     sigma = broad
     twoSigmaSq = 2.0 * sigma**2
-    norm = np.sqrt(2 * np.pi) * sigma / dx 
+    norm = np.sqrt(2 * np.pi) * sigma / dx
     #Divided for dx to take into account implementation as sum instead of integral (volume element)
 
     g = np.arange(-10*sigma, 10*sigma, dx)
@@ -17,7 +17,7 @@ def _lorentz(x, broad):
     dx = x[1] - x[0]
     gamma = broad
     gammaSq = gamma**2
-    norm = np.pi / gamma / dx 
+    norm = np.pi / gamma / dx
     #Divided for dx to take into account implementation as sum instead of integral (volume element)
 
     g = np.arange(-15*gamma, 15*gamma, dx)
@@ -32,7 +32,7 @@ def _check_and_pad_(data,deg):
     dx = x[1] - x[0]
     if np.any((x[1:
         ] - x[:-1]) - dx > 1E-4):
-        raise ValueError("X-axis data must be uniformely distributed.")
+        raise ValueError('X-axis data must be uniformely distributed.')
 
     padding = int(15*deg/dx)
     x = np.pad(x, (padding,padding), 'linear_ramp', end_values=(x[0]-15*deg, x[-1] + 15*deg))
@@ -46,10 +46,10 @@ def _get_conv_function_(t):
     if t == 'lorentz':
         return _lorentz
     else:
-        raise NotImplemented("Invalid convolution function {}.".format(t))
+        raise NotImplemented(f'Invalid convolution function {t}.')
 
 
-def broad(data, t="gauss", deg=0.1, axis=0):
+def broad(data, t='gauss', deg=0.1, axis=0):
     if axis:
         data = data.T
 
@@ -73,7 +73,7 @@ def main():
     import sys
     argc = len(sys.argv)
     if not 2<=argc<=5 or sys.argv[1] == 'help':
-        print("Incorrect use. Pleas pass arguments:"
+        print('Incorrect use. Pleas pass arguments:'
             "\n\t'fname'\t (comma separated),"
             "\n\t'type\t(gauss/lorentz, default=gauss)',"
             "\n\t'broad\t (default=0.1)'"
@@ -90,7 +90,7 @@ def main():
     if argc >= 5:
         oname = str(sys.argv[4]).split(',')
     for n, name in enumerate(str(sys.argv[1]).split(',')):
-        print("Applying '{}' broadening of '{}' to '{}'".format(t.upper(), deg, name))
+        print(f"Applying '{t.upper()}' broadening of '{deg}' to '{name}'")
         data = np.loadtxt(name, usecols=None)
 
         b = broad(data, t, deg)
@@ -98,10 +98,9 @@ def main():
         if oname:
             n_name = oname[n]
         else:
-            n_name = "{}_{}".format(name, deg)
-        print("Saving broadened data to '{}'".format(n_name))
+            n_name = f'{name}_{deg}'
+        print(f"Saving broadened data to '{n_name}'")
         np.savetxt(n_name, b)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
-        

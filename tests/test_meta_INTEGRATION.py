@@ -91,7 +91,7 @@ def init_kwargs_corr(request):
 def test_meta_default(val):
     class app(metaclass=PropertyCreator):
         test_def = {'default':val}
-        
+
     new = app()
     get = getattr(new, 'test_def')
 
@@ -99,7 +99,7 @@ def test_meta_default(val):
     if isinstance(get, np.ndarray):
         check = np.allclose(get, val)
 
-    assert check, f"Failed to set default value: set'{get}' vs to_be'{val}'." 
+    assert check, f"Failed to set default value: set'{get}' vs to_be'{val}'."
 
 
 def test_meta_init_corr(init_kwargs_corr):
@@ -110,8 +110,8 @@ def test_meta_init_inheritance(init_kwargs_corr):
 
 def test_meta_doc():
     assert "C'era una volta tanto tempo fa..." in Dummy.p2.__doc__, (
-        "Documentation was not assigned correctly to property."
-        ) 
+        'Documentation was not assigned correctly to property.'
+        )
 
 
 @pytest.mark.parametrize('num', range(5))
@@ -119,7 +119,7 @@ def test_meta_conv_func(num):
     new  = Dummy()
     new.p6 = [[1,2,3]]*num
 
-    assert isinstance(new.p6, np.ndarray), "Failed to convert list to np.ndarray"
+    assert isinstance(new.p6, np.ndarray), 'Failed to convert list to np.ndarray'
     assert new.p6.shape[0] == num, f"Failed conversion: wrong shape '{Dummy.p6.shape}'"
 
 def test_meta_allowed_wrong():
@@ -127,7 +127,7 @@ def test_meta_allowed_wrong():
     try:
         new.p6 = np.arange(12).reshape(-1,3)
     except ValueError as e:
-        assert not re.search(r"Value '10' is not allowed", str(e)) is None, "Wrong error msg: " + str(e)
+        assert not re.search(r"Value '10' is not allowed", str(e)) is None, 'Wrong error msg: ' + str(e)
         return
 
 @pytest.mark.parametrize(
@@ -142,30 +142,30 @@ def test_meta_reset_attr(name_val):
     name, val = name_val
     new  = Dummy()
 
-    assert not getattr(new, name), f"Wrong initialization of attr."
+    assert not getattr(new, name), f'Wrong initialization of attr.'
     setattr(new, name, val)
     v = getattr(new, name)
     if isinstance(v, np.ndarray) and np.shape != (0,):
         v = True
-    assert v, "Failed to assign attr."
+    assert v, 'Failed to assign attr.'
     setattr(new, name, None)
     res = getattr(new, name)
     if isinstance(res, np.ndarray):
-        res = len(res)   
-    assert not res, "Failed to reset attr."
+        res = len(res)
+    assert not res, 'Failed to reset attr.'
 
 def test_meta_pre_set():
     new    = Dummy()
     new.p7 = 12345
 
-    assert new.p1 == 12345, "Failed pres_set."
+    assert new.p1 == 12345, 'Failed pres_set.'
 
 def test_meta_post_set_corr():
     new    = Dummy()
     new.p1 = 444
     new.p8 = 12345
 
-    assert new.p1 == 12345-444, "Failed post_set."
+    assert new.p1 == 12345-444, 'Failed post_set.'
 
 def test_meta_post_set_wrong():
     new    = Dummy()
@@ -174,7 +174,4 @@ def test_meta_post_set_wrong():
     except:
         return
 
-    raise AssertionError("post_set that should fail did not fail.")
-
-
-
+    raise AssertionError('post_set that should fail did not fail.')

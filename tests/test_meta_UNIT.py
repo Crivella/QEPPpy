@@ -20,20 +20,20 @@ def wrong(func, exc, *args):
         func(*args)
     except exc as e:
         assert not re.search(err, str(e)) is None, (
-            'Exception msg did not match the expected one\n' + 
+            'Exception msg did not match the expected one\n' +
             'expected:  ' + err + '\n' +
             'obtained:  ' + str(e)
             )
         return
     except Exception as e:
-        raise Exception("Wrong exception obtained:  \n" + str(e))
+        raise Exception('Wrong exception obtained:  \n' + str(e))
 
-    raise Exception("Check_type that should fail did not fail: " + str(args))
+    raise Exception('Check_type that should fail did not fail: ' + str(args))
 
 
 iterables = [
-        None, '', (), [], 
-        1, 1.5, 
+        None, '', (), [],
+        1, 1.5,
         [1,2,[3,(4, [12])]],
         (1,2,[3,(4,(5,))]),
         np.arange(16).reshape(2,2,2,2)
@@ -145,7 +145,7 @@ err = r"value='.*' must be of type '.*'"
         ),
         (
             (list,tuple,),
-            "[1,2]",
+            '[1,2]',
             err
         ),
         (
@@ -256,7 +256,7 @@ def test_check_sub_type_wrong(subtyp_value):
             appdict(),
             np.empty((3,2,1)),
             None
-        ),        
+        ),
         (
             appdict(),
             [1,2,3,4],

@@ -104,6 +104,3 @@ def test_pattern_set(load_str):
 def test_pattern_set_new_nl(load_str):
     load_str['NAME3/a3'] = 1
     assert load_str['a3'] == 1, 'Failed to assign value in new namelist'
-
-
-

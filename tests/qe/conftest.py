@@ -11,26 +11,26 @@ def compare_element(a,b):
             a = np.array(a)
             b = np.array(b)
         else:
-            raise ElementMismatch("Type of the two elements are different")
+            raise ElementMismatch('Type of the two elements are different')
     if isinstance(a, np.ndarray):
         if a.shape != b.shape:
-            raise ElementMismatch("The shape of the two array does not match: '{}' vs '{}'.".format(a.shape, b.shape))
+            raise ElementMismatch(f"The shape of the two array does not match: '{a.shape}' vs '{b.shape}'.")
         if len(a) == 0:
             return
         if isinstance(a.flatten()[0], np.number):
             if not np.allclose(a,b, atol=1e-4):
-                raise ElementMismatch("The two array are different (even considering noise!!!).")
+                raise ElementMismatch('The two array are different (even considering noise!!!).')
         else:
             if not np.all(a == b):
-                raise ElementMismatch("The two array are different.")
+                raise ElementMismatch('The two array are different.')
     elif isinstance(a, list):
         if len(a) != len(b):
-            raise ElementMismatch("Two lists of different lenghts: '{}' vs '{}'.".format(len(a), len(b)))
+            raise ElementMismatch(f"Two lists of different lenghts: '{len(a)}' vs '{len(b)}'.")
         for c1,c2 in zip(a,b):
             compare_element(c1,c2)
     elif isinstance(a, dict):
         if len(a) != len(b):
-            raise ElementMismatch("Two lists of different lenghts: '{}' vs '{}'.".format(len(a), len(b)))
+            raise ElementMismatch(f"Two lists of different lenghts: '{len(a)}' vs '{len(b)}'.")
         for k,v in a.items():
             if not k in b:
                 raise ElementMismatch(f"dict is missing key '{k}'")
@@ -47,6 +47,3 @@ def compare_std(cls, std, cmp_list=[]):
             raise ElementMismatch(f"While comparing '{name}': \n\t{e}")
         except Exception as e:
             raise type(e)(f"UNEXPECTED!!!: While comparing '{name}': {e}")
-
-
-

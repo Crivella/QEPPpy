@@ -7,7 +7,7 @@ import traceback
 __all__ = ['logger', 'debug', 'info','warning', 'error', 'critical', 'function_wrap']
 
 try:
-    with open("log.json", "r") as f:
+    with open('log.json', 'r') as f:
         content = json.load(f)
 except Exception:
     content = {}
@@ -19,14 +19,14 @@ global_log_thr     = content.get('global_log_thr',     'ERROR')
 logging.basicConfig(
     format=(
         '-'*80 +
-        '\n%(levelname)s ---> %(name)s  line:%(lineno)s' + 
-        '\n\tMSG: "%(message)s"' + 
+        '\n%(levelname)s ---> %(name)s  line:%(lineno)s' +
+        '\n\tMSG: "%(message)s"' +
         '\n' + '-'*80
-        ), 
+        ),
     level=global_log_level
     )
 
-global_logger    = logging.getLogger("global")
+global_logger    = logging.getLogger('global')
 global_logger.propagate = False
 ch = logging.StreamHandler()
 global_formatter = logging.Formatter(
@@ -36,52 +36,52 @@ global_logger.addHandler(ch)
 
 def stack_analyzer(lvl=2):
     stack = inspect.stack()[lvl]
-    module = stack[1].split("/")[-1]
+    module = stack[1].split('/')[-1]
     lineno = stack[2]
     func = stack[3]
 
-    return "{}:{}:{}".format(module, func, lineno)
+    return f'{module}:{func}:{lineno}'
 
 
 class critical(Exception):
     level = 'CRITICAL'
     @staticmethod
-    def print(msg=""):
+    def print(msg=''):
         stack_msg = stack_analyzer()
-        global_logger.critical("{}\n{}".format(stack_msg, msg))
+        global_logger.critical(f'{stack_msg}\n{msg}')
 
 class error(Exception):
     level = 'ERROR'
     @staticmethod
-    def print(msg=""):
+    def print(msg=''):
         stack_msg = stack_analyzer()
-        global_logger.error("{}\n{}".format(stack_msg, msg))
+        global_logger.error(f'{stack_msg}\n{msg}')
 
 class warning(Exception):
     level = 'WARNING'
     @staticmethod
-    def print(msg=""):
+    def print(msg=''):
         stack_msg = stack_analyzer()
-        global_logger.warning("{}\n{}".format(stack_msg, msg))
+        global_logger.warning(f'{stack_msg}\n{msg}')
 
 class info(Exception):
     level = 'INFO'
     @staticmethod
-    def print(msg=""):
+    def print(msg=''):
         stack_msg = stack_analyzer()
-        global_logger.info("{}\n{}".format(stack_msg, msg))
+        global_logger.info(f'{stack_msg}\n{msg}')
 
 class debug(Exception):
     level = 'DEBUG'
     @staticmethod
-    def print(msg=""):
+    def print(msg=''):
         stack_msg = stack_analyzer()
-        global_logger.debug("{}\n{}".format(stack_msg, msg))
+        global_logger.debug(f'{stack_msg}\n{msg}')
 
 def get_original_class_name(method):
     if inspect.ismethod(method):
         for cls in inspect.getmro(method.__self__.__class__):
-            if cls.__name__ == "NewCls":
+            if cls.__name__ == 'NewCls':
                 continue
             if cls.__dict__.get(method.__name__):
                 return cls.__module__ + ':' + cls.__name__
@@ -95,7 +95,7 @@ def function_wrap(func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
     def wrapped(*args, **kwargs):
         msg_name = func.__name__
         try:
-            msg_name = get_original_class_name(func) + ":" + msg_name
+            msg_name = get_original_class_name(func) + ':' + msg_name
         except:
             pass
         log = logging.getLogger(msg_name)
@@ -138,7 +138,7 @@ def function_wrap(func, msg_lvl=global_log_level, thr_lvl=global_log_thr):
 
 def logger(msg_lvl=global_log_level, thr_lvl=global_log_thr, log_enabled=global_log_enabled):
     """
-    Decorator generator that can be used to log functions or all class methods called through 
+    Decorator generator that can be used to log functions or all class methods called through
     __getatrribute__ (applied directly to the class)
     """
     def _log_(elem):
@@ -150,9 +150,9 @@ def logger(msg_lvl=global_log_level, thr_lvl=global_log_thr, log_enabled=global_
 
                 if inspect.ismethod(x):
                     return function_wrap(
-                        x, 
-                        msg_lvl=msg_lvl, 
-                        thr_lvl=thr_lvl, 
+                        x,
+                        msg_lvl=msg_lvl,
+                        thr_lvl=thr_lvl,
                         )
                 else:
                     return x

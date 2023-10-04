@@ -1,8 +1,9 @@
 import numpy as np
 
-from .FFTgrid import FFTgrid
-from ..parsers import fortran_binary_io as bin_io
 from .. import utils
+from ..parsers import fortran_binary_io as bin_io
+from .FFTgrid import FFTgrid
+
 
 class wavefnc(bin_io, FFTgrid):
     binary_format =[
@@ -36,10 +37,10 @@ class wavefnc(bin_io, FFTgrid):
     @property
     def direct(self):
         return utils.recipr_base(self.recipr)
-    
+
     def get_parity_bnd(self, bnd:int, thr: float = 1e-4) -> int:
         """Get the parity of the wavefunction 'wfc' for band  number 'bnd' (indexing from 0).
-        !!! This works only for k-points where  2k = G  (TRIM points  k + G = -G)  
+        !!! This works only for k-points where  2k = G  (TRIM points  k + G = -G)
             where G is any reciprocal lattice vector.
 
         Args:
@@ -57,7 +58,7 @@ class wavefnc(bin_io, FFTgrid):
         # print(f'KPT_CRYS: {kc2}')
         kc2r = np.round(kc2, decimals=0)
         if np.any(np.abs(kc2r - kc2) > thr):
-            print(f"{bnd = :3d}:  KPT is not a TRIM point   {kc2 = }")
+            print(f'{bnd = :3d}:  KPT is not a TRIM point   {kc2 = }')
             return 0
         kc2 = (kc2r).astype(int)
         # print(kc2)
@@ -65,7 +66,7 @@ class wavefnc(bin_io, FFTgrid):
         grid = self._generate_g_grid_(bnd)
 
         # Parity at k-point:
-        # <psi| P |psi> = <psi(r) | psi(-r)> = ... planw-wave expansion  = 
+        # <psi| P |psi> = <psi(r) | psi(-r)> = ... planw-wave expansion  =
         # = sum{G} (C_knG * C_knG'*)
         # with  G'  such that   G + G' + 2k = 0   (only for TRIM points)
         i1 = np.arange(grid.shape[1]) + kc2[0]
@@ -82,13 +83,13 @@ class wavefnc(bin_io, FFTgrid):
         res = np.sum(grid * np.conj(rev_grid)) / norm
 
         if (diff := np.abs(np.linalg.norm(res) - 1)) > thr:
-            print(f"{bnd=:4d}:  EGV_NORM != 1   {diff = }")
+            print(f'{bnd=:4d}:  EGV_NORM != 1   {diff = }')
             return 0
         else:
             if (diff := np.abs(np.abs(np.real(res)) - 1)) > thr:
-                print(f"{bnd = :3d}:  EGV_REAL != 1   {diff = }")
+                print(f'{bnd = :3d}:  EGV_REAL != 1   {diff = }')
                 return 0
-    
+
         return int(np.sign(np.real(res)))
 
 
@@ -106,5 +107,3 @@ class wavefnc(bin_io, FFTgrid):
             app = self.get_parity_bnd(bnd)
             res *= app
         return res
-
-

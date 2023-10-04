@@ -15,7 +15,7 @@ out_files = [a[:-4] for a in os.listdir(test_dir) if a.endswith('.out')]
 cmp_list = [
     'direct', 'recipr',
     'ibrav', 'alat',
-    'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst', 
+    'n_atoms', 'atoms_coord_cart', 'atoms_coord_cryst',
     'atoms_typ', 'unique_atoms_mass', # 'atoms_pseudo',
     'n_kpt', 'kpt_cart', 'kpt_cryst', 'kpt_weight',
     'egv',
@@ -71,7 +71,7 @@ def outputs_outfile(request):
         pkl = pickle.load(f)
 
     return out, pkl
-    
+
 
 def test_pw_out_parsing_xml(outputs_xml):
     xml, pkl = outputs_xml
@@ -99,4 +99,3 @@ if __name__ == '__main__':
 
         with open(pkl_name, 'wb') as f:
             pickle.dump(res, f)
-
