@@ -3,8 +3,9 @@ from ..meta import PropertyCreator
 from ..graphics import mpl_graphics as cg
 
 import json
-from pkg_resources import resource_string
-periodic_table = json.loads(resource_string('qepppy.data', 'periodic_table.json').decode('utf-8'))
+# from pkg_resources import resource_string
+# periodic_table = json.loads(resource_string('qepppy.data', 'periodic_table.json').decode('utf-8'))
+periodic_table = {}
 
 def undo_unique(cls, l):
 	res = []
