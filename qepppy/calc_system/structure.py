@@ -1,65 +1,95 @@
 import numpy as np
+from attrs import define, field
+from numpy import typing as npt
 
 from .. import utils
 from .._decorators import file_name_handle, set_self
+from ..validators import check_allowed, check_shape, converter_none
 from .atoms_list import atoms_list as atm
 from .lattice import lattice as latt
 
+# def cart_to_cryst(cls: 'structure', coord: np.ndarray):
+#     direct = cls.direct
+#     if len(direct) == 0:
+#         return []
+#     return coord.dot(np.linalg.inv(direct))
 
-def cart_to_cryst(cls: 'structure', coord: np.ndarray):
-    direct = cls.direct
-    if len(direct) == 0:
-        return []
-    return coord.dot(np.linalg.inv(direct))
+# def cryst_to_cart(cls: 'structure', coord: np.ndarray):
+#     direct = cls.direct
+#     if len(direct) == 0:
+#         return []
+#     return coord.dot(direct)
 
-def cryst_to_cart(cls: 'structure', coord: np.ndarray):
-    direct = cls.direct
-    if len(direct) == 0:
-        return []
-    return coord.dot(direct)
-
+@define(slots=False)
 class structure(atm, latt):
-    atoms_coord_cart={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,3),
-        'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-        'post_set_name':'_atoms_coord_cryst',
-        'post_set_func':cart_to_cryst,
-        'doc':"""List of atomic coordinate in CARTESIAN basis."""
-        }
+    # atoms_coord_cart: npt.ArrayLike = field(
+    #     validator=check_shape((-1,3)),
+    #     converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
+    #     default=None
+    # )
 
-    atoms_coord_cryst={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,3),
-        'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-        'post_set_name':'_atoms_coord_cart',
-        'post_set_func':cryst_to_cart,
-        'doc':"""List of atomic coordinate in CRYSTAL basis."""
-        }
+    # atoms_forces: npt.ArrayLike = field(
+    #     validator=check_shape((-1,3)),
+    #     converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
+    #     default=None
+    # )
 
-    atoms_forces={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,3),
-        'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-        'doc':"""Array of forces acting on the atoms."""
-        }
+    # atoms_velocities: npt.ArrayLike = field(
+    #     validator=check_shape((-1,3)),
+    #     converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
+    #     default=None
+    # )
 
-    atoms_velocities={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,3),
-        'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-        'doc':"""Array of velocities of the atoms."""
-        }
+    # @property
+    # def atoms_coord_cryst(self):
+    #     if self.atoms_coord_cart is None or self.direct is None:
+    #         return
+    #     return cart_to_cryst(self, self.atoms_coord_cart)
+    # @atoms_coord_cryst.setter
+    # def atoms_coord_cryst(self, value):
+    #     self.atoms_coord_cart = cryst_to_cart(self, value)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # atoms_coord_cart={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,3),
+    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
+    #     'post_set_name':'_atoms_coord_cryst',
+    #     'post_set_func':cart_to_cryst,
+    #     'doc':"""List of atomic coordinate in CARTESIAN basis."""
+    #     }
 
-        if len(self.direct) > 0 and len(self.atoms_coord_cryst) > 0 and len(self.atoms_typ) > 0:
-            self.get_symmetries()
+    # atoms_coord_cryst={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,3),
+    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
+    #     'post_set_name':'_atoms_coord_cart',
+    #     'post_set_func':cryst_to_cart,
+    #     'doc':"""List of atomic coordinate in CRYSTAL basis."""
+    #     }
+
+    # atoms_forces={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,3),
+    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
+    #     'doc':"""Array of forces acting on the atoms."""
+    #     }
+
+    # atoms_velocities={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,3),
+    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
+    #     'doc':"""Array of velocities of the atoms."""
+    #     }
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+
+    #     if len(self.direct) > 0 and len(self.atoms_coord_cryst) > 0 and len(self.atoms_typ) > 0:
+    #         self.get_symmetries()
 
     @file_name_handle('w')
     def save_xyz(self, file):
@@ -78,11 +108,11 @@ class structure(atm, latt):
 
         data_str = self.atoms_coord_cart
 
-        if len(self.atoms_velocities) > 0:
+        if not self.atoms_velocities is None:
             prop_str += ':vel:R:3'
             data_str = np.hstack((data_str, self.atoms_velocities))
 
-        if len(self.atoms_forces) > 0:
+        if not self.atoms_forces is None:
             prop_str += ':forces:R:3'
             data_str = np.hstack((data_str, self.atoms_forces))
 

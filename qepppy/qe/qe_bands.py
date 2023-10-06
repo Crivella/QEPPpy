@@ -12,12 +12,12 @@ data ={
         'rstring':r'number of k points[\s]*=',
         'typ':int,
         },
-    '_n_bnd':{
-        'xml_search_string':'output//nbnd',
-        'rstring':r'number of Kohn-Sham states[\s]*=',
-        'typ':int,
-        },
-    '_n_el':{
+    # '_n_bnd':{
+    #     'xml_search_string':'output//nbnd',
+    #     'rstring':r'number of Kohn-Sham states[\s]*=',
+    #     'typ':int,
+    #     },
+    'n_el':{
         'xml_search_string':'output//nelec',
         'rstring':r'number of electrons[\s]*=',
         'typ':float,
@@ -59,7 +59,7 @@ data ={
         'xml_search_string':'output//ks_energies/k_point',
         'typ':np.ndarray,
         },
-    '_egv':{
+    'egv':{
         'xml_search_string':'output//ks_energies/eigenvalues',
         'rstring':r'(band energies)|(bands) \(ev\):(?P<egv>[\s\d\.\-]+)',
         'typ':np.ndarray,
@@ -67,7 +67,7 @@ data ={
         'max_num':'-_n_kpt',
         'repeatable': True,
         },
-    '_occ':{
+    'occ':{
         'xml_search_string':'output//ks_energies/occupations',
         'rstring':r'occupation numbers(?P<occ>[\s\d\.]+)',
         'typ':np.ndarray,
@@ -138,19 +138,19 @@ class qe_bands(Parser_xml, Parser_regex):
             return None
         return self._E_tot
 
-    @property
-    def egv(self):
-        """Eigenvalues"""
-        if self._egv is None:
-            return
-        ls = len(self._egv.shape)
-        if ls == 3:
-            return self._egv[-1]
-        if ls == 2:
-            return self._egv
-        if ls == 0 or self._egv.size == 0:
-            return
-        raise NotImplementedError
+    # @property
+    # def egv(self):
+    #     """Eigenvalues"""
+    #     if self._egv is None:
+    #         return
+    #     ls = len(self._egv.shape)
+    #     if ls == 3:
+    #         return self._egv[-1]
+    #     if ls == 2:
+    #         return self._egv
+    #     if ls == 0 or self._egv.size == 0:
+    #         return
+    #     raise NotImplementedError
 
     @property
     def egv_all(self):
@@ -159,20 +159,20 @@ class qe_bands(Parser_xml, Parser_regex):
             return
         return self._egv
 
-    @property
-    def occ(self):
-        """Occupations"""
-        if self._occ is None:
-            return
-        ls = len(self._occ.shape)
-        if ls == 3:
-            return self._occ[-1]
-        if ls == 2:
-            return self._occ
-        if ls == 0 or self._occ.size == 0:
-            return
-        print(self._occ, self._occ.shape, ls)
-        raise NotImplementedError
+    # @property
+    # def occ(self):
+    #     """Occupations"""
+    #     if self._occ is None:
+    #         return
+    #     ls = len(self._occ.shape)
+    #     if ls == 3:
+    #         return self._occ[-1]
+    #     if ls == 2:
+    #         return self._occ
+    #     if ls == 0 or self._occ.size == 0:
+    #         return
+    #     print(self._occ, self._occ.shape, ls)
+    #     raise NotImplementedError
 
 
     @property

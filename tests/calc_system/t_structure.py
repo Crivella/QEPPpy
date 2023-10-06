@@ -52,4 +52,4 @@ class Test_structure(Test_atoms, Test_lattice):
         assert np.allclose(cls_wcc.direct, new_cls.direct)
         assert np.allclose(cls_wcc.atoms_coord_cryst, new_cls.atoms_coord_cryst)
         assert np.allclose(cls_wcc.atoms_forces, new_cls.atoms_forces)
-        assert cls_wcc.atoms_typ == new_cls.atoms_typ
+        assert np.all(cls_wcc.atoms_typ == new_cls.atoms_typ)

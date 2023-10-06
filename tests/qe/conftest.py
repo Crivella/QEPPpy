@@ -11,7 +11,7 @@ def compare_element(a,b):
             a = np.array(a)
             b = np.array(b)
         else:
-            raise ElementMismatch('Type of the two elements are different')
+            raise ElementMismatch(f'Type of the two elements are different. {type(a)} <--> {type(b)}')
     if isinstance(a, np.ndarray):
         if a.shape != b.shape:
             raise ElementMismatch(f"The shape of the two array does not match: '{a.shape}' vs '{b.shape}'.")
@@ -44,6 +44,6 @@ def compare_std(cls, std, cmp_list=[]):
         try:
             compare_element(c1, c2)
         except ElementMismatch as e:
-            raise ElementMismatch(f"While comparing '{name}': \n\t{e}")
+            raise ElementMismatch(f"While comparing '{name}': \n\t{str(e)}")
         except Exception as e:
             raise type(e)(f"UNEXPECTED!!!: While comparing '{name}': {e}")

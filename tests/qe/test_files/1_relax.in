@@ -1,7 +1,7 @@
 &CONTROL
   calculation  = "relax",
   prefix       = "x_0.125",
-  pseudo_dir   = "/marconi/home/userexternal/dgrassan/PSEUDO/",
+  pseudo_dir   = "./PSEUDO/",
   outdir       = "./tmp",
   restart_mode = "from_scratch"
   verbosity    = "high"

@@ -1,29 +1,35 @@
+from typing import Iterable
+
 import numpy as np
+from attrs import define, field
 
 from .. import utils
 from ..graphics import mpl_graphics as mplg
-from ..meta import PropertyCreator
+from ..validators import check_shape, converter_none
 
 
-class lattice(metaclass=PropertyCreator):
-    direct={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape':(3,3),
-        'conv_func':lambda x: np.array(x, dtype=float).reshape(3,3),
-        'post_set_name':'_recipr',
-        'post_set_func':lambda x,y: utils.recipr_base(y),
-        'doc':"""Matrix of direct basis vector (as rows)."""
-        }
-    recipr={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape':(3,3),
-        'conv_func':lambda x: np.array(x, dtype=float).reshape(3,3),
-        'post_set_name':'_direct',
-        'post_set_func':lambda x,y: utils.recipr_base(y),
-        'doc':"""Matrix of reciprocal basis vector (as rows)."""
-        }
+@define(slots=False)
+class lattice():
+    """Class describing a bravais lattice."""
+
+    direct: Iterable = field(
+        validator=[
+            check_shape((3,3)),
+            # mutually_exclusive('recipr'),
+            # post_setter('recipr', lambda x: 2*np.pi*np.linalg.inv(x).T),
+            ],
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(3,3)),
+        default=None
+    )
+
+    @property
+    def recipr(self):
+        if self.direct is None:
+            return
+        return utils.recipr_base(self.direct)
+    @recipr.setter
+    def recipr(self, value):
+        self.direct = utils.recipr_base(value)
 
     def draw_direct_cell(self, ax, center=[0,0,0]):
         """

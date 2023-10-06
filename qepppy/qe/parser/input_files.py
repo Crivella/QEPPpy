@@ -1,7 +1,6 @@
 import numpy as np
 
 from ...errors import ValidateError
-from ...meta import PropertyCreator
 from ...parsers import fortran_namelist_collection as fnc
 
 tf90_to_py = {
@@ -79,9 +78,9 @@ class VariableLinker(type):
 
         return res
 
-class meta_app(PropertyCreator, VariableLinker): pass
+# class meta_app(PropertyCreator, VariableLinker): pass
 
-class qe_input(fnc, metaclass=meta_app):
+class qe_input(fnc, metaclass=VariableLinker):
     cards = []
 
     def parse(self, *args, **kwargs):

@@ -1,20 +1,30 @@
+from attrs import Factory, define, field
+from numpy import typing as npt
+
 from .._decorators import file_name_handle, set_self
+from ..validators import check_allowed, check_shape, converter_none
 from .bands import bands
 from .structure import structure
 
 
+@define(slots=False)
 class system(structure, bands):
-    steps={
-        'typ':(list,),
-        'sub_typ':(structure,),
-        'doc':"""List of configurations for the atoms during time/relaxation steps."""
-        }
+    steps: list = Factory(list)
+    # steps={
+    #     'typ':(list,),
+    #     'sub_typ':(structure,),
+    #     'doc':"""List of configurations for the atoms during time/relaxation steps."""
+    #     }
 
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
 
     #     if self.direct != [] and self.atoms_coord_cryst != []:
     #         self.get_symmetries()
+
+    # def __init__(self, *args, **kwargs):
+    #     print('SYSTEM INIT')
+    #     super().__init__(*args, **kwargs)
 
     @file_name_handle('w')
     def save_step_xyz(self, file):

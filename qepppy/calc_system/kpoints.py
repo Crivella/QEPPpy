@@ -1,6 +1,9 @@
 import numpy as np
+from attrs import define, field
+from numpy import typing as npt
 
 from .._decorators import numpy_save_opt, set_self
+from ..validators import check_allowed, check_shape, converter_none
 from .lattice import lattice
 
 
@@ -19,74 +22,116 @@ def cryst_to_cart(cls: 'kpoints', coord: np.ndarray):
         return
     return coord.dot(recipr)
 
-
+@define(slots=False)
 class kpoints(lattice):
-    kpt_cart={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,3),
-        'conv_func':lambda x: np.array(x, dtype=float),
-        'post_set_name':'_kpt_cryst',
-        'post_set_func':cart_to_cryst,
-        'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
-        }
-    kpt_cryst={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,3),
-        'conv_func':lambda x: np.array(x, dtype=float),
-        'post_set_name':'_kpt_cart',
-        'post_set_func':cryst_to_cart,
-        'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
-        }
-    kpt_weight={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape':('n_kpt',),
-        'conv_func':lambda x: np.array(x, dtype=float),#/np.array(x, dtype=float).sum(),
-        'doc':"""List of k-points weights."""
-        }
-    kpt_mesh={
-        'typ':(tuple,),
-        'sub_typ':(int, np.integer),
-        'shape': (3,),
-        'conv_func':lambda x: np.array(x, dtype=int),
-        'doc':"""Density of the Monkhorst-Pack mesh grid."""
-        }
-    kpt_shift={
-        'typ':(tuple,),
-        'sub_typ':(int, np.integer),
-        'shape': (3,),
-        'default':(0,0,0),
-        'allowed':(0,1),
-        'conv_func':lambda x: np.array(x, dtype=int),
-        'doc':"""Shift of the Monkhorst-Pack mesh grid."""
-        }
-    kpt_edges={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,4,),
-        'conv_func':lambda x: np.array(x, dtype=float),
-        'doc':"""k-path where every i-th row is the 3 coordinates + the number of point
-        between the i-th and i-th + 1  k-points."""
-        }
-    kpt_mode={
-        'typ':(str,),
-        'allowed':['cart','cryst', 'crystal', 'cartesian'],
-        'doc':"""Set mode for the k-path."""
-        }
+    kpt_cart: npt.ArrayLike = field(
+        validator=check_shape((-1,3)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
+        default=None
+    )
+    kpt_weight: npt.ArrayLike = field(
+        validator=check_shape(('n_kpt',)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1)),
+        default=None
+    )
+    kpt_mesh: npt.ArrayLike = field(
+        validator=check_shape((3,)),
+        converter=converter_none(lambda x: np.array(x, dtype=int).reshape(3)),
+        default=None
+    )
+    kpt_shift: npt.ArrayLike = field(
+        validator=[
+            check_shape((3,)),
+            check_allowed((0,1)),
+            ],
+        converter=converter_none(lambda x: np.array(x, dtype=int).reshape(3)),
+        default=(0,0,0)
+    )
+    kpt_edges: npt.ArrayLike = field(
+        validator=check_shape((-1,4)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,4)),
+        default=None
+    )
+    kpt_mode: str = field(
+        validator=check_allowed(['cart','cryst', 'crystal', 'cartesian']),
+        default='crystal'
+    )
 
-    def __init__(self, *args, **kwargs):
-        if not hasattr(self, 'symmetries'):
-            from .symmetry import symmetries
-            self.symmetries = symmetries()
+    @property
+    def kpt_cryst(self):
+        if self.kpt_cart is None or self.direct is None:
+            return
+        return cart_to_cryst(self, self.kpt_cart)
+    @kpt_cryst.setter
+    def kpt_cryst(self, value):
+        self.kpt_cart = cryst_to_cart(self, value)
 
-        if len(self.kpt_mesh) > 0:
+    # kpt_cart={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,3),
+    #     'conv_func':lambda x: np.array(x, dtype=float),
+    #     'post_set_name':'_kpt_cryst',
+    #     'post_set_func':cart_to_cryst,
+    #     'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
+    #     }
+    # kpt_cryst={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,3),
+    #     'conv_func':lambda x: np.array(x, dtype=float),
+    #     'post_set_name':'_kpt_cart',
+    #     'post_set_func':cryst_to_cart,
+    #     'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
+    #     }
+    # kpt_weight={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape':('n_kpt',),
+    #     'conv_func':lambda x: np.array(x, dtype=float),#/np.array(x, dtype=float).sum(),
+    #     'doc':"""List of k-points weights."""
+    #     }
+    # kpt_mesh={
+    #     'typ':(tuple,),
+    #     'sub_typ':(int, np.integer),
+    #     'shape': (3,),
+    #     'conv_func':lambda x: np.array(x, dtype=int),
+    #     'doc':"""Density of the Monkhorst-Pack mesh grid."""
+    #     }
+    # kpt_shift={
+    #     'typ':(tuple,),
+    #     'sub_typ':(int, np.integer),
+    #     'shape': (3,),
+    #     'default':(0,0,0),
+    #     'allowed':(0,1),
+    #     'conv_func':lambda x: np.array(x, dtype=int),
+    #     'doc':"""Shift of the Monkhorst-Pack mesh grid."""
+    #     }
+    # kpt_edges={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,4,),
+    #     'conv_func':lambda x: np.array(x, dtype=float),
+    #     'doc':"""k-path where every i-th row is the 3 coordinates + the number of point
+    #     between the i-th and i-th + 1  k-points."""
+    #     }
+    # kpt_mode={
+    #     'typ':(str,),
+    #     'allowed':['cart','cryst', 'crystal', 'cartesian'],
+    #     'doc':"""Set mode for the k-path."""
+    #     }
+
+    def __post_init__(self):
+        # if not hasattr(self, 'symmetries'):
+        #     from .symmetry import symmetries
+        #     self.symmetries = symmetries()
+
+        if not self.kpt_mesh is None:
             self.generate_monkhorst_pack_grid()
-        if len(self.kpt_edges) > 0:
+        if not self.kpt_edges is None:
             self.generate_kpath()
 
-        super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
 
 
     @property
@@ -101,7 +146,6 @@ class kpoints(lattice):
             except:
                 self._n_kpt = res
         return res
-
     @n_kpt.setter
     def n_kpt(self, value):
         self._n_kpt = value
@@ -248,11 +292,11 @@ class kpoints(lattice):
         kpts, _ = self.translate_coord_into_FBZ(kpts, mode='cryst', num=2)
         self.full_kpt_cryst = kpts
 
-        if use_symmeties:
+        if hasattr(self, 'symmetries') and use_symmeties:
             # Must check symmetries on point in cartesian coordinates
             # Checking on crystal only works if [M,B] = 0
             kpts = cryst_to_cart(self, kpts)
-            if self.symmetries is None or len(self.symmetries) == 0:
+            if getattr(self, 'symmetries', None) is None:
                 try:
                     self.get_symmetries()
                 except:

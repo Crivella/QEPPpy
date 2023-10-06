@@ -1,7 +1,10 @@
 import numpy as np
+from attrs import define, field
+from numpy import typing as npt
 
 from .._decorators import (IO_stdout_redirect, numpy_plot_opt, numpy_save_opt,
                            set_self)
+from ..validators import check_allowed, check_shape, converter_none
 from .kpoints import kpoints
 
 
@@ -26,31 +29,46 @@ def cumul_norm(
 
     return res
 
+@define(slots=False)
 class bands(kpoints):
-    n_el = {
-        'typ':(int, np.integer),
-        'doc':"""Number of electrons in the system."""
-        }
-    egv = {
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'conv_func':lambda x: np.array(x, dtype=float),
-        'doc':"""Array of shape (n_kpt, n_bnd,) where the Nth row represents the
-        energy ordered eigenvalues for the Nth kpoint."""
-        }
+    n_el: float = 0
 
-    occ = {
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'conv_func':lambda x: np.array(x, dtype=float),
-        'doc':"""Array of shape (n_kpt, n_bnd,) where the Nth row and Jth
-        column represent the occupation for the Jth band of the Nth kpoint."""
-        }
+    egv: npt.ArrayLike = field(
+        # validator=check_shape(('n_kpt', -1)),
+        converter=converter_none(lambda x: np.array(x, dtype=float)),
+        default=None
+    )
+
+    occ: npt.ArrayLike = field(
+        # validator=check_shape(('n_kpt', -1)),
+        converter=converter_none(lambda x: np.array(x, dtype=float)),
+        default=None
+    )
+
+    # n_el = {
+    #     'typ':(int, np.integer),
+    #     'doc':"""Number of electrons in the system."""
+    #     }
+    # egv = {
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'conv_func':lambda x: np.array(x, dtype=float),
+    #     'doc':"""Array of shape (n_kpt, n_bnd,) where the Nth row represents the
+    #     energy ordered eigenvalues for the Nth kpoint."""
+    #     }
+
+    # occ = {
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'conv_func':lambda x: np.array(x, dtype=float),
+    #     'doc':"""Array of shape (n_kpt, n_bnd,) where the Nth row and Jth
+    #     column represent the occupation for the Jth band of the Nth kpoint."""
+    #     }
 
     @property
     def vb(self):
         """Valence band index"""
-        return self.n_el - 1
+        return int(self.n_el - 1 + 0.5)
 
     @property
     def cb(self):
@@ -59,16 +77,19 @@ class bands(kpoints):
 
     @property
     def n_bnd(self):
-        try:
-            res = self._n_bnd
-        except:
-            try:
-                res = self.egv.shape[1]
-            except AttributeError:
-                res = None
-            else:
-                self._n_bnd = res
-        return res
+        if self.egv is None:
+            return None
+        return self.egv.shape[-1]
+        # try:
+        #     res = self._n_bnd
+        # except:
+        #     try:
+        #         res = self.egv.shape[1]
+        #     except AttributeError:
+        #         res = None
+        #     else:
+        #         self._n_bnd = res
+        # return res
 
     @n_bnd.setter
     def n_bnd(self, value):

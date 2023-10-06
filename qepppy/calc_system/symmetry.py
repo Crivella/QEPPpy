@@ -1,8 +1,10 @@
 from itertools import product
 
 import numpy as np
+from attrs import define, field
+from numpy import typing as npt
 
-from ..meta import PropertyCreator
+from ..validators import check_shape, converter_none
 
 
 def get_symmetry_order(symm_matrix):
@@ -52,31 +54,19 @@ def inequivalent_iteration(k, sm, thr):
 
     return res_i, res_p # np.array(res_p)
 
-class symmetry(metaclass=PropertyCreator):
-    rotation={
-        'typ':(np.ndarray,),
-        'sub_typ':(np.number,),
-        'shape':(3,3),
-        'default':np.diag([1.]*3),
-        'doc':"""Matrix representation of the symmetry."""
-        }
+@define(slots=False)
+class symmetry():
+    rotation: npt.ArrayLike = field(
+        validator=check_shape((3,3)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(3,3)),
+        default=np.eye(3),
+    )
 
-    translation={
-        'typ':(np.ndarray,),
-        'sub_typ':(np.number,),
-        'shape':(3,),
-        'default':np.zeros((3,)),
-        'doc':"""Translation vector."""
-        }
-
-    def __init__(self, *args, **kwargs):
-        args = list(args)
-        if len(args) > 0:
-            self.rotation = args.pop(0)
-        if len(args) > 0:
-            self.translation = args.pop(0)
-
-        super().__init__(*args, **kwargs)
+    translation: npt.ArrayLike = field(
+        validator=check_shape((3,)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(3,)),
+        default=np.zeros((3,)),
+    )
 
     def __str__(self):
         return f'R={self.rotation}\nT={self.translation}'

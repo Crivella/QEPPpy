@@ -9,12 +9,7 @@ from .tmp import tmp
 from .UPF import UPF
 
 
-# from ..utils       import xyz_mesh
-# from .._decorators import store_property
-# from ..logger import logger
-# @logger()
-# class pw_out(bands, structure):
-class pw_out(structure, bands, system):
+class pw_out(system, structure, bands):
     """
     Instance used to handle QE outputs (by parsing the "data-file*.xml" file")
     fname: name of the "data-file*.xml" to parse
@@ -24,8 +19,10 @@ class pw_out(structure, bands, system):
     """
     __name__ = 'pw_out'
     def __init__(self, *args, xml=None, **kwargs):
+        system.__init__(self)
         self.set_data_file(xml)
-        super().__init__(*args, xml=self.xml, **kwargs)
+        bands.__init__(self, *args, xml=self.xml, **kwargs)
+        structure.__init__(self, *args, xml=self.xml, **kwargs)
         self.validate()
 
     def set_data_file(self, xml):

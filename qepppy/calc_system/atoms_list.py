@@ -3,9 +3,11 @@ import json
 from importlib import resources
 
 import numpy as np
+from attrs import define, field
+from numpy import typing as npt
 
-from ..graphics import mpl_graphics as cg
-from ..meta import PropertyCreator
+from ..graphics import mpl_graphics as mplg
+from ..validators import check_allowed, check_shape, converter_none
 
 periodic_table = {}
 try:
@@ -14,6 +16,18 @@ except ImportError:
     pass
 else:
 	periodic_table = json.load(resources.files('qepppy.data').joinpath('periodic_table.json').open(encoding='utf-8'))
+
+def cart_to_cryst(cls: 'atoms_list', coord: np.ndarray):
+    direct = cls.direct
+    if len(direct) == 0:
+        return []
+    return coord.dot(np.linalg.inv(direct))
+
+def cryst_to_cart(cls: 'atoms_list', coord: np.ndarray):
+    direct = cls.direct
+    if len(direct) == 0:
+        return []
+    return coord.dot(direct)
 
 def undo_unique(cls, l):
     res = []
@@ -59,78 +73,145 @@ def split_atom_list_by_name(atom_coord, atom_names):
         rad.append(periodic_table[n]['radius'])
     return trees, np.array(names), rad
 
-class atoms_list(metaclass=PropertyCreator):
-    atoms_coord_cart={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,3),
-        'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-        # 'post_set_name':'_atoms_coord_cryst',
-        # 'post_set_func':_cart_to_cryst_,
-        'doc':"""List of atomic coordinate in CARTESIAN basis."""
-        }
+@define(slots=False)
+class atoms_list():
+    atoms_coord_cart: npt.ArrayLike = field(
+        validator=check_shape((-1,3)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
+        default=None
+    )
 
-    atoms_coord_cryst={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape': (-1,3),
-        'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-        # 'post_set_name':'_atoms_coord_cart',
-        # 'post_set_func':_cryst_to_cart_,
-        'doc':"""List of atomic coordinate in CRYSTAL basis."""
-        }
+    atoms_forces: npt.ArrayLike = field(
+        validator=check_shape((-1,3)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
+        default=None
+    )
 
-    atoms_typ={
-        'typ':(list,np.ndarray),
-        'sub_typ':(str,np.ndarray,),
-        # 'shape':('n_atoms',),
-        'post_set_name':'_unique_atoms_typ',
-        'post_set_func':get_unique,
-        'doc':"""List of atom names (same order as the list of coordinates)."""
-        }
+    atoms_velocities: npt.ArrayLike = field(
+        validator=check_shape((-1,3)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
+        default=None
+    )
 
-    atoms_mass={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape':('n_atoms',),
-        'conv_func':lambda x: np.array(x, dtype=float),
-        'post_set_name':'_unique_atoms_mass',
-        'post_set_func':get_unique,
-        'doc':"""List of atomic masses (same order as the list of coordinates)."""
-        }
+    atoms_typ: npt.ArrayLike = field(
+        validator=check_allowed(list(periodic_table.keys())),
+        converter=converter_none(lambda x: np.array(x, dtype=str)),
+        default=None
+    )
 
-    atoms_pseudo={
-        'typ':(list,np.ndarray,),
-        'shape':('n_atoms',),
-        'post_set_name':'_unique_atoms_pseudo',
-        'post_set_func':get_unique,
-        'doc':"""List of atomic pseudopotential files (same order as the list of coordinates)."""
-        }
+    atoms_mass: npt.ArrayLike = field(
+        validator=check_shape((-1,)),
+        converter=converter_none(lambda x: np.array(x, dtype=float)),
+        default=None
+    )
 
-    unique_atoms_typ={
-        'typ':(list,np.ndarray,),
-        'sub_typ':(str,np.ndarray,),
-        # 'conv_func':lambda x: np.array(x, dtype=float),
-        'doc':"""List of atom names."""
-        }
+    atoms_pseudo: npt.ArrayLike = field(
+        validator=check_shape((-1,)),
+        converter=converter_none(lambda x: np.array(x, dtype=str)),
+        default=None
+    )
 
-    unique_atoms_mass={
-        'typ':(list,np.ndarray),
-        'sub_typ':(int,float,np.number),
-        'shape':('n_types',),
-        'conv_func':lambda x: np.array(x, dtype=float),
-        'post_set_name':'_atoms_mass',
-        'post_set_func':undo_unique,
-        'doc':"""List of atomic masses."""
-        }
+    @property
+    def atoms_coord_cryst(self):
+        if self.atoms_coord_cart is None or getattr(self, 'direct', None) is None:
+            return
+        return cart_to_cryst(self, self.atoms_coord_cart)
+    @atoms_coord_cryst.setter
+    def atoms_coord_cryst(self, value):
+        if getattr(self, 'direct', None) is None:
+            return
+        self.atoms_coord_cart = cryst_to_cart(self, value)
 
-    unique_atoms_pseudo={
-        'typ':(list,np.ndarray,),
-        'shape':('n_types',),
-        'post_set_name':'_atoms_pseudo',
-        'post_set_func':undo_unique,
-        'doc':"""List of atomic pseudopotential files."""
-        }
+    @property
+    def unique_atoms_typ(self):
+        return get_unique(self, self.atoms_typ)
+
+    @property
+    def unique_atoms_mass(self):
+        return get_unique2(self, self.atoms_mass)
+    @unique_atoms_mass.setter
+    def unique_atoms_mass(self, value):
+        self.atoms_mass = undo_unique(self, value)
+
+    @property
+    def unique_atoms_pseudo(self):
+        return get_unique2(self, self.atoms_pseudo)
+    @unique_atoms_pseudo.setter
+    def unique_atoms_pseudo(self, value):
+        self.atoms_pseudo = undo_unique(self, value)
+
+
+    # atoms_coord_cart={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,3),
+    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
+    #     # 'post_set_name':'_atoms_coord_cryst',
+    #     # 'post_set_func':_cart_to_cryst_,
+    #     'doc':"""List of atomic coordinate in CARTESIAN basis."""
+    #     }
+
+    # atoms_coord_cryst={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape': (-1,3),
+    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
+    #     # 'post_set_name':'_atoms_coord_cart',
+    #     # 'post_set_func':_cryst_to_cart_,
+    #     'doc':"""List of atomic coordinate in CRYSTAL basis."""
+    #     }
+
+    # atoms_typ={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(str,np.ndarray,),
+    #     # 'shape':('n_atoms',),
+    #     'post_set_name':'_unique_atoms_typ',
+    #     'post_set_func':get_unique,
+    #     'doc':"""List of atom names (same order as the list of coordinates)."""
+    #     }
+
+    # atoms_mass={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape':('n_atoms',),
+    #     'conv_func':lambda x: np.array(x, dtype=float),
+    #     'post_set_name':'_unique_atoms_mass',
+    #     'post_set_func':get_unique,
+    #     'doc':"""List of atomic masses (same order as the list of coordinates)."""
+    #     }
+
+    # atoms_pseudo={
+    #     'typ':(list,np.ndarray,),
+    #     'shape':('n_atoms',),
+    #     'post_set_name':'_unique_atoms_pseudo',
+    #     'post_set_func':get_unique,
+    #     'doc':"""List of atomic pseudopotential files (same order as the list of coordinates)."""
+    #     }
+
+    # unique_atoms_typ={
+    #     'typ':(list,np.ndarray,),
+    #     'sub_typ':(str,np.ndarray,),
+    #     # 'conv_func':lambda x: np.array(x, dtype=float),
+    #     'doc':"""List of atom names."""
+    #     }
+
+    # unique_atoms_mass={
+    #     'typ':(list,np.ndarray),
+    #     'sub_typ':(int,float,np.number),
+    #     'shape':('n_types',),
+    #     'conv_func':lambda x: np.array(x, dtype=float),
+    #     'post_set_name':'_atoms_mass',
+    #     'post_set_func':undo_unique,
+    #     'doc':"""List of atomic masses."""
+    #     }
+
+    # unique_atoms_pseudo={
+    #     'typ':(list,np.ndarray,),
+    #     'shape':('n_types',),
+    #     'post_set_name':'_atoms_pseudo',
+    #     'post_set_func':undo_unique,
+    #     'doc':"""List of atomic pseudopotential files."""
+    #     }
 
 
     @property
@@ -203,7 +284,7 @@ class atoms_list(metaclass=PropertyCreator):
         for tree,n,r in zip(trees,names,rad):
             X,Y,Z = tree.data.T
             color = periodic_table[n].get('color', 'k')
-            cg.draw_atom(ax, X,Y,Z, color=color, name=n, radius=r, **kwargs)
+            mplg.draw_atom(ax, X,Y,Z, color=color, name=n, radius=r, **kwargs)
 
 
     def draw_bonds(self, ax, atom_coord=None, atom_names=None, **kwargs):
@@ -235,4 +316,4 @@ class atoms_list(metaclass=PropertyCreator):
                         continue
                     start = tree1.data[i1]
                     end   = tree2.data[i2]
-                    cg.draw_bond(ax, start, end, c1, c2, **kwargs)
+                    mplg.draw_bond(ax, start, end, c1, c2, **kwargs)

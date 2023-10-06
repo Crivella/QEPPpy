@@ -11,13 +11,13 @@ class Test_atoms(BaseTest):
 
     @pytest.fixture(scope='class')
     def cls_wcc(self, cls, coord):
-        cls.atoms_coord_cryst = coord
+        cls.atoms_coord_cart = coord
 
-        assert np.allclose(cls.atoms_coord_cryst, coord), 'Failed to assign coordinates'
+        assert np.allclose(cls.atoms_coord_cart, coord), 'Failed to assign coordinates'
 
         return cls
 
-    def test_atoms_coord_cryst(self, cls_wcc):
+    def test_atoms_coord_cart(self, cls_wcc):
         pass
 
     def test_set_atoms_typ(self, cls_wcc):

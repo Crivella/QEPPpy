@@ -64,6 +64,9 @@ def test_pw_in_build_init(inputs):
 
     new.atoms_coord_cart  = inp.atoms_coord_cart
     new.atoms_typ         = inp.atoms_typ
+    new.kpt_mesh          = inp.kpt_mesh
+    new.kpt_cart          = inp.kpt_cart
+    new.kpt_weight        = inp.kpt_weight
     new.unique_atoms_mass    = inp.unique_atoms_mass
     new.unique_atoms_pseudo  = inp.unique_atoms_pseudo
 
@@ -81,6 +84,9 @@ def test_pw_in_build_scratch(inputs):
     new.alat              = inp.alat
     new.atoms_coord_cart  = inp.atoms_coord_cart
     new.atoms_typ         = inp.atoms_typ
+    new.kpt_mesh          = inp.kpt_mesh
+    new.kpt_cart          = inp.kpt_cart
+    new.kpt_weight        = inp.kpt_weight
     new.unique_atoms_mass    = inp.unique_atoms_mass
     new.unique_atoms_pseudo  = inp.unique_atoms_pseudo
 

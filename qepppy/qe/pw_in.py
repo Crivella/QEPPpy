@@ -7,7 +7,7 @@ from .qe_structure import qe_structure as structure
 
 
 class pw_in(qe_input, structure, system):
-    cards = ['CELL_PARAMETERS', 'ATOMIC_SPECIES','ATOMIC_POSITIONS','K_POINTS',
+    cards = ['CELL_PARAMETERS', 'ATOMIC_POSITIONS', 'ATOMIC_SPECIES', 'K_POINTS',
             'CONSTRAINTS','OCCUPATIONS','ATOMIC_FORCES']
 
     _link__n_atoms={'item':'SYSTEM/nat'}
@@ -18,22 +18,22 @@ class pw_in(qe_input, structure, system):
     _link_test={'item':'SYSTEM/nat, SYSTEM/ntyp'}
 
     def __init__(self, *args, input_file=None, **kwargs):
+        system.__init__(self)
         input_file = kwargs.pop('src', input_file)
-
-        fnc.__init__(self, *args, src=input_file, **kwargs)
-        kwargs.pop('input_data', None)
+        input_data = kwargs.pop('input_data', {})
         structure.__init__(self, *args, **kwargs)
+        fnc.__init__(self, *args, src=input_file, input_data=input_data, **kwargs)
 
     def __str__(self):
         res  = fnc.__str__(self)
         res += structure.__str__(self)
 
         res += '\n\nK_POINTS'
-        if len(self.kpt_mesh) > 0:
+        if not self.kpt_mesh is None:
             res += ' {automatic}\n'
             res += '   {0[0]:d} {0[1]:d} {0[2]:d}    {1[0]:d} {1[1]:d} {1[2]:d}'.format(
                 self.kpt_mesh, self.kpt_shift)
-        elif len(self.kpt_edges) > 0:
+        elif not self.kpt_edges is None:
             if 'cryst' in self.kpt_mode:
                 res += ' {crystal_b}\n'
             else:
@@ -71,7 +71,7 @@ class pw_in(qe_input, structure, system):
             mass.append(float(m))
             pseudo.append(p)
 
-        self.unique_atoms_typ    = typs
+        # self.unique_atoms_typ    = typs
         self.unique_atoms_mass   = mass
         self.unique_atoms_pseudo = pseudo
 

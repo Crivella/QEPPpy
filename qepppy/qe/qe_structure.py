@@ -81,7 +81,8 @@ data ={
         'max_num':'_n_atoms',
         're_scale_fact':'_atom_p'
         },
-    'unique_atoms_typ,_,unique_atoms_mass,unique_atoms_pseudo':{
+    # 'unique_atoms_typ,_,unique_atoms_mass,unique_atoms_pseudo':{
+    '_,_,unique_atoms_mass,unique_atoms_pseudo':{
         'rstring':r'\s*(?P<name>\w+)\s+(?P<valence>[\d\.]+)\s+(?P<mass>[\d\.]+)\s+(?P<pseudo_file>\w+\s*\([ \d\.]+\))',
         'typ':np.ndarray
         },
@@ -125,18 +126,20 @@ data ={
     }
 
 class qe_structure(Parser_xml, Parser_regex):
-    __name__ = 'qe_structure';
+    __name__ = 'qe_structure'
+
     def __init__(self, xml_data={}, regex_data={}, **kwargs):
+        xml_data.update(data)
+        regex_data.update(data)
+        super().__init__(xml_data=xml_data, regex_data=regex_data, **kwargs)
+
         if not hasattr(self,'_app_atom_p') or not self._app_atom_p:
             self._app_atom_p = 'bohr'
         if not hasattr(self,'_app_cell_p') or  not self._app_cell_p:
             self._app_cell_p = 'bohr'
-        if self._direct is None or len(self._direct) == 0:
-            self._direct = np.diag([1]*3)
+        if self.direct is None or len(self.direct) == 0:
+            self.direct = np.diag([1]*3)
 
-        xml_data.update(data)
-        regex_data.update(data)
-        super().__init__(xml_data=xml_data, regex_data=regex_data, **kwargs)
 
     def _format_cell_(self, info):
         if self.ibrav and info == 0:
@@ -221,10 +224,10 @@ class qe_structure(Parser_xml, Parser_regex):
         if self.ibrav == None:
             raise ValidateError('ibrav is not set.')
         # if self._atom_spec == None:
-        if self._atoms_typ is None:
+        if self.atoms_typ is None:
             raise ValidateError('List of atom types is not set.')
         # if self._atoms == None:
-        if self._atoms_coord_cart is None:
+        if self.atoms_coord_cart is None:
             raise ValidateError('List of atomic positions is not set.')
 
         for typ in self.atoms_typ:

@@ -46,7 +46,7 @@ class FFTgrid:
             shape = np.max(self.gvect, axis=0) - np.min(self.gvect, axis=0) + 1
             shape = [int(self.nspin)] + list(shape)
 
-        GRID = np.zeros(shape, dtype=np.complex)
+        GRID = np.zeros(shape, dtype=complex)
 
         GRID[:, self.gvect[:, 0], self.gvect[:, 1], self.gvect[:, 2]] = self.C_kn[bnd]
 

@@ -35,4 +35,4 @@ class Test_system(Test_structure):
             assert np.allclose(sn.atoms_coord_cart, so.atoms_coord_cart)
             assert np.allclose(sn.atoms_forces, so.atoms_forces)
             # assert np.allclose(sn.atoms_velocities == so.atoms_velocities)
-            assert sn.atoms_typ == so.atoms_typ
+            assert np.all(sn.atoms_typ == so.atoms_typ)
