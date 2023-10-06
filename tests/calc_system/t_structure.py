@@ -16,7 +16,7 @@ class Test_structure(Test_atoms, Test_lattice):
         return cls_rec
 
     @pytest.mark.mpl_image_compare
-    @pytest.mark.parametrize('rep', [1,2,3], ids=['rep:' + str(a) for a in [1,2,3]])
+    @pytest.mark.parametrize('rep', [1,2,3], ids=['rep_' + str(a) for a in [1,2,3]])
     def test_plot_cell(self, cls_wcc, rep):
         import matplotlib.pyplot as plt
         from mpl_toolkits.mplot3d import Axes3D
