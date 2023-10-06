@@ -37,10 +37,10 @@ def format_f90_to_py(val, strip_s=False, strip_d=False):
         return res
     try:
         val = int(val)
-    except:
+    except ValueError:
         try:
             val = float(val)
-        except:
+        except ValueError:
             if val.lower() == '.false.':
                 val = False
             elif val.lower() == '.true.':
@@ -143,7 +143,7 @@ class fortran_namelist(OrderedDict):
             app = src
         else:
             if isinstance(src, str):
-                with open(src) as f:
+                with open(src, encoding='utf-8') as f:
                     content = f.read()
             else:
                 content = src.read()
@@ -172,7 +172,7 @@ class fortran_namelist(OrderedDict):
                 res = res[int(i)-1]
             return res
 
-        raise
+        raise ValueError(f'Cannot find {pattern} in {self}')
 
     def set_item(self, key, value, i=None):
         tof_nl, tof_param, n = _tokenize_pattern_(key)
@@ -187,13 +187,13 @@ class fortran_namelist(OrderedDict):
         else:
             self._set_vec_value_(tof_param.lower(), value, n)
 
-    def _set_vec_value_(nl, param, value, index):
+    def _set_vec_value_(self, param, value, index):
         index = str(index)
         index = re.findall(r'[\+\d]+', index)
 
-        if not param in nl or not isinstance(nl[param], list):
-            nl[param] = []
-        ptr = nl[param]
+        if not param in self or not isinstance(self[param], list):
+            self[param] = []
+        ptr = self[param]
         for n,i in enumerate(index):
             i = int(i)-1
             while len(ptr) < i+1:
@@ -221,7 +221,9 @@ class fortran_namelist(OrderedDict):
 
 
 class fortran_namelist_collection(OrderedDict):
-    def __init__(self, *args, src=None, input_data={}, **kwargs):
+    def __init__(self, *args, src=None, input_data=None, **kwargs):
+        if input_data is None:
+            input_data = {}
         if not src is None:
             self.parse(src)
         # super().__init__(**kwargs)
@@ -267,7 +269,7 @@ class fortran_namelist_collection(OrderedDict):
 
         kwargs.update(d)
 
-        return '\n\n'.join(a._format_output_(**kwargs) for a in self.values())  + '\n\n'
+        return '\n\n'.join(a._format_output_(**kwargs) for a in self.values())  + '\n\n' # pylint: disable=protected-access
 
     def max_length_param(self):
         return max(a.max_length_param() for a in self.values())
@@ -310,6 +312,6 @@ class fortran_namelist_collection(OrderedDict):
         for elem in self.values():
             try:
                 return elem.deep_find(pattern, up)
-            except:
+            except (KeyError, ValueError):
                 pass
         return None

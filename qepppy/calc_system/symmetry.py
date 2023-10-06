@@ -89,8 +89,8 @@ class Symmetry():
                   the not-reduced one by symmetry.
          - new_p: The list of points that are not equivalent by symmetry.
         """
-        assert(isinstance(coord, np.ndarray))
-        assert(coord.shape[1] == 3)
+        assert isinstance(coord, np.ndarray)
+        assert coord.shape[1] == 3
 
         symm_matrix = self.rotation
 
@@ -149,8 +149,8 @@ class Symmetries(list):
                              2,3 were remapped using the symmetry with index 0
                              4   was  remapped using the symmetry with index 1
         """
-        assert(isinstance(coord, np.ndarray))
-        assert(coord.shape[1] == 3)
+        assert isinstance(coord, np.ndarray)
+        assert coord.shape[1] == 3
 
         res_i = np.arange(coord.shape[0])
         res_p = coord.copy()
@@ -195,13 +195,13 @@ class Symmetries(list):
                         is done by 'new_p[new_i]'
          - new_p: The list of points that are not equivalent by symmetry.
         """
-        assert(isinstance(coord, np.ndarray))
-        assert(coord.shape[1] == 3)
+        assert isinstance(coord, np.ndarray)
+        assert coord.shape[1] == 3
 
         res_i = np.arange(coord.shape[0])
         res_p = coord.copy()
 
-        symm_remap = np.ones((coord.shape[0],), dtype=int) * -1
+        # symm_remap = np.ones((coord.shape[0],), dtype=int) * -1
 
         combinations = list(product(*(range(_.order) for _ in self)))
 

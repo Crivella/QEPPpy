@@ -8,7 +8,7 @@ from ..graphics import mpl_graphics as mplg
 from ..validators import check_shape, converter_none
 
 
-@define(slots=False)
+@define(slots=False,)
 class Lattice():
     """Class describing a bravais lattice."""
 
@@ -27,13 +27,15 @@ class Lattice():
     def recipr(self, value):
         self.direct = utils.recipr_base(value)
 
-    def draw_direct_cell(self, ax, center=[0,0,0]):
+    def draw_direct_cell(self, ax, center=None):
         """
         Draw a cell centered on 'center'.
         Params:
          - ax: matplotlib 3D axis object
-         - center: center for plotting the cell
+         - center: center for plotting the cell. Default: [0,0,0]
         """
+        if center is None:
+            center = [0,0,0]
         mplg.draw_cell(ax, self.direct, center=center)
 
     def draw_Wigner_Seitz(self, ax, draw_corners=True):

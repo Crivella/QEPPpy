@@ -6,7 +6,7 @@ from attrs import define, field
 from numpy import typing as npt
 from scipy.spatial import KDTree
 
-from .._decorators import IO_stdout_redirect, numpy_plot_opt, numpy_save_opt
+from .._decorators import IOStdoutRedirect, numpy_plot_opt, numpy_save_opt
 from ..validators import converter_none
 from .kpoints import Kpoints
 
@@ -69,9 +69,9 @@ class Bands(Kpoints):
         self._n_bnd = value
 
     def band_unfolding_noproject(self, SC_rec):
-        PC_path  = self.kpt_cryst
-        unf      = self.generate_unfolding_path(SC_rec, return_all=True)
-        ri, SC_path, SC_path_red = unf
+        PC_path = self.kpt_cryst
+        ri, _ ,_ = self.generate_unfolding_path(SC_rec, return_all=True)
+        # ri, SC_path, SC_path_red = unf
 
         res = np.empty((PC_path.shape[0], self.n_bnd))
         for unf_i,fol_i in enumerate(ri):
@@ -101,7 +101,7 @@ class Bands(Kpoints):
         # calc_kpt = np.array([a.kpt for a in wavefunctions])
         # print(SC_path.shape, SC_path_red.shape)
         # for n in range(len(calc_kpt)):
-        #     print(calc_kpt[n]*20.42/6.2831, '   ', SC_path_red[n], '  ->  ', calc_kpt[n]*20.42/6.2831 - SC_path_red[n])
+        #     print(calc_kpt[n]*20.42/6.2831, '   ', SC_path_red[n], ' ->  ', calc_kpt[n]*20.42/6.2831 - SC_path_red[n])
         # exit()
 
         max_g       = np.max(np.abs(wavefunctions[0].gvect)) // 2 + 3
@@ -132,7 +132,10 @@ class Bands(Kpoints):
                 if check_symm:
                     print(f'{"":15s}' + '*'*15)
                     print(f'{"":15s}{ SC_path[unf_i]} is already calculated using symmetry.')
-                    print(f'{"":15s}{ SC_path_red[fol_i]}\'s coefficients will be used (KPT #{fol_i+1:3d} in SC calclulation).')
+                    print(
+                        f'{"":15s}{ SC_path_red[fol_i]}\'s'
+                        f' coefficients will be used (KPT #{fol_i+1:3d} in SC calclulation).'
+                        )
 
                 sys.stdout.flush()
 
@@ -232,10 +235,10 @@ class Bands(Kpoints):
 
     #     return self.egv[w], self.occ[w]
 
-    @IO_stdout_redirect()
+    @IOStdoutRedirect()
     def smallest_gap(self,
         center=(0.,0.,0.), radius=np.inf,
-        verbose=True, **kwargs
+        verbose=True
         ):
         """
         Print to screen the following information concerning the band gap:
@@ -295,7 +298,7 @@ class Bands(Kpoints):
         if mg1 == mg2:
             _print(f'DIRECT GAP {gap:.5f} eV')
         else:
-            if(gap < 0):
+            if gap < 0:
                 _print('METALLIC')
             else:
                 _print(f'INDIRECT GAP {gap:.5f} eV')
@@ -330,72 +333,72 @@ class Bands(Kpoints):
         _print(f'\t{egv[res, cb]} -> {egv[res, cb + 1]}   Ef: {ef} eV')
 
 
-    def fit_analysis(self, n_pt=5):
-        """
-        Fit analysis of the valnece/conduction band extrema.
-        Params:
-         -n_pt = 5: Number of points around the band extrema to use for the fit.
+    # def fit_analysis(self, n_pt=5):
+    #     """
+    #     Fit analysis of the valnece/conduction band extrema.
+    #     Params:
+    #      -n_pt = 5: Number of points around the band extrema to use for the fit.
 
-        Return :
-         Dictionary with the following structure
-         {
-             'linear':{      #Linear fit result
-                 'vb':(...), #Return of scipy.optimize.curve_fit for valence bnd
-                 'cb':(...)  #Return of scipy.optimize.curve_fit for conduct bnd
-             },
-             'quadratic':{   #Quadratic fit result
-                 'vb':(...), #Return of scipy.optimize.curve_fit for valence bnd
-                 'cb':(...)  #Return of scipy.optimize.curve_fit for conduct bnd
-             }
-         }
-        """
-        import scipy
-        def linear(x, a, b):
-            return a*x + b
-        def quadratic(x, a, b, c):
-            return a*x**2 + b*x + c
+    #     Return :
+    #      Dictionary with the following structure
+    #      {
+    #          'linear':{      #Linear fit result
+    #              'vb':(...), #Return of scipy.optimize.curve_fit for valence bnd
+    #              'cb':(...)  #Return of scipy.optimize.curve_fit for conduct bnd
+    #          },
+    #          'quadratic':{   #Quadratic fit result
+    #              'vb':(...), #Return of scipy.optimize.curve_fit for valence bnd
+    #              'cb':(...)  #Return of scipy.optimize.curve_fit for conduct bnd
+    #          }
+    #      }
+    #     """
+    #     import scipy
+    #     def linear(x, a, b):
+    #         return a*x + b
+    #     def quadratic(x, a, b, c):
+    #         return a*x**2 + b*x + c
 
-        bands = self.band_structure(pFile=False, plot=False)
-        ext_v = self.bands_extrema(self.vb)
-        ext_c = self.bands_extrema(self.cb)
+    #     bands = self.band_structure(pFile=False, plot=False)
+    #     ext_v = self.bands_extrema(self.vb)
+    #     ext_c = self.bands_extrema(self.cb)
 
-        x = bands[:,0]
+    #     x = bands[:,0]
 
-        res = {}
+    #     res = {}
 
-        print('LINEAR:')
-        ptr = res['linear'] = {}
-        i   = ext_v['max'][0]
-        sl  = slice(i-n_pt,i+1)
-        print(sl)
-        app = scipy.optimize.curve_fit(linear, x[sl], bands[sl,self.vb])
-        ptr['vb'] = app
-        print('--Valence    band (left fit):')
-        print(' '*4 + f'Vf = {app[0][0]:>12.4E} eV/(2pi/alat)')
-        print(' '*9 + f'{app[0][0] * self.alat * 12800.0:>12.4E} m/s')
+    #     print('LINEAR:')
+    #     ptr = res['linear'] = {}
+    #     i   = ext_v['max'][0]
+    #     sl  = slice(i-n_pt,i+1)
+    #     print(sl)
+    #     app = scipy.optimize.curve_fit(linear, x[sl], bands[sl,self.vb])
+    #     ptr['vb'] = app
+    #     print('--Valence    band (left fit):')
+    #     print(' '*4 + f'Vf = {app[0][0]:>12.4E} eV/(2pi/alat)')
+    #     print(' '*9 + f'{app[0][0] * self.alat * 12800.0:>12.4E} m/s')
 
-        i   = ext_c['min'][0]
-        sl  = slice(i-n_pt,i+1)
-        app = scipy.optimize.curve_fit(linear, x[sl], bands[sl,self.cb])
-        ptr['cb'] = app
-        print('--Conduction band (left fit):')
-        print(' '*4 + f'Vf = {app[0][0]:>12.4E} eV/(2pi/alat)')
-        print(' '*9 + f'{app[0][0] * self.alat * 12800.0:>12.4E} m/s')
+    #     i   = ext_c['min'][0]
+    #     sl  = slice(i-n_pt,i+1)
+    #     app = scipy.optimize.curve_fit(linear, x[sl], bands[sl,self.cb])
+    #     ptr['cb'] = app
+    #     print('--Conduction band (left fit):')
+    #     print(' '*4 + f'Vf = {app[0][0]:>12.4E} eV/(2pi/alat)')
+    #     print(' '*9 + f'{app[0][0] * self.alat * 12800.0:>12.4E} m/s')
 
-        print('QUADRATIC:')
-        ptr = res['quadratic'] = {}
-        i   = ext_v['max'][0]
-        sl  = slice(i-n_pt,i+n_pt)
-        app = scipy.optimize.curve_fit(quadratic, x[sl], bands[sl,self.vb])
-        ptr['vb'] = app
-        print('--Valence band')
-        print('    f(x) = {:>12.4E} * x^2 + {:>12.4E} * x + {:>12.4E}'.format(*app[0]))
+    #     print('QUADRATIC:')
+    #     ptr = res['quadratic'] = {}
+    #     i   = ext_v['max'][0]
+    #     sl  = slice(i-n_pt,i+n_pt)
+    #     app = scipy.optimize.curve_fit(quadratic, x[sl], bands[sl,self.vb])
+    #     ptr['vb'] = app
+    #     print('--Valence band')
+    #     print('    f(x) = {:>12.4E} * x^2 + {:>12.4E} * x + {:>12.4E}'.format(*app[0]))
 
-        i   = ext_c['min'][0]
-        sl  = slice(i-n_pt,i+n_pt)
-        app = scipy.optimize.curve_fit(quadratic, x[sl], bands[sl,self.cb])
-        ptr['cb'] = app
-        print('--Conduction band')
-        print('    f(x) = {:>12.4E} * x^2 + {:>12.4E} * x + {:>12.4E}'.format(*app[0]))
+    #     i   = ext_c['min'][0]
+    #     sl  = slice(i-n_pt,i+n_pt)
+    #     app = scipy.optimize.curve_fit(quadratic, x[sl], bands[sl,self.cb])
+    #     ptr['cb'] = app
+    #     print('--Conduction band')
+    #     print('    f(x) = {:>12.4E} * x^2 + {:>12.4E} * x + {:>12.4E}'.format(*app[0]))
 
-        return res
+    #     return res

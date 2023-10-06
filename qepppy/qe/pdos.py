@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 
 # from ..logger import logger, warning
-from .._decorators import (IO_stdout_redirect, numpy_plot_opt, numpy_save_opt,
+from .._decorators import (IOStdoutRedirect, numpy_plot_opt, numpy_save_opt,
                            store_property)
 from ..calc_system import Bands
 from ..parsers import Parser_regex
@@ -60,9 +60,17 @@ class state:
     m: float
 
 
-class pdos(Parser_regex, Bands):
+class ProjectedDOS(Parser_regex, Bands):
+    # pylint: disable=not-an-iterable
     __name__ = 'pdos'
-    def __init__(self, regex_data={}, **kwargs):
+    def __init__(self, regex_data=None, **kwargs):
+        self.n_states = None
+        self._states = None
+        self._raw_egv = None
+
+        if regex_data is None:
+            regex_data = {}
+
         regex_data.update(data)
         super().__init__(regex_data=regex_data, **kwargs)
 
@@ -75,7 +83,7 @@ class pdos(Parser_regex, Bands):
         res = np.empty((self.n_kpt,self.n_bnd))
         old = -1
         nkpt = 0
-        for n,e in enumerate(self._raw_egv):
+        for e in self._raw_egv:
             nbnd, egv, unit, _, _ = e
             nbnd = int(float(nbnd))-1
             egv = float(egv)
@@ -90,12 +98,12 @@ class pdos(Parser_regex, Bands):
 
     @property
     @store_property
-    def components(self):
+    def components(self) -> np.ndarray:
         r = re.compile(r'\+?([\d.]+)\*\[\#\s*(\d+)\]')
-        res = np.zeros((self.n_kpt, self.n_bnd, self.n_states))
+        res: np.ndarray = np.zeros((self.n_kpt, self.n_bnd, self.n_states))
         old = -1
         nkpt = 0
-        for n,e in enumerate(self._raw_egv):
+        for e in self._raw_egv:
             nbnd, _, _, components, _ = e
             nbnd = int(float(nbnd))-1
             if nbnd < old:
@@ -104,7 +112,7 @@ class pdos(Parser_regex, Bands):
             if components.strip():
                 comp = np.array([(float(a.group(1)),int(a.group(2))) for a in r.finditer(components)])
                 res[nkpt,nbnd,comp[:,1].astype(dtype=int)-1] = comp[:,0]
-        return res.reshape(self.n_kpt,self.n_bnd,self.n_states)
+        return res.reshape((self.n_kpt, self.n_bnd, self.n_states))
 
     @property
     @store_property
@@ -127,10 +135,17 @@ class pdos(Parser_regex, Bands):
             raise NotImplementedError()
         return res
 
-    @IO_stdout_redirect()
-    def pdos_char(self, kpt_list=[], bnd_list=[], thr=1E-2, **kwargs):
+    @IOStdoutRedirect()
+    def pdos_char(
+        self,
+        kpt_list: list[int] = None, bnd_list: list[int] = None, thr: float = 1E-2
+        ):
+        if kpt_list is None:
+            kpt_list = []
+        if bnd_list is None:
+            bnd_list = []
         for k in kpt_list:
-            print(('KPT(#{:5d}): ' + '{:9.4f}'*3).format(k, *self.kpt[k-1]))
+            print(('KPT(#{:5d}): ' + '{:9.4f}'*3).format(k, *self.kpt_cart[k-1]))
             for b in bnd_list:
                 print(f'\tBND (#{b:3d}): {self.egv[k - 1][b - 1]} eV')
                 for p in np.where(self.components[k-1,b-1,:] >= thr)[0]:
@@ -140,10 +155,9 @@ class pdos(Parser_regex, Bands):
     @numpy_plot_opt(_xlab='Energy (eV)', _ylab='PDOS (arb. units)')
     @numpy_save_opt(_fname='pdos.dat')
     def sum_pdos(
-        self, *args,
+        self, *,
         emin=-20, emax=20, deltaE=0.001, fermi=0.00, deg=0.00,
         weight=None,
-        **kwargs
         ):
         if weight is None:
             weight = np.ones(self.n_kpt) / self.n_kpt

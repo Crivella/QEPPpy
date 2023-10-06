@@ -1,6 +1,5 @@
-import numpy as np
+# from abc import ABCMeta
 
-from ...errors import ValidateError
 from ...parsers import fortran_namelist_collection as fnc
 
 tf90_to_py = {
@@ -10,16 +9,8 @@ tf90_to_py = {
     'CHARACTER': str
     }
 
-# tf90_to_np = {
-#     'INTEGER': 'i4',
-#     'REAL': 'f8',
-#     'LOGICAL': 'bool',
-#     'CHARACTER': 'U64'
-#     }
-
 def key_getter(key, item=None, attr=None):
     def getter(cls):
-        # print('GETTING {}!!!'.format(key))
         if not item is None:
             items = item.replace(' ', '').split(',')
             res = []
@@ -37,12 +28,11 @@ def key_getter(key, item=None, attr=None):
 
 def key_setter(key, item=None, attr=None):
     def setter(cls, value):
-        # print('SETTING {} = {}!!!'.format(key, value))
         if not item is None:
             items = item.replace(' ', '').split(',')
             try:
                 iter(value)
-            except:
+            except TypeError:
                 value = [value]
             for i,v in zip(items,value):
                 cls[i] = v
@@ -54,7 +44,7 @@ def key_setter(key, item=None, attr=None):
     return setter
 
 class VariableLinker(type):
-    def __new__(cls, clsname, base, dct):
+    def __new__(mcs, clsname, base, dct):
         new_dct = {}
         for k,v in dct.items():
             new_dct[k] = v
@@ -74,11 +64,15 @@ class VariableLinker(type):
 
             new_dct[k] = property(getter, setter)
 
-        res = super().__new__(cls, clsname, base, new_dct)
+        res = super().__new__(mcs, clsname, base, new_dct)
 
         return res
 
-# class meta_app(PropertyCreator, VariableLinker): pass
+
+
+# class MixMeta(ABCMeta, VariableLinker):
+#     """Needed for subclassing this togheter with another child that is a a child of abc.ABC"""
+#     pass
 
 class qe_input(fnc, metaclass=VariableLinker):
     cards = []

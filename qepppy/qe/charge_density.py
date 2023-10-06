@@ -1,9 +1,9 @@
-from ..parsers import fortran_binary_io as bin_io
+from ..parsers import FortranBinaryIO as FBIO
 from ..utils import recipr_base
 from .FFTgrid import FFTgrid
 
 
-class charge_density(bin_io, FFTgrid):
+class charge_density(FBIO, FFTgrid):
     binary_format =[
         [
             {'type':'i4', 'shape':(1,), 'name':'????'},
@@ -21,8 +21,13 @@ class charge_density(bin_io, FFTgrid):
         ], 'ispin'),
     ]
     def __init__(self, **kwargs):
+        self.igwx = None
+        self.ispin = None
+        self.recipr = None
+        self.gvect = None
+        self.C_kn = None
+
         super().__init__(**kwargs)
-        # self.rep = 1
 
     @property
     def direct(self):

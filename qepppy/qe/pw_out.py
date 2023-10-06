@@ -19,6 +19,7 @@ class pw_out(System, structure, bands):
     """
     __name__ = 'pw_out'
     def __init__(self, *args, xml=None, **kwargs):
+        # super().__init__(*args, xml=self.xml, **kwargs)
         System.__init__(self)
         self.set_data_file(xml)
         bands.__init__(self, *args, xml=self.xml, **kwargs)
@@ -77,7 +78,7 @@ class pw_out(System, structure, bands):
         bnd_low -= 1
         bnd_high = min(bnd_high, self.n_bnd)
 
-        f = open(fname, 'a')
+        f = open(fname, 'a', encoding='utf-8')
         for k,psi in enumerate(self.tmp):
             egv = self.egv[k][bnd_low:bnd_high]
             occ = self.occ[k][bnd_low:bnd_high]*2

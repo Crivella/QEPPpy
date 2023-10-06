@@ -1,16 +1,21 @@
 import numpy as np
 from attrs import Factory, define
-from numpy import typing as npt
 
 from .._decorators import file_name_handle, set_self
 from .bands import Bands
 from .kpoints import cart_to_cryst, cryst_to_cart
 from .structure import Structure
 
+try:
+    import ase
+    import ase.visualize
+except ImportError:
+    ase = None
 
 @define(slots=False)
 class System(Structure, Bands):
     steps: list = Factory(list)
+    irrep_mapping: np.ndarray = None
 
     @file_name_handle('w')
     def save_step_xyz(self, file):
@@ -29,12 +34,10 @@ class System(Structure, Bands):
         self.steps = steps
 
     def _make_ase_steps(self):
-        return [a._make_ase_atoms() for a in self.steps]
+        return [a._make_ase_atoms() for a in self.steps] # pylint: disable=protected-access
 
     def plot_step_ase(self):
-        from ase.visualize import view
-
-        view(self._make_ase_steps())
+        ase.visualize.view(self._make_ase_steps())
 
     @set_self('atoms_coord_cryst')
     def translate_into_PC(self):
@@ -73,10 +76,7 @@ class System(Structure, Bands):
             # Checking on crystal only works if [M,B] = 0
             kpts = cryst_to_cart(self, kpts)
             if getattr(self, 'symmetries', None) is None:
-                try:
-                    self.get_symmetries()
-                except:
-                    pass
+                self.get_symmetries()
             ind, kpts, _ = self.symmetries.reduce(kpts, thr=symm_thr)
             # ind, kpts = self.symmetries.reduce2(kpts, thr=symm_thr)
             self.irrep_mapping  = ind

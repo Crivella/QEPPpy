@@ -1,10 +1,9 @@
-import numpy as np
-
+# pylint: disable=unused-argument
 
 def flatten_iter(iterable):
     try:
         iter(iterable)
-    except:
+    except TypeError:
         return [iterable,]
 
     if isinstance(iterable, str):

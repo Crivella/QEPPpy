@@ -57,6 +57,12 @@ class Kpoints(Lattice):
         default='crystal'
     )
 
+    full_kpt_cryst: npt.ArrayLike = field(
+        validator=check_shape((-1,3)),
+        converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
+        default=None
+    )
+
     @property
     def kpt_cryst(self):
         if self.kpt_cart is None or self.direct is None:
@@ -66,7 +72,7 @@ class Kpoints(Lattice):
     def kpt_cryst(self, value):
         self.kpt_cart = cryst_to_cart(self, value)
 
-    def __post_init__(self):
+    def __attrs_post_init__(self):
         if not self.kpt_mesh is None:
             self.generate_monkhorst_pack_grid()
         if not self.kpt_edges is None:
@@ -287,7 +293,9 @@ class Kpoints(Lattice):
 
         return res_kpt, res_weight.reshape(-1,1)
 
-    def _kpt_plot(self, ax, edges_name=list()):
+    def _kpt_plot(self, ax, edges_name=None):
+        if edges_name is None:
+            edges_name = []
         self.draw_Wigner_Seitz(ax)
         ax.scatter(*self.kpt_cart.T)
         if not self.kpt_edges is None and len(self.kpt_edges) > 0:

@@ -3,11 +3,11 @@ import re
 import numpy as np
 
 from .._decorators import join_doc, numpy_plot_opt, numpy_save_opt
-from ..parsers import fortran_binary_io
+from ..parsers import FortranBinaryIO
 
 HARTREE = 27.2113
 
-class dpforexc_rhotw(fortran_binary_io):
+class dpforexc_rhotw(FortranBinaryIO):
     binary_format =[
         [
             {'type':'i4', 'shape':(1,), 'name':'nt'},

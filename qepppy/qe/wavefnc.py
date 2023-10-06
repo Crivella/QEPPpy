@@ -1,11 +1,11 @@
 import numpy as np
 
 from .. import utils
-from ..parsers import fortran_binary_io as bin_io
+from ..parsers import FortranBinaryIO as FBIO
 from .FFTgrid import FFTgrid
 
 
-class wavefnc(bin_io, FFTgrid):
+class wavefnc(FBIO, FFTgrid):
     binary_format =[
         [
             {'type':'i4', 'shape':(1,), 'name':'kpt_num'},

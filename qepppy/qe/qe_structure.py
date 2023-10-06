@@ -2,7 +2,7 @@ import numpy as np
 
 # from ..calc_system.structure import structure as structure
 # from ..calc_system import system
-from .. import utils
+# from .. import utils
 # from .parser.data_file_parser import data_file_parser as dfp
 from ..errors import ValidateError
 from ..parsers import Parser_regex, Parser_xml
@@ -126,9 +126,21 @@ data ={
     }
 
 class qe_structure(Parser_xml, Parser_regex):
+    # pylint: disable=no-member
     __name__ = 'qe_structure'
 
-    def __init__(self, xml_data={}, regex_data={}, **kwargs):
+    def __init__(self, xml_data=None, regex_data=None, **kwargs):
+        # Eitehr make this an ABC or just define this attributes here as none and they will be overwritten by
+        # the child class
+        self._app_atom_p = None
+        self._app_cell_p = None
+        self.direct = None
+
+        if xml_data is None:
+            xml_data = {}
+        if regex_data is None:
+            regex_data = {}
+
         xml_data.update(data)
         regex_data.update(data)
         super().__init__(xml_data=xml_data, regex_data=regex_data, **kwargs)
@@ -139,7 +151,6 @@ class qe_structure(Parser_xml, Parser_regex):
             self._app_cell_p = 'bohr'
         if self.direct is None or len(self.direct) == 0:
             self.direct = np.diag([1]*3)
-
 
     def _format_cell_(self, info):
         if self.ibrav and info == 0:
@@ -221,7 +232,7 @@ class qe_structure(Parser_xml, Parser_regex):
     #     return list([a['name'] for a in self._symm])
 
     def validate(self):
-        if self.ibrav == None:
+        if self.ibrav is None:
             raise ValidateError('ibrav is not set.')
         # if self._atom_spec == None:
         if self.atoms_typ is None:
@@ -245,121 +256,123 @@ class qe_structure(Parser_xml, Parser_regex):
 
 
     def _ibrav_to_cell_(self):
-        if self.ibrav == None:
+        if self.ibrav is None:
             raise ValueError('Failed to generate cell structure from self.ibrav: self.ibrav not set.')
 
-        lp = self.alat
+        lattice_param = self.alat
 
-        celldm = self['celldm']
+        celldm = self.celldm
         if len(celldm) > 1:
             b = celldm[1]
         if len(celldm) > 2:
             c = celldm[2]
         if   self.ibrav ==  1:
-            v1 = np.array([1,0,0]) * lp
-            v2 = np.array([0,1,0]) * lp
-            v3 = np.array([0,0,1]) * lp
+            v1 = np.array([1,0,0]) * lattice_param
+            v2 = np.array([0,1,0]) * lattice_param
+            v3 = np.array([0,0,1]) * lattice_param
         elif self.ibrav ==  2:
-            v1 = np.array([-1,0,1]) * lp/2
-            v2 = np.array([0,1,1]) * lp/2
-            v3 = np.array([-1,1,0]) * lp/2
+            v1 = np.array([-1,0,1]) * lattice_param/2
+            v2 = np.array([0,1,1]) * lattice_param/2
+            v3 = np.array([-1,1,0]) * lattice_param/2
         elif self.ibrav ==  3:
-            v1 = np.array([1,1,1]) * lp/2
-            v2 = np.array([-1,1,1]) * lp/2
-            v3 = np.array([-1,-1,1]) * lp/2
+            v1 = np.array([1,1,1]) * lattice_param/2
+            v2 = np.array([-1,1,1]) * lattice_param/2
+            v3 = np.array([-1,-1,1]) * lattice_param/2
         elif self.ibrav == -3:
-            v1 = np.array([-1,1,1]) * lp/2
-            v2 = np.array([1,-1,1]) * lp/2
-            v3 = np.array([1,1,-1]) * lp/2
+            v1 = np.array([-1,1,1]) * lattice_param/2
+            v2 = np.array([1,-1,1]) * lattice_param/2
+            v3 = np.array([1,1,-1]) * lattice_param/2
         elif self.ibrav ==  4:
             c = self.celldm[2]
-            v1 = np.array([1,0,0]) * lp
-            v2 = np.array([-1,np.sqrt(3),0]) * lp/2
-            v3 = np.array([0,0,c]) * lp
+            v1 = np.array([1,0,0]) * lattice_param
+            v2 = np.array([-1,np.sqrt(3),0]) * lattice_param/2
+            v3 = np.array([0,0,c]) * lattice_param
         elif self.ibrav ==  5:
             c = self.celldm[3]
             tx = (1-c)/2
             ty = (1-c)/6
             tz = (1+2*c)/3
-            v1 = np.array([tx,-ty,tz]) * lp
-            v2 = np.array([0,2*ty,tz]) * lp
-            v3 = np.array([-tx,-ty,tz]) * lp
+            v1 = np.array([tx,-ty,tz]) * lattice_param
+            v2 = np.array([0,2*ty,tz]) * lattice_param
+            v3 = np.array([-tx,-ty,tz]) * lattice_param
         elif self.ibrav ==  -5:
             c = self.celldm[3]
             ty = (1-c)/6
             tz = (1+2*c)/3
             u = tz - 2*np.sqrt(2)*ty
             v = tz +np.sqrt(2)*ty
-            v1 = np.array([u,v,v]) * lp/np.sqrt(3)
-            v2 = np.array([v,u,v]) * lp/np.sqrt(3)
-            v3 = np.array([v,v,u]) * lp/np.sqrt(3)
+            v1 = np.array([u,v,v]) * lattice_param/np.sqrt(3)
+            v2 = np.array([v,u,v]) * lattice_param/np.sqrt(3)
+            v3 = np.array([v,v,u]) * lattice_param/np.sqrt(3)
         elif self.ibrav ==  6:
-            v1 = np.array([1,0,0]) * lp
-            v2 = np.array([0,1,0]) * lp
-            v3 = np.array([0,0,c]) * lp
+            v1 = np.array([1,0,0]) * lattice_param
+            v2 = np.array([0,1,0]) * lattice_param
+            v3 = np.array([0,0,c]) * lattice_param
         elif self.ibrav ==  7:
-            v1 = np.array([1,-1,c]) * lp/2
-            v2 = np.array([1,1,c]) * lp/2
-            v3 = np.array([-1,-1,c]) * lp/2
+            v1 = np.array([1,-1,c]) * lattice_param/2
+            v2 = np.array([1,1,c]) * lattice_param/2
+            v3 = np.array([-1,-1,c]) * lattice_param/2
         elif self.ibrav ==  8:
-            v1 = np.array([1,0,0]) * lp
-            v2 = np.array([0,b,0]) * lp
-            v3 = np.array([0,0,c]) * lp
+            v1 = np.array([1,0,0]) * lattice_param
+            v2 = np.array([0,b,0]) * lattice_param
+            v3 = np.array([0,0,c]) * lattice_param
         elif self.ibrav ==  9:
-            v1 = np.array([1,b,0]) * lp/2
-            v2 = np.array([-1,b,0]) * lp/2
-            v3 = np.array([0,0,c]) * lp
+            v1 = np.array([1,b,0]) * lattice_param/2
+            v2 = np.array([-1,b,0]) * lattice_param/2
+            v3 = np.array([0,0,c]) * lattice_param
         elif self.ibrav == -9:
-            v1 = np.array([1,-b,0]) * lp/2
-            v2 = np.array([1,b,0]) * lp/2
-            v3 = np.array([0,0,c]) * lp
+            v1 = np.array([1,-b,0]) * lattice_param/2
+            v2 = np.array([1,b,0]) * lattice_param/2
+            v3 = np.array([0,0,c]) * lattice_param
         elif self.ibrav == 91:
-            v1 = np.array([1,0,0]) * lp
-            v2 = np.array([0,b,-c]) * lp/2
-            v3 = np.array([0,b,c]) * lp/2
+            v1 = np.array([1,0,0]) * lattice_param
+            v2 = np.array([0,b,-c]) * lattice_param/2
+            v3 = np.array([0,b,c]) * lattice_param/2
         elif self.ibrav ==  10:
-            v1 = np.array([1,0,c]) * lp/2
-            v2 = np.array([1,b,0]) * lp/2
-            v3 = np.array([0,b,c]) * lp/2
+            v1 = np.array([1,0,c]) * lattice_param/2
+            v2 = np.array([1,b,0]) * lattice_param/2
+            v3 = np.array([0,b,c]) * lattice_param/2
         elif self.ibrav ==  11:
-            v1 = np.array([1,b,c]) * lp/2
-            v2 = np.array([-1,b,b]) * lp/2
-            v3 = np.array([-1,-b,c]) * lp/2
+            v1 = np.array([1,b,c]) * lattice_param/2
+            v2 = np.array([-1,b,b]) * lattice_param/2
+            v3 = np.array([-1,-b,c]) * lattice_param/2
         elif self.ibrav ==  12:
             cab = self.celldm[3]
             sab = np.sqrt(1 - cab**2)
-            v1 = np.array([1,0,0]) * lp
-            v2 = np.array([b*cab,b*sab,0]) * lp
-            v3 = np.array([0,0,c]) * lp
+            v1 = np.array([1,0,0]) * lattice_param
+            v2 = np.array([b*cab,b*sab,0]) * lattice_param
+            v3 = np.array([0,0,c]) * lattice_param
         elif self.ibrav == -12:
             cac = self.celldm[4]
             sac = np.sqrt(1 - cac**2)
-            v1 = np.array([1,0,0]) * lp
-            v2 = np.array([0,b,0]) * lp
-            v3 = np.array([c*cac,0,c*sac]) * lp
+            v1 = np.array([1,0,0]) * lattice_param
+            v2 = np.array([0,b,0]) * lattice_param
+            v3 = np.array([c*cac,0,c*sac]) * lattice_param
         elif self.ibrav ==  13:
             cg = self.celldm[3]
             sg = np.sqrt(1 - cg**2)
-            v1 = np.array([1,0,-c]) * lp/2
-            v2 = np.array([b*cg,b*sg,0]) * lp/2
-            v3 = np.array([1,0,c]) * lp
+            v1 = np.array([1,0,-c]) * lattice_param/2
+            v2 = np.array([b*cg,b*sg,0]) * lattice_param/2
+            v3 = np.array([1,0,c]) * lattice_param
         elif self.ibrav ==  -13:
             cb = self.celldm[4]
             sb = np.sqrt(1 - cb**2)
-            v1 = np.array([1,-b,0]) * lp/2
-            v2 = np.array([1,b,0]) * lp/2
-            v3 = np.array([c*cb,0,c*sb]) * lp
+            v1 = np.array([1,-b,0]) * lattice_param/2
+            v2 = np.array([1,b,0]) * lattice_param/2
+            v3 = np.array([c*cb,0,c*sb]) * lattice_param
         elif self.ibrav ==  14:
             cbc = self.celldm[3]
             cac = self.celldm[4]
             cab = self.celldm[5]
             cg = cab
             sg = np.sqrt(1 - cg**2)
-            v1 = np.array([1,0,0]) * lp
-            v2 = np.array([b*cg,b*sg,0]) * lp
+            v1 = np.array([1,0,0]) * lattice_param
+            v2 = np.array([b*cg,b*sg,0]) * lattice_param
             v3 = np.array([c*cac,
                 c*(cbc-cac*cg)/sg,
-                c*np.sqrt(1+2*cbc*cac*cg-cbc**2-cac**2-cg**2)/sg]) * lp
+                c*np.sqrt(1+2*cbc*cac*cg-cbc**2-cac**2-cg**2)/sg]) * lattice_param
+        else:
+            raise NotImplementedError(f'ibrav = {self.ibrav} not implemented.')
 
         # self._app_cell_p = 'bohr'
         return np.array([v1,v2,v3])

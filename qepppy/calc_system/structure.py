@@ -2,12 +2,13 @@ import re
 from functools import reduce
 
 import numpy as np
-from attrs import Factory, define
+from attrs import define
 
 from .. import utils
 from .._decorators import file_name_handle, set_self
 from .atoms_list import AtomsList
 from .lattice import Lattice
+from .symmetry import Symmetries
 
 try:
     import matplotlib.pyplot as plt
@@ -23,7 +24,7 @@ except ImportError:
 
 @define(slots=False)
 class Structure(AtomsList, Lattice):
-    symmetries: list = Factory(list)
+    symmetries: Symmetries = None
 
     @file_name_handle('w')
     def save_xyz(self, file):
@@ -140,7 +141,7 @@ class Structure(AtomsList, Lattice):
          - counts: Array of shape (max_shell,) containing the number of atoms for
                    every shell of nearest neighours.
         """
-        assert(isinstance(max_shell, int))
+        assert isinstance(max_shell, int)
 
         m        = max_shell
         l        = range(-m, m+1)
@@ -222,7 +223,7 @@ class Structure(AtomsList, Lattice):
 
         return new
 
-    def plot_ase(self, *args, **kwargs):
+    def plot_ase(self, *args, **kwargs): # pylint: disable=unused-argument
         if ase is None:
             raise ImportError('ase must be installed and accessible to the PYTHONPATH.')
 
@@ -240,7 +241,7 @@ class Structure(AtomsList, Lattice):
     @set_self('symmetries')
     def get_symmetries(self):
         # import ase.spacegroup
-        from .symmetry import Symmetries, Symmetry
+        # from .symmetry import Symmetries, Symmetry
 
         # sg = ase.spacegroup.get_spacegroup(self._make_ase_atoms())
 

@@ -5,19 +5,30 @@ from .. import utils
 
 
 class FFTgrid:
+    # pylint: disable=unsubscriptable-object,not-an-iterable
     def __init__(self, *args, **kwargs):
+        self.binary: bool = None
+        self.igwx: int = None
+        self.ispin: int = None
+        self.direct: np.ndarray = None
+        self.recipr: np.ndarray = None
+        self.gvect: np.ndarray = None
+        self.C_kn: np.ndarray = None
+
         super().__init__(*args, **kwargs)
         if not hasattr(self, 'nspin'):
             self.nspin = 1
 
-    def make_density_grid(self, bnd_list=[1]):
+    def make_density_grid(self, bnd_list: list[int] = None) -> np.ndarray:
+        if bnd_list is None:
+            bnd_list = [1]
         rho = 0
         for bnd in bnd_list:
             rho += np.abs(self.make_psi_grid(bnd)) ** 2
 
         return rho
 
-    def make_psi_grid(self, bnd, shape=None):
+    def make_psi_grid(self, bnd: int, shape: tuple[int] = None):
         bnd -= 1
         GRID = self._generate_g_grid_(bnd, shape)
 
@@ -25,7 +36,7 @@ class FFTgrid:
 
     def test_norm(self):
         if not self.binary:
-            raise Exception('Must first read a wavefunction file.')
+            raise ValueError('Must first read a wavefunction file.')
         for val in self.C_kn:
             norm = np.linalg.norm(val)
             if np.abs(norm - 1) > 1.0e-7:
@@ -35,27 +46,40 @@ class FFTgrid:
 
     def test_orthonorm(self):
         if not self.binary:
-            raise Exception('Must first read a wavefunction file.')
+            raise ValueError('Must first read a wavefunction file.')
         overlap = np.dot(self.C_kn.conj(), self.C_kn.T)
         if not np.allclose(overlap, np.eye(overlap.shape[0])):
             return False
         return True
 
-    def _generate_g_grid_(self, bnd, shape=None):
+    def _generate_g_grid_(
+            self,
+            bnd: int, shape: tuple[int] = None
+            ) -> np.ndarray:
         if shape is None:
             shape = np.max(self.gvect, axis=0) - np.min(self.gvect, axis=0) + 1
             shape = [int(self.nspin)] + list(shape)
 
-        GRID = np.zeros(shape, dtype=complex)
+        grid = np.zeros(shape, dtype=complex)
 
-        GRID[:, self.gvect[:, 0], self.gvect[:, 1], self.gvect[:, 2]] = self.C_kn[bnd]
+        grid[:, self.gvect[:, 0], self.gvect[:, 1], self.gvect[:, 2]] = self.C_kn[bnd]
 
-        return GRID
+        return grid
 
-    def plot_density_zslice(self, rep=1, bnd_list=[1], z_slice=[0], cmap='inferno'):
+    def plot_density_zslice(
+            self, rep: int = 1,
+            bnd_list: list[int] = None,
+            z_slice: list[int] = None,
+            cmap: str = 'inferno'
+            ) -> None:
+
+        if band_list is None:
+            band_list = [1]
+        if z_slice is None:
+            z_slice = [0]
 
         rho = self.make_density_grid(bnd_list=bnd_list)
-        X, Y, Z = utils.xyz_mesh(
+        X, Y, _ = utils.xyz_mesh(
             rho.shape,
             base=self.direct,
             rep=rep,

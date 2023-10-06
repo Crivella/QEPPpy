@@ -1,10 +1,12 @@
 import importlib
 import json
 from importlib import resources
+from typing import Any
 
 import numpy as np
 from attrs import define, field
 from numpy import typing as npt
+from scipy.spatial import KDTree
 
 from ..graphics import mpl_graphics as mplg
 from ..validators import check_allowed, check_shape, converter_none
@@ -17,47 +19,52 @@ except ImportError:
 else:
     periodic_table = json.load(resources.files('qepppy.data').joinpath('periodic_table.json').open(encoding='utf-8'))
 
-def cart_to_cryst(cls: 'AtomsList', coord: np.ndarray):
+def cart_to_cryst(cls: 'AtomsList', coord: np.ndarray) -> np.ndarray:
     direct = cls.direct
     if len(direct) == 0:
         return []
     return coord.dot(np.linalg.inv(direct))
 
-def cryst_to_cart(cls: 'AtomsList', coord: np.ndarray):
+def cryst_to_cart(cls: 'AtomsList', coord: np.ndarray) -> np.ndarray:
     direct = cls.direct
     if len(direct) == 0:
         return []
     return coord.dot(direct)
 
-def undo_unique(cls, l):
+def undo_unique(cls: 'AtomsList', lst: list) -> list[Any]:
+    """Get the full list of properties from the unique one.
+    Uses the knowledge of the full and unique list of atoms names.
+    """
     res = []
     names     = cls.atoms_typ
     all_names = list(cls.unique_atoms_typ)
     for n in names:
-        res.append(l[all_names.index(n)])
+        res.append(lst[all_names.index(n)])
 
     return res
 
-def get_unique(cls, l):
+def get_unique(lst: list) -> list[Any]:
+    """Get unique elements of a list."""
     res = []
-    for name in l:
+    for name in lst:
         if not name in res:
             res.append(name)
 
     return res
 
-def get_unique2(cls, l):
-    res   = []
+def get_unique_atm_prop(cls: 'AtomsList', lst: list) -> list[Any]:
+    """Get unique list of atomic properties from a list of properties of the same shape as cls.atoms_typ."""
+    res = []
 
-    names     = list(cls.atoms_typ)
-    all_names = cls.unique_atoms_typ
-    for n in all_names:
-        res.append(l[names.index(n)])
+    names = list(cls.atoms_typ)
+    unq_names = cls.unique_atoms_typ
+    for n in unq_names:
+        res.append(lst[names.index(n)])
 
     return res
 
-def split_atom_list_by_name(atom_coord, atom_names):
-    from scipy.spatial import KDTree
+def split_atom_list_by_name(atom_coord: np.ndarray, atom_names: list[str]) -> tuple[list, np.ndarray, list[float]]:
+    """Split a list of atomic coordinates by atom name."""
     trees  = []
     rad    = []
     names  = []
@@ -124,106 +131,32 @@ class AtomsList():
 
     @property
     def unique_atoms_typ(self):
-        return get_unique(self, self.atoms_typ)
+        return get_unique(self.atoms_typ)
 
     @property
     def unique_atoms_mass(self):
-        return get_unique2(self, self.atoms_mass)
+        return get_unique_atm_prop(self, self.atoms_mass)
     @unique_atoms_mass.setter
     def unique_atoms_mass(self, value):
         self.atoms_mass = undo_unique(self, value)
 
     @property
     def unique_atoms_pseudo(self):
-        return get_unique2(self, self.atoms_pseudo)
+        return get_unique_atm_prop(self, self.atoms_pseudo)
     @unique_atoms_pseudo.setter
     def unique_atoms_pseudo(self, value):
         self.atoms_pseudo = undo_unique(self, value)
 
-
-    # atoms_coord_cart={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,3),
-    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-    #     # 'post_set_name':'_atoms_coord_cryst',
-    #     # 'post_set_func':_cart_to_cryst_,
-    #     'doc':"""List of atomic coordinate in CARTESIAN basis."""
-    #     }
-
-    # atoms_coord_cryst={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,3),
-    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-    #     # 'post_set_name':'_atoms_coord_cart',
-    #     # 'post_set_func':_cryst_to_cart_,
-    #     'doc':"""List of atomic coordinate in CRYSTAL basis."""
-    #     }
-
-    # atoms_typ={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(str,np.ndarray,),
-    #     # 'shape':('n_atoms',),
-    #     'post_set_name':'_unique_atoms_typ',
-    #     'post_set_func':get_unique,
-    #     'doc':"""List of atom names (same order as the list of coordinates)."""
-    #     }
-
-    # atoms_mass={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape':('n_atoms',),
-    #     'conv_func':lambda x: np.array(x, dtype=float),
-    #     'post_set_name':'_unique_atoms_mass',
-    #     'post_set_func':get_unique,
-    #     'doc':"""List of atomic masses (same order as the list of coordinates)."""
-    #     }
-
-    # atoms_pseudo={
-    #     'typ':(list,np.ndarray,),
-    #     'shape':('n_atoms',),
-    #     'post_set_name':'_unique_atoms_pseudo',
-    #     'post_set_func':get_unique,
-    #     'doc':"""List of atomic pseudopotential files (same order as the list of coordinates)."""
-    #     }
-
-    # unique_atoms_typ={
-    #     'typ':(list,np.ndarray,),
-    #     'sub_typ':(str,np.ndarray,),
-    #     # 'conv_func':lambda x: np.array(x, dtype=float),
-    #     'doc':"""List of atom names."""
-    #     }
-
-    # unique_atoms_mass={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape':('n_types',),
-    #     'conv_func':lambda x: np.array(x, dtype=float),
-    #     'post_set_name':'_atoms_mass',
-    #     'post_set_func':undo_unique,
-    #     'doc':"""List of atomic masses."""
-    #     }
-
-    # unique_atoms_pseudo={
-    #     'typ':(list,np.ndarray,),
-    #     'shape':('n_types',),
-    #     'post_set_name':'_atoms_pseudo',
-    #     'post_set_func':undo_unique,
-    #     'doc':"""List of atomic pseudopotential files."""
-    #     }
-
-
     @property
     def n_atoms(self):
-        try:
+        res = None
+        if not self.atoms_coord_cart is None:
             res = len(self.atoms_coord_cart)
-        except:
-            res = None
+
         if hasattr(self, '_n_atoms'):
             try:
                 res = self._n_atoms
-            except:
+            except AttributeError:
                 self._n_atoms = res
         return res
 
@@ -233,24 +166,20 @@ class AtomsList():
 
     @property
     def n_types(self):
-        try:
+        res = None
+        if not self.unique_atoms_typ is None:
             res = len(self.unique_atoms_typ)
-        except:
-            res = None
+
         if hasattr(self, '_n_types'):
             try:
                 res = self._n_types
-            except:
+            except AttributeError:
                 self._n_types = res
         return res
 
     @n_types.setter
     def n_types(self, value):
         self._n_types = value
-
-    # @property
-    # def unique_atoms_typ(self):
-    #     return get_unique_atoms_typ(self, self.atoms_typ)
 
     @property
     def atoms_group_coord_cart(self):

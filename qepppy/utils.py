@@ -13,17 +13,17 @@ def generate_repetition_grid(R, vect_matrix=None):
     return res
 
 def xyz_mesh(shape, base=None, rep=1, reverse=False):
-    nspin, n1,n2,n3 = shape
+    _, n1,n2,n3 = shape
     try:
         r1,r2,r3 = rep
-    except:
+    except (TypeError, ValueError):
         r1 = r2 = r3 = rep
     a = np.linspace(0, r1, n1*r1 + 1)[1:] #[:-1] #+ .5/n1
     b = np.linspace(0, r2, n2*r2 + 1)[1:] #[:-1] #+ .5/n2
     c = np.linspace(0, r3, n3*r3 + 1)[1:] #[:-1] #+ .5/n3
 
     if reverse:
-        a,b,c = c,b,a
+        a, c = c, a
 
     # Specific order to obtain the array with shape (n1,n2,n3) as the data grid
     # The 'b,a,c' order is because for a 3d meshgrid the resulting shape is (1,2,3) --> (2,1,3)
@@ -39,7 +39,7 @@ def xyz_mesh(shape, base=None, rep=1, reverse=False):
     x,y,z = np.meshgrid(a,b,c, indexing='ij')
 
     if reverse:
-        x,y,z = z,y,x
+        x,z = z,x
 
     if not base is None:
         XYZ  = np.dot(
@@ -85,9 +85,9 @@ def remap_plane(
     lim = (Xlim, Ylim, Zlim)
     shape = np.array(shape)
 
-    xmin, xmax = Xlim
-    ymin, ymax = Ylim
-    zmin, zmax = Zlim
+    # xmin, xmax = Xlim
+    # ymin, ymax = Ylim
+    # zmin, zmax = Zlim
 
     m1 = np.linspace(*lim[(fixaxis+1)%3], shape[0] * rep[0])
     m2 = np.linspace(*lim[(fixaxis+2)%3], shape[1] * rep[1])
@@ -114,7 +114,7 @@ def remap_generic_plane(
         shape_plane: tuple,
         shape_out: tuple,
         offset=None
-    ):
+    ) -> tuple[np.ndarray, np.ndarray]:
     """Remap a generic plane defined by two vectors v1 and v2 in a grid defined by the cell vectors 'cell'
     such that cell = [a1,a2,a3]
 
@@ -129,11 +129,13 @@ def remap_generic_plane(
             origin of the plane (cartesian coordinates). Defaults to None.
 
     Returns:
-        _type_: _description_
+        points_cart (np.ndarray): Points of the plane in cartesian coordinates
+        rec (np.ndarray): Array of indexes (int) if the plane is remapped on a grid with shape 'shape_out'
+            e.g.:  grid[*rec] will give the values of grid at the points of the plane
     """
     shape_out = np.array(shape_out)
     cell_inv = np.linalg.inv(cell)
-    Xpc, Ypc = plane_crys = np.meshgrid(
+    Xpc, Ypc = np.meshgrid(
         np.linspace(0,1, shape_plane[0]),
         np.linspace(0,1, shape_plane[1]),
         indexing='ij'

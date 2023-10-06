@@ -1,6 +1,7 @@
 import numpy as np
 
 from ..calc_system import System
+from ..errors import ValidateError
 from ..parsers import fortran_namelist_collection as fnc
 from .parser.input_files import qe_input
 from .qe_structure import qe_structure as structure
@@ -22,7 +23,7 @@ class pw_in(qe_input, structure, System):
         input_file = kwargs.pop('src', input_file)
         input_data = kwargs.pop('input_data', {})
         structure.__init__(self, *args, **kwargs)
-        fnc.__init__(self, *args, src=input_file, input_data=input_data, **kwargs)
+        qe_input.__init__(self, *args, src=input_file, input_data=input_data, **kwargs)
 
     def __str__(self):
         res  = fnc.__str__(self)
@@ -101,7 +102,7 @@ class pw_in(qe_input, structure, System):
             if   ls == 4 and (ls == ls_old or ls_old is None):
                 t,x,y,z = s
             elif ls == 7 and (ls == ls_old or ls_old is None):
-                t,x,y,z,ix,iy,iz = s
+                t,x,y,z,_,_,_ = s
                 raise NotImplementedError()
             else:
                 raise ValidateError('Invalid format for ATOMIC_POSITIONS card.')
@@ -155,7 +156,6 @@ class pw_in(qe_input, structure, System):
             return
         elif mode == 'gamma':
             raise NotImplementedError()
-            return
 
         content = content.strip().split('\n')[1:]
         nks     = int(content[0].strip())

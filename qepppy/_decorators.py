@@ -5,6 +5,7 @@ import numpy as np
 
 
 def join_doc(func, add):
+    """Joins the docstring of a function with the string passed as argument. Keeps proper indentation"""
     tabs='\t'
     if not func.__doc__:
         func.__doc__ = ''
@@ -17,7 +18,7 @@ def join_doc(func, add):
     for line in add.split('\n'):
         func.__doc__ += tabs + re.sub(r'^\t*', '', line) + '\n'
 
-save_opt_doc = """
+SAVE_OPT_DOC = """
     numpy_save_opt specific params:
       - pFile:     Enable/disable save functionality (default = True)
       - fname:     Output file name (must be present)
@@ -25,7 +26,7 @@ save_opt_doc = """
       - header:    Header for np.savetxt
       - delimiter: Delimiter between coloumns"""
 
-plot_opt_doc = """
+PLOT_OPT_DOC = """
     numpy_plot_opt specific params:
       - plot:      Enable/disable plot functionality (default = True)
       - xlab:      String to use as x label
@@ -45,7 +46,7 @@ plot_opt_doc = """
                    If no dash_list is specified, the lines will switch from
                    nodash to dash=(8,2) for every loop of the colors"""
 
-set_self_doc = """
+SET_SELF_DOC = """
     set_self specific params:
      - set_self: If True set the variable as an attribute of the
                  calling class.
@@ -86,11 +87,11 @@ def numpy_save_opt(_fname='',_fmt='', _header='', _delimiter=' '):
             np.savetxt( fname=fname, X=tosave, **save_args)
             return res
 
-        join_doc(wrapped, save_opt_doc)
+        join_doc(wrapped, SAVE_OPT_DOC)
         return wrapped
     return decorator
 
-def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
+def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=None):
     """
     Decorator factory to add functionality to plot return value to file
     using matplotlib.
@@ -100,6 +101,8 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
       - _ylab:   Default label for the x axis
       - _labels: Default labels
     """
+    if _labels is None:
+        _labels = ['']
     def decorator(func):
         @functools.wraps(func)
         def wrapped(
@@ -109,11 +112,15 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
             start=1, end=None,
             xlim=None, ylim=None,
             xlab=_xlab, ylab=_ylab,
-            colors=['k','r','b','g','c','m'],
+            colors=None,
             labels=_labels,
-            dash_list=[],
+            dash_list=None,
             **kwargs
             ):
+            if dash_list is None:
+                dash_list = []
+            if colors is None:
+                colors = ['k','r','b','g','c','m']
             res = func(*args, **kwargs)
             if not plot:
                 return res
@@ -127,7 +134,7 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
                 fig, ax = plt.subplots()
             else:
                 offset = len(ax.get_lines())
-            cl = len(colors)
+            color_len = len(colors)
             X = res[:,0]
 
             if res.shape[1] == 2:
@@ -141,10 +148,10 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
                 if dash_list:
                     dash = dash_list[(i+offset)%len(dash_list)]
                 else:
-                    dash = (8,2*(((i+offset)//cl)%2))
+                    dash = (8,2*(((i+offset)//color_len)%2))
                 ax.plot(
                     X, Y,
-                    color=colors[(i+offset)%cl],
+                    color=colors[(i+offset)%color_len],
                     label=labels[i] if i<len(labels) else '',
                     dashes=dash,
                     )
@@ -163,7 +170,7 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=['']):
 
             return res
 
-        join_doc(wrapped, plot_opt_doc)
+        join_doc(wrapped, PLOT_OPT_DOC)
         return wrapped
     return decorator
 
@@ -177,19 +184,20 @@ def set_self(_name, _default=True):
     """
     def decorator(func):
         @functools.wraps(func)
-        def wrapped(cls, *args, set_self=_default, **kwargs):
+        def wrapped(cls, *args, do_set_self=_default, **kwargs):
             res = func(cls, *args, **kwargs)
-            if not set_self:
-                return res
 
-            names = _name.split(',')
-            if len(names) == 1:
-                setattr(cls, names[0], res)
-            else:
-                for name,val in zip(names,res):
-                    setattr(cls, name, val)
+            if do_set_self:
+                names = _name.split(',')
+                if len(names) == 1:
+                    setattr(cls, names[0], res)
+                else:
+                    for name,val in zip(names,res):
+                        setattr(cls, name, val)
 
-        join_doc(wrapped, set_self_doc)
+            return res
+
+        join_doc(wrapped, SET_SELF_DOC)
         return wrapped
     return decorator
 
@@ -210,7 +218,7 @@ def store_property(func):
         return res
     return wrapped
 
-def IO_stdout_redirect(_outfile=None):
+def IOStdoutRedirect(_outfile=None):
     """
     Decorator factory to catch and redirect stdout from a function call.
     If not output file is given, the stdout will not be redirected
@@ -225,7 +233,7 @@ def IO_stdout_redirect(_outfile=None):
 
             f = None
             if isinstance(outfile, str):
-                f = open(outfile, 'w')
+                f = open(outfile, 'w', encoding='utf-8')
             elif not outfile is None and hasattr(outfile, 'close') and not outfile is sys.stdout:
                 f = outfile
 
@@ -258,7 +266,7 @@ def IO_stderr_redirect(_errfile=None):
 
             f = None
             if isinstance(errfile, str):
-                f = open(errfile, 'w')
+                f = open(errfile, 'w', encoding='utf-8')
             elif not errfile is None and hasattr(errfile, 'close') and not errfile is sys.stdout:
                 f = errfile
 
@@ -304,7 +312,7 @@ def file_name_handle(
             if hasattr(file, 'close'):
                 return app(file, *args, **kwargs)
 
-            f   = open(file, _mode)
+            f   = open(file, _mode, encoding='utf-8')
             res = app(f, *args, **kwargs)
             f.close()
 

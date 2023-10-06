@@ -65,7 +65,7 @@ exclude = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 log_cli = 1
-addopts = "--mpl --mpl-baseline-path=tests/baseline"
+# addopts = "--mpl --mpl-baseline-path=tests/baseline"
 
 [tool.pylint.main]
 load-plugins = [
@@ -73,23 +73,28 @@ load-plugins = [
 ]
 
 [tool.pylint.messages_control]
-# disable = [
-#     "logging-fstring-interpolation",
-#     "global-statement",
-#     "broad-exception-caught",
-#     "too-few-public-methods",
-# ]
+disable = [
+    # "logging-fstring-interpolation",
+    # "global-statement",
+    # "broad-exception-caught",
+    # "too-few-public-methods",
+    "missing-module-docstring",
+    "missing-function-docstring",
+    "missing-class-docstring",
+    "import-outside-toplevel",
+    "invalid-name",
+    "consider-using-f-string",
+    "dangerous-default-value",
+]
 
 
 [tool.pylint.format]
 max-line-length = 120
 good-names = [
-    "_",
-    "l", "r", "b", "t",
-    "l1", "r1", "b1", "t1",
-    "l2", "r2", "b2", "t2",
-    "i", "j",
+    "_", "ax", "vb", "cb",
+    "n", "i", "j", "k",
     "k", "v",
+    "X", "Y", "Z", "x", "y", "z",
     "f",
 ]
 

@@ -60,4 +60,4 @@ class Test_kpoints(Test_lattice):
     @pytest.mark.parametrize('shift',[(0,0,0),(1,1,1)])
     @pytest.mark.parametrize('shape',[(1,1,1),(5,5,5),(10,10,7)])
     def test_kpt_mesh(self, cls_rec, shape, shift):
-        cls_rec.generate_monkhorst_pack_grid(shape, shift, set_self=False)
+        cls_rec.generate_monkhorst_pack_grid(shape, shift, do_set_self=False)
