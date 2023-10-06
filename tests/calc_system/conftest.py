@@ -17,7 +17,7 @@ l = list(basis.keys())
 @pytest.fixture(
     scope='module',
     params=l,
-    ids=['LATT:' + str(a) for a in l]
+    ids=['LATT_' + str(a) for a in l]
     )
 def base(request):
     return basis[request.param]
@@ -26,7 +26,7 @@ l = list(range(1, len(coords)+1))
 @pytest.fixture(
     scope='module',
     params=l,
-    ids=['#ATM:' + str(a) for a in l]
+    ids=['#ATM_' + str(a) for a in l]
     )
 def coord(request):
     return coords[:request.param]
