@@ -1,14 +1,14 @@
 import numpy as np
 import pytest
 
-from qepppy.calc_system.structure import structure
+from qepppy.calc_system.structure import Structure
 
 from .t_atoms_list import Test_atoms
 from .t_lattice import Test_lattice
 
 
 class Test_structure(Test_atoms, Test_lattice):
-    cls_typ  = structure
+    cls_typ  = Structure
 
     @pytest.fixture(scope='class')
     def cls_wcc(self, cls_rec, coord):

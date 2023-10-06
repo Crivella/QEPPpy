@@ -1,21 +1,21 @@
 import numpy as np
 
-from qepppy.calc_system import system
+from qepppy.calc_system import System
 
 from .t_structure import Test_structure
 
 
 class Test_system(Test_structure):
-    cls_typ = system
+    cls_typ = System
 
     def test_save_steps(self, new_cls, cls_wcc, tmpfile):
-        from qepppy.calc_system.structure import structure
+        from qepppy.calc_system.structure import Structure
         cls_wcc.atoms_typ    = ['Si']*cls_wcc.n_atoms
         cls_wcc.atoms_forces = np.random.rand(cls_wcc.n_atoms,3)
 
         steps = []
         for i in np.linspace(0,1,11):
-            new = structure()
+            new = Structure()
             new.direct           = cls_wcc.direct
             new.atoms_coord_cart = cls_wcc.atoms_coord_cart + i
             new.atoms_typ        = cls_wcc.atoms_typ

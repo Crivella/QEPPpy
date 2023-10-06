@@ -2,14 +2,14 @@ import os
 
 import numpy as np
 
-from ..calc_system import system
+from ..calc_system import System
 from .qe_bands import qe_bands as bands
 from .qe_structure import qe_structure as structure
 from .tmp import tmp
 from .UPF import UPF
 
 
-class pw_out(system, structure, bands):
+class pw_out(System, structure, bands):
     """
     Instance used to handle QE outputs (by parsing the "data-file*.xml" file")
     fname: name of the "data-file*.xml" to parse
@@ -19,7 +19,7 @@ class pw_out(system, structure, bands):
     """
     __name__ = 'pw_out'
     def __init__(self, *args, xml=None, **kwargs):
-        system.__init__(self)
+        System.__init__(self)
         self.set_data_file(xml)
         bands.__init__(self, *args, xml=self.xml, **kwargs)
         structure.__init__(self, *args, xml=self.xml, **kwargs)

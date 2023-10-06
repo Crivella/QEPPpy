@@ -55,7 +55,7 @@ def inequivalent_iteration(k, sm, thr):
     return res_i, res_p # np.array(res_p)
 
 @define(slots=False)
-class symmetry():
+class Symmetry():
     rotation: npt.ArrayLike = field(
         validator=check_shape((3,3)),
         converter=converter_none(lambda x: np.array(x, dtype=float).reshape(3,3)),
@@ -107,15 +107,15 @@ class symmetry():
 
         return new_i, new_p
 
-class symmetries(list):
+class Symmetries(list):
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
 
     def append(self, value):
-        if isinstance(value, symmetry):
+        if isinstance(value, Symmetry):
             new = value
         else:
-            new = symmetry(value)
+            new = Symmetry(value)
 
         super().append(new)
 

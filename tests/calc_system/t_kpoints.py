@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pytest
 
-from qepppy.calc_system.kpoints import kpoints
+from qepppy.calc_system.kpoints import Kpoints
 
 from .t_lattice import Test_lattice
 
@@ -19,7 +19,7 @@ edges = np.array([
     ])
 
 class Test_kpoints(Test_lattice):
-    cls_typ = kpoints
+    cls_typ = Kpoints
 
     @pytest.fixture(
         params=[1,5,10]

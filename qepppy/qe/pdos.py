@@ -6,7 +6,7 @@ import numpy as np
 # from ..logger import logger, warning
 from .._decorators import (IO_stdout_redirect, numpy_plot_opt, numpy_save_opt,
                            store_property)
-from ..calc_system import bands
+from ..calc_system import Bands
 from ..parsers import Parser_regex
 
 data={
@@ -60,7 +60,7 @@ class state:
     m: float
 
 
-class pdos(Parser_regex, bands):
+class pdos(Parser_regex, Bands):
     __name__ = 'pdos'
     def __init__(self, regex_data={}, **kwargs):
         regex_data.update(data)

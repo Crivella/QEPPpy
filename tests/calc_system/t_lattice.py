@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-from qepppy.calc_system.lattice import lattice
+from qepppy.calc_system.lattice import Lattice
 
 from .conftest import BaseTest
 
 
 class Test_lattice(BaseTest):
-    cls_typ = lattice
+    cls_typ = Lattice
 
     @pytest.fixture(scope='class')
     def cls_rec(self, cls, base):

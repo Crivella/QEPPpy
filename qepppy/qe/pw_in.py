@@ -1,12 +1,12 @@
 import numpy as np
 
-from ..calc_system import system
+from ..calc_system import System
 from ..parsers import fortran_namelist_collection as fnc
 from .parser.input_files import qe_input
 from .qe_structure import qe_structure as structure
 
 
-class pw_in(qe_input, structure, system):
+class pw_in(qe_input, structure, System):
     cards = ['CELL_PARAMETERS', 'ATOMIC_POSITIONS', 'ATOMIC_SPECIES', 'K_POINTS',
             'CONSTRAINTS','OCCUPATIONS','ATOMIC_FORCES']
 
@@ -18,7 +18,7 @@ class pw_in(qe_input, structure, system):
     _link_test={'item':'SYSTEM/nat, SYSTEM/ntyp'}
 
     def __init__(self, *args, input_file=None, **kwargs):
-        system.__init__(self)
+        System.__init__(self)
         input_file = kwargs.pop('src', input_file)
         input_data = kwargs.pop('input_data', {})
         structure.__init__(self, *args, **kwargs)

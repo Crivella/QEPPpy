@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-from qepppy.calc_system.atoms_list import atoms_list
+from qepppy.calc_system.atoms_list import AtomsList
 
 from .conftest import BaseTest
 
 
 class Test_atoms(BaseTest):
-    cls_typ = atoms_list
+    cls_typ = AtomsList
 
     @pytest.fixture(scope='class')
     def cls_wcc(self, cls, coord):

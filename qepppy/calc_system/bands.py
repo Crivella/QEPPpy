@@ -1,11 +1,14 @@
+import sys
+from itertools import product
+
 import numpy as np
 from attrs import define, field
 from numpy import typing as npt
+from scipy.spatial import KDTree
 
-from .._decorators import (IO_stdout_redirect, numpy_plot_opt, numpy_save_opt,
-                           set_self)
-from ..validators import check_allowed, check_shape, converter_none
-from .kpoints import kpoints
+from .._decorators import IO_stdout_redirect, numpy_plot_opt, numpy_save_opt
+from ..validators import converter_none
+from .kpoints import Kpoints
 
 
 def cumul_norm(
@@ -30,7 +33,7 @@ def cumul_norm(
     return res
 
 @define(slots=False)
-class bands(kpoints):
+class Bands(Kpoints):
     n_el: float = 0
 
     egv: npt.ArrayLike = field(
@@ -44,26 +47,6 @@ class bands(kpoints):
         converter=converter_none(lambda x: np.array(x, dtype=float)),
         default=None
     )
-
-    # n_el = {
-    #     'typ':(int, np.integer),
-    #     'doc':"""Number of electrons in the system."""
-    #     }
-    # egv = {
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'conv_func':lambda x: np.array(x, dtype=float),
-    #     'doc':"""Array of shape (n_kpt, n_bnd,) where the Nth row represents the
-    #     energy ordered eigenvalues for the Nth kpoint."""
-    #     }
-
-    # occ = {
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'conv_func':lambda x: np.array(x, dtype=float),
-    #     'doc':"""Array of shape (n_kpt, n_bnd,) where the Nth row and Jth
-    #     column represent the occupation for the Jth band of the Nth kpoint."""
-    #     }
 
     @property
     def vb(self):
@@ -80,16 +63,6 @@ class bands(kpoints):
         if self.egv is None:
             return None
         return self.egv.shape[-1]
-        # try:
-        #     res = self._n_bnd
-        # except:
-        #     try:
-        #         res = self.egv.shape[1]
-        #     except AttributeError:
-        #         res = None
-        #     else:
-        #         self._n_bnd = res
-        # return res
 
     @n_bnd.setter
     def n_bnd(self, value):
@@ -111,12 +84,8 @@ class bands(kpoints):
         self, SC_rec, wavefunctions,
         verbose = True,
         **kwargs):
-        from itertools import product
-
-        from scipy.spatial import KDTree
 
         if verbose:
-            import sys
             np.set_printoptions(precision=2, formatter={'float':lambda x: f' {x:+14.10f}'})
 
         Emin   = kwargs.pop('Emin', self.egv.min())
@@ -199,15 +168,6 @@ class bands(kpoints):
           The other column are the ordered band eigenvalue for the
           corresponding kpt.
         """
-        # kpt = np.array(self.kpt_cart)
-        # kpt[1:] -= kpt[:-1]
-        # kpt[0]  -= kpt[0]
-        # norm = np.linalg.norm(kpt, axis=1)
-
-        # norm[norm > thr] = 0
-
-        # x = [norm[:i+1].sum() for i in range(len(norm))]
-
         x   = cumul_norm(self.kpt_cart, thr=thr)
         egv = self.egv - fermi
 

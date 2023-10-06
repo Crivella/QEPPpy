@@ -2,14 +2,14 @@ import os
 
 import numpy as np
 
-from qepppy.calc_system.bands import bands
+from qepppy.calc_system.bands import Bands
 
 from .t_kpoints import Test_kpoints
 
 cwd = os.path.dirname(os.path.realpath(__file__))
 
 class Test_bands(Test_kpoints):
-    cls_typ = bands
+    cls_typ = Bands
 
     def test_bands_unfolding_noproject(self, cls_edges):
         from qepppy.qe import pw_out

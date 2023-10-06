@@ -1,30 +1,16 @@
-from attrs import Factory, define, field
+import numpy as np
+from attrs import Factory, define
 from numpy import typing as npt
 
 from .._decorators import file_name_handle, set_self
-from ..validators import check_allowed, check_shape, converter_none
-from .bands import bands
-from .structure import structure
+from .bands import Bands
+from .kpoints import cart_to_cryst, cryst_to_cart
+from .structure import Structure
 
 
 @define(slots=False)
-class system(structure, bands):
+class System(Structure, Bands):
     steps: list = Factory(list)
-    # steps={
-    #     'typ':(list,),
-    #     'sub_typ':(structure,),
-    #     'doc':"""List of configurations for the atoms during time/relaxation steps."""
-    #     }
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-
-    #     if self.direct != [] and self.atoms_coord_cryst != []:
-    #         self.get_symmetries()
-
-    # def __init__(self, *args, **kwargs):
-    #     print('SYSTEM INIT')
-    #     super().__init__(*args, **kwargs)
 
     @file_name_handle('w')
     def save_step_xyz(self, file):
@@ -35,7 +21,7 @@ class system(structure, bands):
     def load_step_xyz(self, file):
         steps = []
         while True:
-            new = structure()
+            new = Structure()
             if new.load_xyz(file):
                 break
             steps.append(new)
@@ -65,3 +51,40 @@ class system(structure, bands):
         """
         res, _ = self.translate_coord_into_FBZ(self.kpt_cryst)
         return res
+
+    @set_self('kpt_cryst,kpt_weight')
+    def generate_monkhorst_pack_grid(
+            self,
+            mesh: tuple[int] = None, shift: tuple[int] = None,
+            use_symmeties: bool = True, symm_thr: float = 1E-5
+        ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Generate a Monkhorst-Pack grid of k-point.
+        Params:
+         -mesh:  tuple of 3 ints > 0
+         -shift: tuple of 3 ints that can be either 0 or 1
+         -use_symmeties: if True, use symmetries to reduce the number of k-points
+         -symm_thr: threshold for symmetries
+        """
+        kpts, weight = super().generate_monkhorst_pack_grid(mesh, shift)
+
+        if use_symmeties:
+            # Must check symmetries on point in cartesian coordinates
+            # Checking on crystal only works if [M,B] = 0
+            kpts = cryst_to_cart(self, kpts)
+            if getattr(self, 'symmetries', None) is None:
+                try:
+                    self.get_symmetries()
+                except:
+                    pass
+            ind, kpts, _ = self.symmetries.reduce(kpts, thr=symm_thr)
+            # ind, kpts = self.symmetries.reduce2(kpts, thr=symm_thr)
+            self.irrep_mapping  = ind
+            kpts = cart_to_cryst(self, kpts)
+
+            unique, counts = np.unique(ind, return_counts=True)
+            weight = counts[np.argsort(unique)]
+
+            weight = self._normalize_weight(weight, 1)
+
+        return kpts, weight

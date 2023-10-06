@@ -9,15 +9,11 @@ from ..validators import check_shape, converter_none
 
 
 @define(slots=False)
-class lattice():
+class Lattice():
     """Class describing a bravais lattice."""
 
     direct: Iterable = field(
-        validator=[
-            check_shape((3,3)),
-            # mutually_exclusive('recipr'),
-            # post_setter('recipr', lambda x: 2*np.pi*np.linalg.inv(x).T),
-            ],
+        validator=check_shape((3,3)),
         converter=converter_none(lambda x: np.array(x, dtype=float).reshape(3,3)),
         default=None
     )

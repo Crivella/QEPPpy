@@ -4,26 +4,26 @@ from numpy import typing as npt
 
 from .._decorators import numpy_save_opt, set_self
 from ..validators import check_allowed, check_shape, converter_none
-from .lattice import lattice
+from .lattice import Lattice
 
 
 def u(r, q):
     return (2.*r - q - 1.), (2. * q)
 
-def cart_to_cryst(cls: 'kpoints', coord: np.ndarray):
+def cart_to_cryst(cls: 'Kpoints', coord: np.ndarray):
     recipr = cls.recipr
     if len(recipr) == 0:
         return
     return coord.dot(np.linalg.inv(recipr))
 
-def cryst_to_cart(cls: 'kpoints', coord: np.ndarray):
+def cryst_to_cart(cls: 'Kpoints', coord: np.ndarray):
     recipr = cls.recipr
     if len(recipr) == 0:
         return
     return coord.dot(recipr)
 
 @define(slots=False)
-class kpoints(lattice):
+class Kpoints(Lattice):
     kpt_cart: npt.ArrayLike = field(
         validator=check_shape((-1,3)),
         converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
@@ -66,85 +66,21 @@ class kpoints(lattice):
     def kpt_cryst(self, value):
         self.kpt_cart = cryst_to_cart(self, value)
 
-    # kpt_cart={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,3),
-    #     'conv_func':lambda x: np.array(x, dtype=float),
-    #     'post_set_name':'_kpt_cryst',
-    #     'post_set_func':cart_to_cryst,
-    #     'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
-    #     }
-    # kpt_cryst={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,3),
-    #     'conv_func':lambda x: np.array(x, dtype=float),
-    #     'post_set_name':'_kpt_cart',
-    #     'post_set_func':cryst_to_cart,
-    #     'doc':"""List of k-points coordinate in cartesian basis (k_i, i=x,y,z in units of 2pi/a)."""
-    #     }
-    # kpt_weight={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape':('n_kpt',),
-    #     'conv_func':lambda x: np.array(x, dtype=float),#/np.array(x, dtype=float).sum(),
-    #     'doc':"""List of k-points weights."""
-    #     }
-    # kpt_mesh={
-    #     'typ':(tuple,),
-    #     'sub_typ':(int, np.integer),
-    #     'shape': (3,),
-    #     'conv_func':lambda x: np.array(x, dtype=int),
-    #     'doc':"""Density of the Monkhorst-Pack mesh grid."""
-    #     }
-    # kpt_shift={
-    #     'typ':(tuple,),
-    #     'sub_typ':(int, np.integer),
-    #     'shape': (3,),
-    #     'default':(0,0,0),
-    #     'allowed':(0,1),
-    #     'conv_func':lambda x: np.array(x, dtype=int),
-    #     'doc':"""Shift of the Monkhorst-Pack mesh grid."""
-    #     }
-    # kpt_edges={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,4,),
-    #     'conv_func':lambda x: np.array(x, dtype=float),
-    #     'doc':"""k-path where every i-th row is the 3 coordinates + the number of point
-    #     between the i-th and i-th + 1  k-points."""
-    #     }
-    # kpt_mode={
-    #     'typ':(str,),
-    #     'allowed':['cart','cryst', 'crystal', 'cartesian'],
-    #     'doc':"""Set mode for the k-path."""
-    #     }
-
     def __post_init__(self):
-        # if not hasattr(self, 'symmetries'):
-        #     from .symmetry import symmetries
-        #     self.symmetries = symmetries()
-
         if not self.kpt_mesh is None:
             self.generate_monkhorst_pack_grid()
         if not self.kpt_edges is None:
             self.generate_kpath()
 
-        # super().__init__(*args, **kwargs)
-
-
     @property
     def n_kpt(self):
-        try:
+        res = None
+        if not self.kpt_cart is None:
             res = len(self.kpt_cart)
-        except:
-            res = None
         if hasattr(self, '_n_kpt'):
-            try:
-                res = self._n_kpt
-            except:
-                self._n_kpt = res
+            res = self._n_kpt
+        else:
+            self._n_kpt = res
         return res
     @n_kpt.setter
     def n_kpt(self, value):
@@ -223,7 +159,7 @@ class kpoints(lattice):
 
 
     def generate_unfolding_path(self, SC_rec, mode='cryst', return_all=False):
-        from .symmetry import symmetries
+        from .symmetry import Symmetries
 
         PC_rec     = self.recipr
         SC_rec_inv = np.linalg.inv(SC_rec)
@@ -239,7 +175,7 @@ class kpoints(lattice):
 
         full_kpts = new
 
-        symm = symmetries()
+        symm = Symmetries()
         symm.append(np.diag([1]*3))
         symm.append(np.diag([-1]*3))
 
@@ -253,8 +189,9 @@ class kpoints(lattice):
 
     @set_self('kpt_cryst,kpt_weight')
     def generate_monkhorst_pack_grid(
-        self, mesh=None, shift=None,
-        use_symmeties=True, symm_thr=1E-5):
+            self,
+            mesh: tuple[int] = None, shift: tuple[int] = None,
+        ) -> tuple[np.ndarray, np.ndarray]:
         """
         Generate a Monkhorst-Pack grid of k-point.
         Params:
@@ -272,15 +209,13 @@ class kpoints(lattice):
         self.kpt_shift = tuple(shift)
         self.kpt_edges = self.kpt_mode = None
 
-        s1,s2,s3   = shift
-
         l1,l2,l3 = [
             list(
                 (n+shift[i])/d for n,d in
                     (
                         u(r+1,q) for r in range(q)
                     )
-            ) for i,q in enumerate(mesh)
+                ) for i,q in enumerate(mesh)
             ]
 
         kpts = np.array(list(product(l1,l2,l3)))
@@ -292,24 +227,7 @@ class kpoints(lattice):
         kpts, _ = self.translate_coord_into_FBZ(kpts, mode='cryst', num=2)
         self.full_kpt_cryst = kpts
 
-        if hasattr(self, 'symmetries') and use_symmeties:
-            # Must check symmetries on point in cartesian coordinates
-            # Checking on crystal only works if [M,B] = 0
-            kpts = cryst_to_cart(self, kpts)
-            if getattr(self, 'symmetries', None) is None:
-                try:
-                    self.get_symmetries()
-                except:
-                    pass
-            ind, kpts, _ = self.symmetries.reduce(kpts, thr=symm_thr)
-            # ind, kpts = self.symmetries.reduce2(kpts, thr=symm_thr)
-            self.irrep_mapping  = ind
-            kpts = cart_to_cryst(self, kpts)
-        else:
-            ind = np.arange(len(kpts))
-
-        unique, counts = np.unique(ind, return_counts=True)
-        weight = counts[np.argsort(unique)]
+        weight = np.ones(len(kpts))
 
         weight = self._normalize_weight(weight, 1)
 
@@ -323,7 +241,7 @@ class kpoints(lattice):
 
     @set_self('kpt_weight')
     def normalize_weight(self, norm=1):
-        return self._normalize_weight(self.weight, norm=norm)
+        return self._normalize_weight(self.kpt_weight, norm=norm)
 
 
 
@@ -344,7 +262,7 @@ class kpoints(lattice):
         """
         # if radius < 0:
         #     raise ValueError("Radius must be greather than 0.")
-        self.mesh  = self.shift = self.edges = None
+        # self.mesh  = self.shift = self.edges = None
 
         center = np.array(center).reshape(3)
         norms  = np.linalg.norm(self.kpt_cart - center, axis=1)
@@ -369,7 +287,7 @@ class kpoints(lattice):
 
         return res_kpt, res_weight.reshape(-1,1)
 
-    def _kpt_plot(self, ax, edges_name=[]):
+    def _kpt_plot(self, ax, edges_name=list()):
         self.draw_Wigner_Seitz(ax)
         ax.scatter(*self.kpt_cart.T)
         if not self.kpt_edges is None and len(self.kpt_edges) > 0:
@@ -393,7 +311,6 @@ class kpoints(lattice):
                        Used if the kpt are generated using generate_kpath.
         """
         import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')

@@ -1,95 +1,29 @@
+import re
+from functools import reduce
+
 import numpy as np
-from attrs import define, field
-from numpy import typing as npt
+from attrs import Factory, define
 
 from .. import utils
 from .._decorators import file_name_handle, set_self
-from ..validators import check_allowed, check_shape, converter_none
-from .atoms_list import atoms_list as atm
-from .lattice import lattice as latt
+from .atoms_list import AtomsList
+from .lattice import Lattice
 
-# def cart_to_cryst(cls: 'structure', coord: np.ndarray):
-#     direct = cls.direct
-#     if len(direct) == 0:
-#         return []
-#     return coord.dot(np.linalg.inv(direct))
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 
-# def cryst_to_cart(cls: 'structure', coord: np.ndarray):
-#     direct = cls.direct
-#     if len(direct) == 0:
-#         return []
-#     return coord.dot(direct)
+try:
+    import ase
+    import ase.visualize
+except ImportError:
+    ase = None
+
 
 @define(slots=False)
-class structure(atm, latt):
-    # atoms_coord_cart: npt.ArrayLike = field(
-    #     validator=check_shape((-1,3)),
-    #     converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
-    #     default=None
-    # )
-
-    # atoms_forces: npt.ArrayLike = field(
-    #     validator=check_shape((-1,3)),
-    #     converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
-    #     default=None
-    # )
-
-    # atoms_velocities: npt.ArrayLike = field(
-    #     validator=check_shape((-1,3)),
-    #     converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
-    #     default=None
-    # )
-
-    # @property
-    # def atoms_coord_cryst(self):
-    #     if self.atoms_coord_cart is None or self.direct is None:
-    #         return
-    #     return cart_to_cryst(self, self.atoms_coord_cart)
-    # @atoms_coord_cryst.setter
-    # def atoms_coord_cryst(self, value):
-    #     self.atoms_coord_cart = cryst_to_cart(self, value)
-
-    # atoms_coord_cart={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,3),
-    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-    #     'post_set_name':'_atoms_coord_cryst',
-    #     'post_set_func':cart_to_cryst,
-    #     'doc':"""List of atomic coordinate in CARTESIAN basis."""
-    #     }
-
-    # atoms_coord_cryst={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,3),
-    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-    #     'post_set_name':'_atoms_coord_cart',
-    #     'post_set_func':cryst_to_cart,
-    #     'doc':"""List of atomic coordinate in CRYSTAL basis."""
-    #     }
-
-    # atoms_forces={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,3),
-    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-    #     'doc':"""Array of forces acting on the atoms."""
-    #     }
-
-    # atoms_velocities={
-    #     'typ':(list,np.ndarray),
-    #     'sub_typ':(int,float,np.number),
-    #     'shape': (-1,3),
-    #     'conv_func':lambda x: np.array(x, dtype=float).reshape(-1,3),
-    #     'doc':"""Array of velocities of the atoms."""
-    #     }
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-
-    #     if len(self.direct) > 0 and len(self.atoms_coord_cryst) > 0 and len(self.atoms_typ) > 0:
-    #         self.get_symmetries()
+class Structure(AtomsList, Lattice):
+    symmetries: list = Factory(list)
 
     @file_name_handle('w')
     def save_xyz(self, file):
@@ -127,7 +61,6 @@ class structure(atm, latt):
 
     @file_name_handle('r')
     def load_xyz(self, file):
-        import re
         conv={
             'R': float,
             'I': bool,
@@ -177,7 +110,6 @@ class structure(atm, latt):
          - typ: list with len = (n_atoms*repX*repY*repZ) containing the
                 name/type of all the atoms. (1 to 1 correspondence with 'res')
         """
-        from functools import reduce
         assert(isinstance(repX,(int,range,list,tuple)))
         assert(isinstance(repY,(int,range,list,tuple)))
         assert(isinstance(repZ,(int,range,list,tuple)))
@@ -268,10 +200,8 @@ class structure(atm, latt):
            - 2: Use 3d spheres for atoms and bonds as in 1.
            - 3: Use 3d spheres for atoms and cylinders for bonds.
         """
-        # from . import cell_graphic as cg
-        import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
-
+        if plt is None:
+            raise ImportError('matplotlib must be installed and accessible to the PYTHONPATH.')
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
 
@@ -280,7 +210,8 @@ class structure(atm, latt):
         plt.show()
 
     def _make_ase_atoms(self):
-        import ase
+        if ase is None:
+            raise ImportError('ase must be installed and accessible to the PYTHONPATH.')
 
         new = ase.Atoms(
             symbols          = self.atoms_typ,
@@ -292,32 +223,28 @@ class structure(atm, latt):
         return new
 
     def plot_ase(self, *args, **kwargs):
-        from ase.visualize import view
+        if ase is None:
+            raise ImportError('ase must be installed and accessible to the PYTHONPATH.')
 
-        view(self._make_ase_atoms())
+        ase.visualize.view(self._make_ase_atoms())
 
     def plot(self, *args, mode='mpl', **kwargs):
-        if   mode == 'mpl':
+        if mode == 'mpl':
             self.plot_mpl(*args, **kwargs)
         elif mode == 'ase':
-            try:
-                import ase
-            except ImportError:
-                print('ase must be installed and accessible to the PYTHONPATH.')
-
             self.plot_ase(*args, **kwargs)
         else:
-            raise NotImplemented()
+            raise NotImplementedError(f'Plot mode {mode} not implemented.')
 
 
     @set_self('symmetries')
     def get_symmetries(self):
         # import ase.spacegroup
-        from .symmetry import symmetries, symmetry
+        from .symmetry import Symmetries, Symmetry
 
         # sg = ase.spacegroup.get_spacegroup(self._make_ase_atoms())
 
-        new = symmetries()
+        new = Symmetries()
 
         # for rot in sg.rotations:
         #     new.append(symmetry(rotation=rot))

@@ -15,15 +15,15 @@ try:
 except ImportError:
     pass
 else:
-	periodic_table = json.load(resources.files('qepppy.data').joinpath('periodic_table.json').open(encoding='utf-8'))
+    periodic_table = json.load(resources.files('qepppy.data').joinpath('periodic_table.json').open(encoding='utf-8'))
 
-def cart_to_cryst(cls: 'atoms_list', coord: np.ndarray):
+def cart_to_cryst(cls: 'AtomsList', coord: np.ndarray):
     direct = cls.direct
     if len(direct) == 0:
         return []
     return coord.dot(np.linalg.inv(direct))
 
-def cryst_to_cart(cls: 'atoms_list', coord: np.ndarray):
+def cryst_to_cart(cls: 'AtomsList', coord: np.ndarray):
     direct = cls.direct
     if len(direct) == 0:
         return []
@@ -74,7 +74,7 @@ def split_atom_list_by_name(atom_coord, atom_names):
     return trees, np.array(names), rad
 
 @define(slots=False)
-class atoms_list():
+class AtomsList():
     atoms_coord_cart: npt.ArrayLike = field(
         validator=check_shape((-1,3)),
         converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
