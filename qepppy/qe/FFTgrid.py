@@ -80,7 +80,7 @@ class FFTgrid:
 
         rho = self.make_density_grid(bnd_list=bnd_list)
         X, Y, _ = utils.xyz_mesh(
-            rho.shape,
+            rho.shape[1:],
             base=self.direct,
             rep=rep,
         )
@@ -92,7 +92,7 @@ class FFTgrid:
             ax1 = fig.add_subplot(111)
 
             x, y, index = utils.remap_plane(
-                self.recipr / (2 * np.pi),
+                self.direct,
                 (X.min(), X.max()),
                 (Y.min(), Y.max()),
                 (zs, zs),
