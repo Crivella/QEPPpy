@@ -1,6 +1,8 @@
+"""Class describing data and operations on a list of atoms."""
 import importlib
 import json
 from importlib import resources
+from itertools import combinations_with_replacement as cwr
 from typing import Any
 
 import numpy as np
@@ -10,6 +12,11 @@ from scipy.spatial import KDTree
 
 from ..graphics import mpl_graphics as mplg
 from ..validators import check_allowed, check_shape, converter_none
+
+try:
+    from matplotlib.axes import Axes
+except ImportError:
+    Axes = None
 
 periodic_table = {}
 try:
@@ -82,6 +89,8 @@ def split_atom_list_by_name(atom_coord: np.ndarray, atom_names: list[str]) -> tu
 
 @define(slots=False)
 class AtomsList():
+    """Class describing data and operations on a list of atoms."""
+    
     atoms_coord_cart: npt.ArrayLike = field(
         validator=check_shape((-1,3)),
         converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
@@ -120,6 +129,7 @@ class AtomsList():
 
     @property
     def atoms_coord_cryst(self):
+        """List of atomic coordinate in crystal basis."""
         if self.atoms_coord_cart is None or getattr(self, 'direct', None) is None:
             return
         return cart_to_cryst(self, self.atoms_coord_cart)
@@ -131,10 +141,12 @@ class AtomsList():
 
     @property
     def unique_atoms_typ(self):
+        """List of unique atomic names."""
         return get_unique(self.atoms_typ)
 
     @property
     def unique_atoms_mass(self):
+        """List of unique atomic masses."""
         return get_unique_atm_prop(self, self.atoms_mass)
     @unique_atoms_mass.setter
     def unique_atoms_mass(self, value):
@@ -142,6 +154,7 @@ class AtomsList():
 
     @property
     def unique_atoms_pseudo(self):
+        """List of unique atomic pseudopotential."""
         return get_unique_atm_prop(self, self.atoms_pseudo)
     @unique_atoms_pseudo.setter
     def unique_atoms_pseudo(self, value):
@@ -149,6 +162,7 @@ class AtomsList():
 
     @property
     def n_atoms(self):
+        """Number of atoms."""
         res = None
         if not self.atoms_coord_cart is None:
             res = len(self.atoms_coord_cart)
@@ -159,13 +173,13 @@ class AtomsList():
             except AttributeError:
                 self._n_atoms = res
         return res
-
     @n_atoms.setter
     def n_atoms(self, value):
         self._n_atoms = value
 
     @property
     def n_types(self):
+        """Number of atomic types."""
         res = None
         if not self.unique_atoms_typ is None:
             res = len(self.unique_atoms_typ)
@@ -176,7 +190,6 @@ class AtomsList():
             except AttributeError:
                 self._n_types = res
         return res
-
     @n_types.setter
     def n_types(self, value):
         self._n_types = value
@@ -193,15 +206,16 @@ class AtomsList():
         in a dictionary."""
         return {a:np.array(self.atoms_coord_cryst[np.array(self.atoms_typ) == a]) for a in self.unique_atoms_typ}
 
-    def draw_atoms(self, ax, atom_coord=None, atom_names=None, **kwargs):
+    def draw_atoms(self, ax: Axes, atom_coord: npt.NDArray = None, atom_names: npt.NDArray = None, **kwargs):
         """
         Draw atoms onto a matplotlib axis object.
-        Params:
-         - ax:         Matplotlib axis object
-         - atom_coord: List of atomic coordinates (not necessarily the original
-                       one in order to use a supercell).
-         - atom_namse: List of atom names (same shape as atom_coord). Used to
-                       plot the proper color and atomic radius.
+
+        Args:
+            ax: Matplotlib axis object
+            atom_coord: List of atomic coordinates (not necessarily the original
+                one in order to use a supercell).
+            atom_namse: List of atom names (same shape as atom_coord). Used to
+                plot the proper color and atomic radius.
         """
         if atom_coord is None:
             atom_coord = self.atoms_coord_cart
@@ -216,7 +230,7 @@ class AtomsList():
             mplg.draw_atom(ax, X,Y,Z, color=color, name=n, radius=r, **kwargs)
 
 
-    def draw_bonds(self, ax, atom_coord=None, atom_names=None, **kwargs):
+    def draw_bonds(self, ax: Axes, atom_coord: npt.NDArray = None, atom_names: npt.NDArray = None, **kwargs):
         """
         Draw atomic bonds onto a matplotlib axis object.
         Params:
@@ -226,7 +240,6 @@ class AtomsList():
          - atom_namse: List of atom names (same shape as atom_coord). Used to
                        plot the proper color and atomic radius.
         """
-        from itertools import combinations_with_replacement as cwr
 
         if atom_coord is None:
             atom_coord = self.atoms_coord_cart
