@@ -3,6 +3,12 @@ import re
 
 import numpy as np
 
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import AutoMinorLocator as AML
+except ImportError:
+    pass
+
 
 def join_doc(func, add):
     """Joins the docstring of a function with the string passed as argument. Keeps proper indentation"""
@@ -125,10 +131,8 @@ def numpy_plot_opt(_xlab='',_ylab='', _plot=True, _labels=None):
             if not plot:
                 return res
 
-            from matplotlib.ticker import AutoMinorLocator as AML
             to_plot = False
             if ax is None:
-                import matplotlib.pyplot as plt
                 offset = 0
                 to_plot = True
                 fig, ax = plt.subplots()
@@ -231,27 +235,29 @@ def IOStdoutRedirect(_outfile=None):
             import sys
             from contextlib import redirect_stdout
 
-            f = None
+            fp = None
+            was_opened = False
             if isinstance(outfile, str):
-                f = open(outfile, 'w', encoding='utf-8')
+                fp = open(outfile, 'w', encoding='utf-8')
+                was_opened = True
             elif not outfile is None and hasattr(outfile, 'close') and not outfile is sys.stdout:
-                f = outfile
+                fp = outfile
 
-            if f:
-                with redirect_stdout(f):
+            if fp:
+                with redirect_stdout(fp):
                     res = func(*args, **kwargs)
             else:
                 res = func(*args, **kwargs)
 
-            if f:
-                f.close()
+            if was_opened:
+                fp.close()
 
             return res
 
         return wrapped
     return decorator
 
-def IO_stderr_redirect(_errfile=None):
+def IOStderrRedirect(_errfile=None):
     """
     Decorator factory to catch and redirect stderr from a function call.
     If not output file is given, the stdout will not be redirected
@@ -264,20 +270,22 @@ def IO_stderr_redirect(_errfile=None):
             import sys
             from contextlib import redirect_stderr
 
-            f = None
+            fp = None
+            was_opened = False
             if isinstance(errfile, str):
-                f = open(errfile, 'w', encoding='utf-8')
+                fp = open(errfile, 'w', encoding='utf-8')
+                was_opened = True
             elif not errfile is None and hasattr(errfile, 'close') and not errfile is sys.stdout:
-                f = errfile
+                fp = errfile
 
-            if f:
-                with redirect_stderr(f):
+            if fp:
+                with redirect_stderr(fp):
                     res = func(*args, **kwargs)
             else:
                 res = func(*args, **kwargs)
 
-            if f:
-                f.close()
+            if was_opened:
+                fp.close()
 
             return res
 

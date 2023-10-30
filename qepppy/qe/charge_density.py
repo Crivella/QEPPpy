@@ -6,7 +6,7 @@ from .FFTgrid import FFTgrid
 class charge_density(FBIO, FFTgrid):
     binary_format =[
         [
-            {'type':'i4', 'shape':(1,), 'name':'????'},
+            {'type':'i4', 'shape':(1,), 'name':'unknown'},
             {'type':'i4', 'shape':(1,), 'name':'igwx'},
             {'type':'i4', 'shape':(1,), 'name':'ispin'},
         ],

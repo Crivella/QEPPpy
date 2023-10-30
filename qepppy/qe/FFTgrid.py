@@ -7,14 +7,6 @@ from .. import utils
 class FFTgrid:
     # pylint: disable=unsubscriptable-object,not-an-iterable
     def __init__(self, *args, **kwargs):
-        self.binary: bool = None
-        self.igwx: int = None
-        self.ispin: int = None
-        self.direct: np.ndarray = None
-        self.recipr: np.ndarray = None
-        self.gvect: np.ndarray = None
-        self.C_kn: np.ndarray = None
-
         super().__init__(*args, **kwargs)
         if not hasattr(self, 'nspin'):
             self.nspin = 1

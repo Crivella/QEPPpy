@@ -3,7 +3,7 @@ from typing import Iterable
 import numpy as np
 from attrs import define, field
 
-from .. import utils
+from .. import types, utils
 from ..graphics import mpl_graphics as mplg
 from ..validators import check_shape, converter_none
 
@@ -27,57 +27,85 @@ class Lattice():
     def recipr(self, value):
         self.direct = utils.recipr_base(value)
 
-    def draw_direct_cell(self, ax, center=None):
+    def draw_direct_cell(
+            self,
+            ax:
+            mplg.Axes,
+            center: types.LArray3 = np.zeros(3),
+            ):
+        """Draw a cell centered on 'center'.
+
+        Args:
+            ax (mplg.Axes): matplotlib 3D axis object
+            center (types.LArray3, optional): center for plotting the cell. Defaults to np.zeros(3).
         """
-        Draw a cell centered on 'center'.
-        Params:
-         - ax: matplotlib 3D axis object
-         - center: center for plotting the cell. Default: [0,0,0]
-        """
-        if center is None:
-            center = [0,0,0]
         mplg.draw_cell(ax, self.direct, center=center)
 
-    def draw_Wigner_Seitz(self, ax, draw_corners=True):
-        """
-        Draw the Wigner Seitz cell for the lattice.
-        Params:
-         - ax: matplotlib 3D axis object
-         - draw_corners: Draw the cell corners as green dots
+
+    def draw_Wigner_Seitz(
+            self,
+            ax: mplg.Axes,
+            draw_corners: bool = True
+            ):
+        """Draw the Wigner Seitz cell for the lattice.
+
+        Args:
+            ax (mplg.Axes): matplotlib 3D axis object
+            draw_corners (bool, optional): Whether to draw the corners as dots. Defaults to True.
         """
         mplg.draw_Wigner_Seitz(ax, self.recipr, draw_corners=draw_corners)
 
     @staticmethod
     def _transalte_points(
-        base, coord,
-        mode='cryst',
-        num=5,
-        ):
+            base: types.LArray3_3,
+            coord: types.LArrayN_3,
+            mode: str = 'cryst',
+            num: int = 5,
+            ) -> tuple[types.LArrayN_3, types.LArrayN_3]:
+        """Translate a list of points into the Voronoi cell.
+
+        Args:
+            base (types.LArray3_3): The basis vectors of the cell as rows of a matrix.
+            coord (types.LArrayN_3): The coordinates of the points to translate.
+            mode (str, optional): Whether input/output coordinates are in 'cartesian' or 'crystal'. Defaults to 'cryst'.
+            num (int, optional): The maximum value of i,j,k where the lattice vector G is G = iGx + jGy + kGz
+               Defaults to 5.
+
+        Raises:
+            ValueError: If mode is not 'cryst' or 'cart'.
+
+        Returns:
+            tuple[types.LArrayN_3, types.LArrayN_3]: The translated coordinates and the translation vectors.
+        """
         from itertools import product
 
         from scipy.spatial import KDTree
 
         base_inv = np.linalg.inv(base)
 
+        # Operate in cartesian coordinates
         if mode == 'cryst':
             coord_cryst = coord
             coord_cart  = coord.dot(base)
-
         elif mode == 'cart':
             coord_cart  = coord
             coord_cryst = coord.dot(base_inv)
         else:
             raise ValueError("Mode must be either 'cart' or 'cryst'.")
 
+        # Generate a repetition grid with all possible translation vetors
         l       = range(-num,num+1)
         L_cryst = np.array(list(product(l, repeat=3)))
         L_cart  = L_cryst.dot(base)
         L_tree  = KDTree(L_cart)
 
+        # Find the closest translation vector for each point
         G_l   = []
         for c in coord_cart:
             d,i = L_tree.query(c, k=L_cart.shape[0])
+            # There can be multiple vectors with the same distance
             w   = i[np.where(np.abs(d - d[0]) < 1E-6)]
+            # Choose the one with the smallest norm in crystal coordinates
             i0  = w[np.argmin(np.linalg.norm(L_cryst[w], axis=1))]
 
             G_l.append(i0)
@@ -91,26 +119,39 @@ class Lattice():
 
         return C_res, G_res
 
-    def translate_coord_into_PC(self, coord, **kwargs):
-        """
-        Translate a list of atoms coordinates into the Primitive Cell.
-        Params:
-         - coord: np.array of shape (-1,3) containing the coordinates
-                  of the atoms to translate.
-         - mode: 'crystal'/'cart' Specify the basis for the coordinates.
-         - num:  integer that specify the maximum number of cells on
-                 which to test.
-        """
-        return self._transalte_points(self.direct, coord, **kwargs)
+    def translate_coord_into_PC(
+            self,
+            coord: types.LArrayN_3,
+            mode: str = 'cryst',
+            num: int = 5
+            ) -> tuple[types.LArrayN_3, types.LArrayN_3]:
+        """Translate a list of atoms coordinates into the Primitive Cell.
 
-    def translate_coord_into_FBZ(self, coord, **kwargs):
+        Args:
+            coord (types.LArrayN_3): np.array of shape (-1,3) containing the coordinates of the atoms to translate.
+            mode (str, optional): Whether input/output coordinates are in 'cartesian' or 'crystal'. Defaults to 'cryst'.
+            num (int, optional): The maximum value of i,j,k where the lattice vector G is G = iGx + jGy + kGz
+               Defaults to 5.
+
+        Returns:
+            tuple[types.LArrayN_3, types.LArrayN_3]: The translated coordinates and the translation vectors.
         """
-        Translate a list of k-points coordinates into the First BZ.
-        Params:
-         - coord: np.array of shape (-1,3) containing the coordinates
-                  of the k-points to translate.
-         - mode: 'cryst'/'cart' Specify the basis for the coordinates.
-         - num:  integer that specify the maximum number of cells on
-                 which to test.
+        return self._transalte_points(self.direct, coord, mode=mode, num=num)
+
+    def translate_coord_into_FBZ(
+            self,
+            coord: types.LArrayN_3,
+            mode: str = 'cryst',
+            num: int = 5
+            ) -> tuple[types.LArrayN_3, types.LArrayN_3]:
+        """Translate a list of reciprocal coordinates into the First Brillouin Zone.
+
+        Args:
+            coord (types.LArrayN_3): np.array of shape (-1,3) containing the coordinates of the points to translate.
+            mode (str, optional): Whether input/output coordinates are in 'cartesian' or 'crystal'. Defaults to 'cryst'.
+            num (int, optional): The maximum value of i,j,k where the lattice vector G is G = iGx + jGy + kGz
+                Defaults to 5.
+        Returns:
+            tuple[types.LArrayN_3, types.LArrayN_3]: The translated coordinates and the translation vectors.
         """
-        return self._transalte_points(self.recipr, coord, **kwargs)
+        return self._transalte_points(self.recipr, coord, mode=mode, num=num)

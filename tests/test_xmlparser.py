@@ -69,8 +69,7 @@ def test_xpath_multiple_cross_same_node(cls1):
     ]
     )
 def test_xmlparser_xpath_corr(cls, xpath):
-    if not cls.find(xpath):
-        raise AssertionError('Failed to properly parse')
+    assert cls.find(xpath)
 
 
 @pytest.mark.parametrize(
@@ -85,5 +84,4 @@ def test_xmlparser_xpath_corr(cls, xpath):
     ]
     )
 def test_xmlparser_xpath_wrong(cls, xpath):
-    if cls.find(xpath):
-        raise AssertionError('Failed to properly parse')
+    assert not cls.find(xpath)

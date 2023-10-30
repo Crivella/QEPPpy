@@ -19,11 +19,7 @@ except ImportError:
     Axes = None
 
 periodic_table = {}
-try:
-    importlib.import_module('qepppy')
-except ImportError:
-    pass
-else:
+if importlib.util.find_spec('qepppy'):
     periodic_table = json.load(resources.files('qepppy.data').joinpath('periodic_table.json').open(encoding='utf-8'))
 
 def cart_to_cryst(cls: 'AtomsList', coord: np.ndarray) -> np.ndarray:
@@ -90,7 +86,7 @@ def split_atom_list_by_name(atom_coord: np.ndarray, atom_names: list[str]) -> tu
 @define(slots=False)
 class AtomsList():
     """Class describing data and operations on a list of atoms."""
-    
+
     atoms_coord_cart: npt.ArrayLike = field(
         validator=check_shape((-1,3)),
         converter=converter_none(lambda x: np.array(x, dtype=float).reshape(-1,3)),
