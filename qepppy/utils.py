@@ -147,7 +147,7 @@ def remap_generic_plane(
         points_cart += offset.reshape(3,1)
 
     rec = np.round(
-        np.dot(cell_inv, points_cart),
+        np.dot(cell_inv.T, points_cart),
         decimals=8
     )
     rec = rec % 1
